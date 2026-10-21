@@ -6,7 +6,7 @@ Primer cliente: NEXUS REAL ESTATE. El sitio `inmo.elearningcloud.org` puede inst
 
 Mantén este servicio **separado de Edvorya**. En la aplicación WebAppECloud (Dockerfile) configura:
 
-- `INSTALLER_TOKEN` es **opcional**. Si Dockploy no entrega variables de entorno, la aplicación genera automáticamente un token aleatorio seguro en `/app/.runtime/installer-token` con permisos privados `0600`. Puedes optar por definir el token en Dockploy si funciona correctamente.
+- `INSTALLER_TOKEN` es **opcional**. Si Dockploy no entrega variables de entorno, la aplicación genera automáticamente un token aleatorio seguro en `/app/.runtime/installer-token` con permisos privados `0600`, al abrir por primera vez `/instalar`. Puedes optar por definir el token en Dockploy si funciona correctamente.
 - Para consultar la clave generada, **primero abre `/instalar`**, luego en la terminal del contenedor de WebAppECloud ejecuta `cat /app/.runtime/installer-token`. No la compartas por chat, no la incluyas en capturas y no la guardes en Git. La clave se solicita en el primer paso y se elimina del volumen al finalizar la instalación.
 - `APP_CONFIG_DIR=/app/.runtime`.
 - **Volumen persistente** montado en `/app/.runtime` con permisos de escritura para el usuario `node` del contenedor. Este volumen es OBLIGATORIO: sin él, se perderán las credenciales al reconstruir la imagen.
