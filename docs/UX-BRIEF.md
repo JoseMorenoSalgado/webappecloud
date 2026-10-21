@@ -1,7 +1,7 @@
 # Referencia de producto y diseño — WebAppECloud
 
 ## Alcance
-**Producto:** plataforma multi-tenant de sitios web administrables. **Primer cliente:** inmobiliaria DEPRO. **Arquitectura:** Next.js + MySQL/MariaDB + cPanel/Node.js.
+**Producto:** plataforma multi-tenant de sitios web administrables. **Primer cliente:** inmobiliaria NEXUS REAL ESTATE. **Arquitectura:** Next.js + MySQL/MariaDB + cPanel/Node.js.
 
 ## Referencias aportadas por el cliente
 - https://kwnicaragua.kw.com/es-419/
@@ -28,9 +28,9 @@
 7. Contenido, medios, navegación y secciones editables desde el panel.
 
 ## Tokens preliminares (por validar con captura y marca)
-- Principal: azul marino profundo
-- Superficies: blanco y gris muy claro
-- Acentos: verde para leads, naranja para WhatsApp, violeta para ciertas métricas
+- Principal: rojo corporativo NEXUS (#cf202b)
+- Superficies: blanco, gris muy claro y gris grafito
+- Acentos: verde para leads y WhatsApp, naranja en eventos secundarios
 - Tipografía sugerida: Inter
 - Animación: discreta y opcional según preferencia del usuario
 
