@@ -16,3 +16,8 @@ coverage
 reference
 *.md
 !README.md
+
+# Credenciales y bloqueo persistentes del instalador
+.runtime/
+*.installer.lock
+installation.json
