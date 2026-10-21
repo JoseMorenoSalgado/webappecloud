@@ -3,6 +3,7 @@ import {timingSafeEqual} from "node:crypto";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {join} from "node:path";
+import {prismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {prismaFor} from "@/lib/prisma";
 import {hashPassword} from "@/lib/auth";
 import {installerAvailable,installerToken,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
@@ -12,7 +13,7 @@ import {mkdirSync,accessSync,constants} from "node:fs";
 export const runtime="nodejs";
 const execute=promisify(execFile);
 type Form={
- setupToken:string;dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ setupToken:string;dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
 };
 const response=(error:string,status=400)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
@@ -23,26 +24,31 @@ function isValidToken(input:string){
  return timingSafeEqual(Buffer.from(input),Buffer.from(key));
 }
 function validate(input:Form){
- const dbHost=safe(input.dbHost,250).toLowerCase(),dbPort=Number(input.dbPort||"3306");
+ const dbType=safe(input.dbType,20)||"mariadb";
+ if(!["mysql","mariadb","postgresql"].includes(dbType))throw Error("Selecciona MySQL, MariaDB o PostgreSQL.");
+ const dbPort=Number(input.dbPort||(dbType==="postgresql"?"5432":"3306"));
+ const dbHost=safe(input.dbHost,250).toLowerCase();
  const dbName=safe(input.dbName,64),dbUser=safe(input.dbUser,80);
  const dbPassword=String(input.dbPassword||"");
  const institution=safe(input.institution,140),institutionEmail=safe(input.institutionEmail,180).toLowerCase();
  const adminName=safe(input.adminName,120),adminEmail=safe(input.adminEmail,180).toLowerCase();
  const adminPassword=String(input.adminPassword||"");
- if(!/^[a-z0-9][a-z0-9.-]*$/.test(dbHost)||dbHost.length>250||!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto MariaDB inválido.");
+ if(!/^[a-z0-9][a-z0-9.-]*$/.test(dbHost)||dbHost.length>250||!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto de base de datos inválido.");
  if(!/^[a-zA-Z0-9_]{1,64}$/.test(dbName)||!/^[a-zA-Z0-9_@.-]{1,80}$/.test(dbUser)||!dbPassword||dbPassword.length>256)throw Error("Revisa el nombre, usuario y contraseña de la base de datos.");
  if(institution.length<3||adminName.length<2||adminPassword.length<14||adminPassword.length>256)throw Error("Introduce la institución, administrador y una contraseña de al menos 14 caracteres.");
  if(!/^\S+@\S+\.\S+$/.test(institutionEmail)||!/^\S+@\S+\.\S+$/.test(adminEmail))throw Error("Los correos electrónicos no son válidos.");
- const url=`mysql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}`;
- return {institution,institutionEmail,adminName,adminEmail,adminPassword,url};
+ const engine:DatabaseEngine=dbType==="postgresql"?"postgresql":"mysql";
+ const scheme=engine==="postgresql"?"postgresql":"mysql";
+ const url=`${scheme}://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}`;
+ return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine};
 }
 function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
 function databaseError(error:unknown){
  const code=typeof error==="object"&&error&&"code" in error?String(error.code):"";
- if(code==="P1000")return "Usuario o contraseña incorrectos para MariaDB.";
- if(code==="P1001")return "No se pudo conectar al servidor MariaDB. Comprueba host y puerto.";
+ if(code==="P1000")return "Usuario o contraseña incorrectos.";
+ if(code==="P1001")return "No se pudo conectar al servidor SQL. Comprueba host, puerto y red de Docker.";
  if(code==="P1003")return "La base de datos no existe. Debes crearla primero en cPanel o Dockploy.";
- if(code==="P1017")return "La conexión MariaDB se cerró inesperadamente.";
+ if(code==="P1017")return "La conexión a la base de datos se cerró inesperadamente.";
  return "No fue posible preparar la base de datos. Verifica permisos CREATE/ALTER y que esté vacía.";
 }
 export async function POST(req:NextRequest){
@@ -70,12 +76,14 @@ export async function POST(req:NextRequest){
   accessSync(configDir(),constants.W_OK);
   const probe=prismaFor(data.url);
   try{
-   const tables=await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE()`;
+   const tables=data.engine==="postgresql"
+    ? await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
+    : await probe.$queryRaw<Array<{n:bigint}>>`SELECT COUNT(*) AS n FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'BASE TABLE'`;
    if(Number(tables[0]?.n||0)!==0)return response("Utiliza una base de datos vacía y exclusiva para esta instalación.",409);
   }catch(error){return response(databaseError(error),422);}
   finally{await probe.$disconnect();}
   try{
-   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--schema=prisma/schema.prisma"],{
+   await execute(process.execPath,[join(process.cwd(),"node_modules","prisma","build","index.js"),"db","push","--schema="+prismaSchemaFor(data.engine)],{
     cwd:process.cwd(),
     env:{...process.env,DATABASE_URL:data.url},
     timeout:120000,maxBuffer:512000

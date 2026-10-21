@@ -56,3 +56,5 @@
 .wizard-success p{color:#647084;max-width:480px;margin:0 auto 23px}
 .install-footer{text-align:center;font-size:12px;color:#778395;margin-top:20px}
 @media(max-width:680px){.install-card{padding:22px 17px}.install-head h1{font-size:27px}.install-steps span{font-size:11px}.wizard-grid{grid-template-columns:1fr}.wizard-actions .btn{flex:1}}
+
+.wizard-db-select{width:100%;padding:13px;border:1px solid #dce1e7;border-radius:9px;background:#fff;color:#243044;font:inherit;min-height:46px}.wizard-db-select:focus-visible{outline:2px solid #cf202b;outline-offset:1px}

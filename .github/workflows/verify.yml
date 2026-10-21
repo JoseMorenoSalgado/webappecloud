@@ -1,4 +1,4 @@
-name: Verificación Next.js + MariaDB
+name: Verificación Next.js + MariaDB + PostgreSQL
 on:
   pull_request:
   push:
@@ -28,6 +28,19 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pgci
+          POSTGRES_PASSWORD: pg_password_only
+          POSTGRES_DB: webappecloud_pg_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U pgci -d webappecloud_pg_ci"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
     env:
       DATABASE_URL: mysql://ciuser:ci_password_only@127.0.0.1:3306/webappecloud_ci
       SEED_DOMAIN: localhost
@@ -43,8 +56,9 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Validar esquema Prisma
         run: |
-          npx prisma validate
-          npx prisma generate
+          npx prisma validate --schema prisma/schema.prisma
+          DATABASE_URL=postgresql://pgci:pg_password_only@127.0.0.1:5432/webappecloud_pg_ci npx prisma validate --schema prisma/schema.postgres.prisma
+          npm run db:generate
       - name: Crear esquema en base efímera de CI
         run: npx prisma db push
       - name: Crear datos de prueba
@@ -121,9 +135,31 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -d '{}' http://localhost:3002/api/install)" = "409"
         env:
           NODE_ENV: production
+      - name: PostgreSQL - instalación completa desde el asistente
+        run: |
+          set -euo pipefail
+          INSTALL_PG_TMP="$(mktemp -d)"
+          env -u DATABASE_URL -u INSTALLER_TOKEN APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3003/api/live >/dev/null; do sleep 2; done'
+          curl -fsS http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
+          grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
+          test -s "$INSTALL_PG_TMP/installer-token"
+          node -e 'const fs=require("fs");const key=fs.readFileSync(process.argv[1],"utf8").trim();const body={setupToken:key,dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});' "$INSTALL_PG_TMP/installer-token"
+          curl -fsS -X POST http://localhost:3003/api/install \
+            -H 'Origin: http://localhost:3003' \
+            -H 'Content-Type: application/json' \
+            --data-binary @/tmp/webappecloud-pg-request.json | grep -q '"ok":true'
+          curl -fsS http://localhost:3003/api/health | grep -q '"status":"ok"'
+          curl -fsS http://localhost:3003/ -o /tmp/nexus-postgres-home.html
+          grep -qi 'NEXUS' /tmp/nexus-postgres-home.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3003/instalar)" = "307"
+          test ! -e "$INSTALL_PG_TMP/installer-token"
+        env:
+          NODE_ENV: production
       - name: Mostrar logs si falla
         if: failure()
         run: |
           cat /tmp/webappecloud-next.log 2>/dev/null || true
           cat /tmp/webappecloud-preview.log 2>/dev/null || true
           cat /tmp/webappecloud-installer.log 2>/dev/null || true
+          cat /tmp/webappecloud-postgres.log 2>/dev/null || true

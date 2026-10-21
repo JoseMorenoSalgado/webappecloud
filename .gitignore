@@ -11,3 +11,6 @@ coverage
 .runtime/
 *.installer.lock
 installation.json
+
+# PostgreSQL Prisma Client generated during npm install/build
+/src/generated/

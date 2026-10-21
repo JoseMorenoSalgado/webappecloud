@@ -2,7 +2,7 @@
 
 **Primera implementación:** NEXUS REAL ESTATE · «Pensando en tu futuro».
 
-Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Estado:** primera versión de pruebas, no apta aún para clientes reales sin completar migraciones, respaldos y auditoría de seguridad.
+Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Estado:** primera versión de pruebas, no apta aún para clientes reales sin completar migraciones, respaldos y auditoría de seguridad.
 
 ## Funcionalidades implementadas
 
@@ -17,7 +17,7 @@ Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, prepar
 
 ### Instalador inicial
 
-Abre `/instalar` para configurar por primera vez **MariaDB/MySQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL previamente creada, un `INSTALLER_TOKEN` seguro y volumen persistente. Consulta [Instalación web](docs/INSTALACION-WEB.md).
+Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL previamente creada, un `INSTALLER_TOKEN` seguro y volumen persistente. Consulta [Instalación web](docs/INSTALACION-WEB.md).
 
 ### Aún pendiente
 
@@ -58,3 +58,7 @@ Necesita Node.js / Passenger, Application Manager o Web Apps, más una versión 
 La compilación inicial de Next.js/MariaDB y Docker superó CI. La nueva función del instalador debe superar CI antes de su integración a `main`; Dockploy requiere pruebas de funcionamiento adicionales.
 
 Referencias de diseño: [docs/UX-BRIEF.md](docs/UX-BRIEF.md).
+
+## Identificar el despliegue real
+
+`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-multidb-installer-r1`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.

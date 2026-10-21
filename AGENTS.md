@@ -15,7 +15,7 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 
 ## Arquitectura no negociable
 - Next.js + TypeScript + Tailwind CSS.
-- MariaDB o MySQL mediante Prisma (no suponer PostgreSQL).
+- MariaDB, MySQL y PostgreSQL mediante dos clientes Prisma (mysql/postgresql); mantener los modelos equivalentes y probar ambos motores.
 - Despliegue orientado a WHM/cPanel con Node.js/Passenger validado antes de asegurar compatibilidad.
 - Autenticación, autorización y acceso a cada recurso restringidos por tenant en el servidor; nunca depender del filtrado visual.
 - Los módulos sectoriales no deben contaminar los componentes núcleo.

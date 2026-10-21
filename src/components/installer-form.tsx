@@ -3,11 +3,11 @@ import {useState,type FormEvent} from "react";
 import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
 
 type Values={
- setupToken:string;dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ setupToken:string;dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
 };
 const defaults:Values={
- setupToken:"",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
+ setupToken:"",dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
  institution:"Nexus Real Estate",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:""
 };
 export default function InstallerForm({domain}:{domain:string}){
@@ -41,14 +41,22 @@ export default function InstallerForm({domain}:{domain:string}){
  return <form className="install-form" onSubmit={submit}>
   <div className="install-steps"><span className={step===1?"current":"completed"}><Database size={17}/> 1. Base de datos</span><span className={step===2?"current":""}><Building2 size={17}/> 2. Institución y administrador</span></div>
   {step===1?<section>
-    <h2>Conexión a MariaDB / MySQL</h2>
+    <h2>Conexión a la base de datos</h2>
+    <label className="wizard-field"><span>Motor de base de datos</span>
+     <select value={values.dbType} className="wizard-db-select" onChange={e=>{
+      const next=e.target.value as Values["dbType"];
+      setValues(v=>({...v,dbType:next,dbPort:next==="postgresql"?"5432":"3306",dbHost:v.dbHost==="db"&&next==="postgresql"?"postgres":v.dbHost==="postgres"&&next!=="postgresql"?"db":v.dbHost}));
+     }}>
+      <option value="mariadb">MariaDB</option><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option>
+     </select>
+    </label>
     <p>Utiliza una base de datos <strong>vacía</strong> que hayas creado previamente en cPanel o Dockploy. Sus credenciales no se guardan en GitHub.</p>
-    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Docker, utiliza el nombre del servicio (por ejemplo: db)."})}{input("dbPort","Puerto",{hint:"Habitualmente 3306."})}</div>
+    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Docker, utiliza el nombre del servicio alcanzable por red (por ejemplo: db o postgres)."})}{input("dbPort","Puerto",{hint:"3306 para MySQL/MariaDB; 5432 para PostgreSQL."})}</div>
     {input("dbName","Nombre de la base de datos")}
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
-    {input("setupToken","Clave de instalación",{type:"password",minLength:24,hint:"La defines previamente como INSTALLER_TOKEN en Dockploy. Solo se utiliza una vez."})}
-    <p className="wizard-warning"><ShieldCheck size={18}/> El usuario de MariaDB necesita permisos para crear las tablas. No utilices la base de datos de Edvorya.</p>
+    {input("setupToken","Clave de instalación",{type:"password",minLength:24,hint:"Puedes obtenerla mediante cat /app/.runtime/installer-token en la terminal privada de Dockploy. No la compartas."})}
+    <p className="wizard-warning"><ShieldCheck size={18}/> El usuario SQL necesita permisos para crear tablas en una base vacía. No reutilices la base de datos de Edvorya.</p>
     <button className="btn btn-red" type="submit">Continuar <ArrowRight size={16}/></button>
   </section>:<section>
     <h2>Información de la institución</h2>

@@ -1,6 +1,10 @@
-import {PrismaClient} from "@prisma/client";
+import {PrismaClient as MysqlPrismaClient} from "@prisma/client";
+import {PrismaClient as PostgresPrismaClient} from "../src/generated/postgres";
+import {engineFromUrl} from "../src/lib/db-provider";
 import {scryptSync,randomBytes} from "node:crypto";
-const prisma=new PrismaClient();
+const url=process.env.DATABASE_URL;
+if(!url)throw Error("DATABASE_URL requerida para seed");
+const prisma=engineFromUrl(url)==="postgresql" ? new PostgresPrismaClient({datasources:{db:{url}}}) as unknown as MysqlPrismaClient : new MysqlPrismaClient({datasources:{db:{url}}});
 const properties=[
  {refCode:"NX-102",slug:"casa-zona-ejecutiva",title:"Casa moderna en Zona Ejecutiva",city:"Managua",neighborhood:"Zona Ejecutiva",type:"Casa",operation:"venta",price:250000,bedrooms:4,bathrooms:3,areaM2:320,description:"Propiedad de demostración; fotografías, precio y características ilustrativos.",url:"https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1100"},
  {refCode:"NX-205",slug:"apartamento-torre-norte",title:"Apartamento Torre Norte",city:"Managua",neighborhood:"Centro",type:"Apartamento",operation:"alquiler",price:1200,bedrooms:3,bathrooms:2,areaM2:180,description:"Propiedad de demostración; fotografías, precio y características ilustrativos.",url:"https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1100"},
