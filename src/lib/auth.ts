@@ -1,6 +1,6 @@
 import "server-only";
 import {randomBytes,scryptSync,timingSafeEqual,createHash} from "node:crypto";
-import {cookies} from "next/headers";
+import {cookies,headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
 const cookieName="webappecloud_session";
@@ -22,6 +22,10 @@ export async function currentAdmin(){
  if(!cookie||! /^[a-f0-9]{64}$/.test(cookie))return null;
  const session=await prisma.adminSession.findUnique({where:{tokenHash:tokenHash(cookie)},include:{user:{include:{tenant:true}}}});
  if(!session||session.expiresAt<new Date()||!session.user.active||!session.user.tenant.active)return null;
+ // La sesión solo puede operar sobre un dominio asignado a su empresa.
+ const hostname=(await headers()).get("host")?.toLowerCase().trim().replace(/:\\d+$/,"").replace(/\\.$/,"")||"";
+ const assigned=await prisma.domain.findFirst({where:{tenantId:session.user.tenantId,hostname},select:{id:true}});
+ if(!assigned)return null;
  return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:session.user.role};
 }
 export async function requireAdmin(){

@@ -122,3 +122,9 @@ model AdminSession {
   createdAt DateTime @default(now())
   @@index([userId])
 }
+
+model AdminLoginThrottle {
+  key String @id
+  attempts Int @default(0)
+  expiresAt DateTime
+}

@@ -20,7 +20,7 @@ Base Next.js 15 + TypeScript + Prisma + **MariaDB/MySQL**, preparada para cPanel
 - Logo vectorial/fotografías definitivas de NEXUS en el repositorio.
 - Editor de páginas, carga de medios y administración de plantillas/módulos para otros sectores.
 - Gestión de categorías, agentes, CRM, edición/eliminación de propiedades, informes avanzados.
-- Rate limiting persistente para login y formularios, anti-bots, auditoría de seguridad y protección de datos.
+- Rate limiting del formulario público, anti-bots, auditoría de seguridad y protección de datos (login incluye control básico de intentos).
 - Migraciones iniciales versionadas, pruebas CI y proceso de despliegue concreto del cPanel.
 
 ## Desarrollo local
