@@ -101,7 +101,7 @@ jobs:
       - name: Prueba real del asistente de instalación MariaDB
         run: |
           set -euo pipefail
-          printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/mysql" --stdin
+          printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/webappecloud_ci" --stdin
           INSTALL_TMP="$(mktemp -d)"
           env -u DATABASE_URL APP_CONFIG_DIR="$INSTALL_TMP" INSTALLER_TOKEN="CI-test-installer-very-long-secure-token-2026" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3002/api/live >/dev/null; do sleep 2; done'
