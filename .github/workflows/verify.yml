@@ -1,0 +1,88 @@
+name: Verificación Next.js + MariaDB
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: ci_root_only
+          MARIADB_DATABASE: webappecloud_ci
+          MARIADB_USER: ciuser
+          MARIADB_PASSWORD: ci_password_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DATABASE_URL: mysql://ciuser:ci_password_only@127.0.0.1:3306/webappecloud_ci
+      SEED_DOMAIN: localhost
+      ADMIN_EMAIL: admin@ci.invalid
+      ADMIN_PASSWORD: CI-PASSWORD-NOT-PRODUCTION-2345
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependencias
+        run: npm install --no-audit --no-fund
+      - name: Validar esquema Prisma
+        run: |
+          npx prisma validate
+          npx prisma generate
+      - name: Crear esquema en base efímera de CI
+        run: npx prisma db push
+      - name: Crear datos de prueba
+        run: npm run db:seed
+      - name: Verificar TypeScript
+        run: npx tsc --noEmit
+      - name: Compilar Next.js
+        run: npm run build
+        env:
+          NODE_ENV: production
+      - name: Iniciar servidor de prueba
+        run: |
+          npm run start > /tmp/webappecloud-next.log 2>&1 &
+          echo $! > /tmp/webappecloud-server.pid
+          timeout 90 bash -c 'until curl -fsS http://localhost:3000/ >/dev/null; do sleep 2; done'
+        env:
+          NODE_ENV: production
+      - name: Smoke test - web pública, catálogo, PDF y formulario
+        run: |
+          set -euo pipefail
+          curl -fsS http://localhost:3000/ | grep -qi 'NEXUS'
+          curl -fsS http://localhost:3000/propiedades | grep -qi 'Catálogo'
+          curl -fsS http://localhost:3000/propiedades/casa-zona-ejecutiva | grep -qi 'NX-102'
+          curl -fsS http://localhost:3000/api/propiedades/casa-zona-ejecutiva/pdf -o /tmp/nexus-ficha.pdf
+          head -c 5 /tmp/nexus-ficha.pdf | grep -q '%PDF-'
+          curl -fsS -X POST http://localhost:3000/api/leads \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"Cliente de pruebas","phone":"88887777","email":"cliente@example.com","consent":"yes","message":"Deseo conocer la propiedad."}' | grep -q '"ok":true'
+          curl -fsS -X POST http://localhost:3000/api/events \
+            -H 'Origin: http://localhost:3000' \
+            -H 'Content-Type: application/json' \
+            -d '{"kind":"view","path":"/"}' | grep -q '"ok":true'
+          CODE="$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/admin)"
+          test "$CODE" = "307" || test "$CODE" = "308"
+          echo 'Smoke tests exitosos'
+        env:
+          NODE_ENV: production
+      - name: Mostrar logs si falla
+        if: failure()
+        run: cat /tmp/webappecloud-next.log 2>/dev/null || true
