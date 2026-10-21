@@ -2,6 +2,12 @@
 
 Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Docker Compose, con MariaDB aislada y datos ficticios. **No ejecutar como reemplazo de Edvorya** y no abrir el panel al público hasta completar seguridad y pruebas.
 
+## Diagnóstico en dos etapas
+
+**Etapa 1: servidor web y proxy (sin MariaDB).** En la aplicación Dockerfile, el chequeo Docker usa `/api/live` y debe devolver HTTP 200 con `{"status":"online","service":"webappecloud"}` aunque MariaDB no esté configurada. En el navegador, prueba `https://inmo.elearningcloud.org/api/live`. Si continúa el 502, verifica en Dockploy que el contenedor esté **running**, que Domains apunte al servicio correcto y que Container Port sea `3000`. Revisa los **runtime logs**, no solo los build logs.
+
+**Etapa 2: MariaDB.** `/api/health` confirma disponibilidad de base de datos y devuelve HTTP 503 cuando no está configurada o no responde. Hasta crear el esquema y sembrar el dominio, las páginas públicas pueden mostrar 404 o error; no equivale a fallo de compilación.
+
 ## Precondiciones
 
 - Confirmar RAM, CPU, espacio en disco y carga actual de Edvorya antes de desplegar. Reservar un margen para compilaciones.
@@ -34,7 +40,7 @@ Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Doc
    Para crear una cuenta de pruebas, ejecutar la semilla con `ADMIN_EMAIL` y `ADMIN_PASSWORD` (mínimo 14 caracteres) como variables secretas en el entorno, o asignarlas temporalmente al comando de seed sin registrar la contraseña en el historial de shell. Elimina estas variables tras sembrar usuarios. **No colocar credenciales reales en Git**.
 
 8. En el servicio Compose → Domains → Add Domain: servicio `app`, puerto de contenedor `3000`, host `tu-subdominio-de-pruebas.example.com`, HTTPS/Let's Encrypt. Asegurarse de que DNS apunte al VPS.
-9. Verificar `https://tu-subdominio-de-pruebas.example.com/api/health`, home, catálogo, PDF, formularios y `/admin/acceso`.
+9. Verificar primero `https://tu-subdominio-de-pruebas.example.com/api/live` (servidor activo). Tras configurar MariaDB y aplicar esquema, revisar `https://tu-subdominio-de-pruebas.example.com/api/health`, home, catálogo, PDF, formularios y `/admin/acceso`.
 
 ## Límites y aislamiento
 
