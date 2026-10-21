@@ -5,7 +5,7 @@ import {promisify} from "node:util";
 import {join} from "node:path";
 import {prismaFor} from "@/lib/prisma";
 import {hashPassword} from "@/lib/auth";
-import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
+import {installerAvailable,installerToken,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
 import {normalizeSiteHost} from "@/lib/preview";
 import {mkdirSync,accessSync,constants} from "node:fs";
 
@@ -18,7 +18,7 @@ type Form={
 const response=(error:string,status=400)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
 const safe=(input:unknown,max=128)=>String(input??"").trim().slice(0,max);
 function isValidToken(input:string){
- const key=process.env.INSTALLER_TOKEN||"";
+ const key=installerToken();
  if(key.length<24||!input||input.length!==key.length)return false;
  return timingSafeEqual(Buffer.from(input),Buffer.from(key));
 }
@@ -47,7 +47,7 @@ function databaseError(error:unknown){
 }
 export async function POST(req:NextRequest){
  if(!installerAvailable())return response("Esta instalación ya está configurada.",409);
- if(!process.env.INSTALLER_TOKEN||process.env.INSTALLER_TOKEN.length<24)return response("Configura una clave INSTALLER_TOKEN segura en Dockploy antes de iniciar.",503);
+
  const origin=req.headers.get("origin"),host=req.headers.get("host")||"";
  if(!origin||!host)return response("Origen de instalación no válido.",403);
  try{if(new URL(origin).host.toLowerCase()!==host.toLowerCase())return response("Origen no autorizado.",403);}catch{return response("Origen no válido.",403);}
