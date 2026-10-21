@@ -103,13 +103,17 @@ jobs:
           set -euo pipefail
           printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/webappecloud_ci" --stdin
           INSTALL_TMP="$(mktemp -d)"
-          env -u DATABASE_URL APP_CONFIG_DIR="$INSTALL_TMP" INSTALLER_TOKEN="CI-test-installer-very-long-secure-token-2026" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
+          env -u DATABASE_URL -u INSTALLER_TOKEN APP_CONFIG_DIR="$INSTALL_TMP" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3002/api/live >/dev/null; do sleep 2; done'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/)" = "307"
           curl -fsS http://localhost:3002/instalar -o /tmp/nexus-wizard.html
           grep -qi "instalación inicial" /tmp/nexus-wizard.html
+          test -s "$INSTALL_TMP/installer-token"
+          # Generate the request locally, without printing the secret into workflow logs.
+          node -e 'const fs=require("node:fs");const key=fs.readFileSync(process.argv[1],"utf8").trim();if(key.length!==64)process.exit(1);const data={setupToken:key,dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});' "$INSTALL_TMP/installer-token"
           curl -fsS -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
-            --data '{"setupToken":"CI-test-installer-very-long-secure-token-2026","dbHost":"127.0.0.1","dbPort":"3306","dbName":"webappecloud_install_ci","dbUser":"ciuser","dbPassword":"ci_password_only","institution":"Nexus Real Estate","institutionEmail":"nexus@example.com","adminName":"Administrador Nexus","adminEmail":"admin-nexus@example.com","adminPassword":"long-safe-password-for-test-1234"}' | grep -q '"ok":true'
+            --data-binary @/tmp/webappecloud-install-request.json | grep -q '"ok":true'
+          test ! -e "$INSTALL_TMP/installer-token"
           curl -fsS http://localhost:3002/api/health | grep -q '"status":"ok"'
           curl -fsS http://localhost:3002/ -o /tmp/nexus-after-install.html
           grep -qi 'NEXUS' /tmp/nexus-after-install.html

@@ -13,7 +13,7 @@ services:
       PORT: "3000"
       NEXT_TELEMETRY_DISABLED: "1"
       DATABASE_URL: ${DATABASE_URL:-}
-      INSTALLER_TOKEN: ${INSTALLER_TOKEN:?Configura INSTALLER_TOKEN largo y aleatorio}
+      INSTALLER_TOKEN: ${INSTALLER_TOKEN:-}
       APP_CONFIG_DIR: /app/.runtime
       SITE_PREVIEW_MODE: ${SITE_PREVIEW_MODE:-false}
       SITE_PREVIEW_HOST: ${SITE_PREVIEW_HOST:-inmo.elearningcloud.org}

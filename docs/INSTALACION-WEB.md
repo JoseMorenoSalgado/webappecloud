@@ -6,7 +6,8 @@ Primer cliente: NEXUS REAL ESTATE. El sitio `inmo.elearningcloud.org` puede inst
 
 Mantén este servicio **separado de Edvorya**. En la aplicación WebAppECloud (Dockerfile) configura:
 
-- `INSTALLER_TOKEN`: clave aleatoria de **al menos 24 caracteres**, almacenada como variable secreta en Dockploy. Se solicitará en el formulario para impedir instalaciones por desconocidos.
+- `INSTALLER_TOKEN` es **opcional**. Si Dockploy no entrega variables de entorno, la aplicación genera automáticamente un token aleatorio seguro en `/app/.runtime/installer-token` con permisos privados `0600`, al abrir por primera vez `/instalar`. Puedes optar por definir el token en Dockploy si funciona correctamente.
+- Para consultar la clave generada, **primero abre `/instalar`**, luego en la terminal del contenedor de WebAppECloud ejecuta `cat /app/.runtime/installer-token`. No la compartas por chat, no la incluyas en capturas y no la guardes en Git. La clave se solicita en el primer paso y se elimina del volumen al finalizar la instalación.
 - `APP_CONFIG_DIR=/app/.runtime`.
 - **Volumen persistente** montado en `/app/.runtime` con permisos de escritura para el usuario `node` del contenedor. Este volumen es OBLIGATORIO: sin él, se perderán las credenciales al reconstruir la imagen.
 - Elimina cualquier `DATABASE_URL` previo si deseas configurar la conexión desde el asistente. Si está definido, el asistente no permitirá reinstalar.
@@ -25,7 +26,7 @@ En cPanel crearías la base, usuario y permisos desde MySQL Databases antes de a
 
 Visita `https://inmo.elearningcloud.org/instalar`.
 
-**Paso 1:** host SQL, puerto (3306), nombre de la base, usuario SQL, contraseña y clave de instalación.
+**Paso 1:** host SQL, puerto (3306), nombre de la base, usuario SQL, contraseña y clave de instalación (tomada de la terminal privada o de la variable `INSTALLER_TOKEN`).
 
 **Paso 2:** nombre de la institución, correo institucional, nombre del administrador, correo del administrador y contraseña de al menos 14 caracteres.
 
