@@ -16,3 +16,7 @@
 .mobile-menu{display:none}.mobile-menu summary{list-style:none;cursor:pointer;padding:9px}.mobile-menu summary::-webkit-details-marker{display:none}.mobile-menu>div{position:absolute;top:70px;left:0;right:0;background:white;padding:16px 26px;display:grid;gap:17px;box-shadow:0 12px 24px #0002}.mobile-menu a{font-size:15px;font-weight:700}.mobile-menu a:hover{color:var(--red)}@media(max-width:720px){.mobile-menu{display:block}}
 
 .brand-icon{background:transparent;border-radius:0;width:49px;height:55px}.brand-icon img{max-width:48px;max-height:52px;object-fit:contain}
+
+/* Vista previa explícita de staging: mostrar contenidos ficticios sin captar leads */
+.nexus-preview-banner{padding:13px 24px;background:#fff5dd;border-bottom:1px solid #e7bf70;color:#67491b;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;font-size:13px}
+.nexus-preview-banner strong{font-size:13px}.preview-form-note{color:#5d6470;background:#f5f6f8;border:1px solid #e1e4e9;padding:18px;border-radius:9px;font-size:14px;line-height:1.55}
