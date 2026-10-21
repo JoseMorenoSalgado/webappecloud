@@ -2,7 +2,7 @@
 
 **Primera implementación:** NEXUS REAL ESTATE · «Pensando en tu futuro».
 
-Base Next.js 15 + TypeScript + Prisma + **MariaDB/MySQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Rama de desarrollo**, no apta aún para producción sin pruebas de instalación, seguridad, dominio y carga.
+Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Rama de desarrollo**, no apta aún para producción sin pruebas de instalación, seguridad, dominio y carga.
 
 ## Funcionalidades implementadas
 
