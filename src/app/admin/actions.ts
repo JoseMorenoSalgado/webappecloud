@@ -4,8 +4,10 @@ import {prisma} from "@/lib/prisma";
 import {verifyPassword,startSession,destroySession,requireAdmin} from "@/lib/auth";
 import {revalidatePath} from "next/cache";
 import {createHash} from "node:crypto";
+import {hasDatabaseConfig} from "@/lib/server-config";
+import {normalizeSiteHost} from "@/lib/preview";
 export async function signIn(form:FormData){
- if(!process.env.DATABASE_URL)redirect("/admin/acceso?error=config");
+ if(!hasDatabaseConfig())redirect("/instalar");
  const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
  const password=String(form.get("password")||"");
  if(!email||password.length<8)redirect("/admin/acceso?error=credenciales");
@@ -21,7 +23,7 @@ export async function signIn(form:FormData){
  }
  // Asegurar que la cuenta pertenezca al dominio donde se está iniciando sesión.
  const h=(await import("next/headers")).headers;
- const hostname=((await h()).get("host")||"").toLowerCase().trim().replace(/:\\d+$/,"").replace(/\\.$/,"");
+ const hostname=normalizeSiteHost((await h()).get("host")||"");
  const allowed=await prisma.domain.findFirst({where:{tenantId:user.tenantId,hostname}});
  if(!allowed)redirect("/admin/acceso?error=dominio");
  await prisma.adminLoginThrottle.deleteMany({where:{key}});
