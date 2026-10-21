@@ -1,11 +1,12 @@
 import {headers} from "next/headers";
-import {notFound} from "next/navigation";
+import {notFound,redirect} from "next/navigation";
+import {hasDatabaseConfig} from "@/lib/server-config";
 import {isPreviewHost,normalizeSiteHost} from "@/lib/preview";
 import {prisma} from "@/lib/prisma";
 import {demoTenant,demoProperties,type PublicTenant,type PublicProperty} from "@/lib/demo";
 export const canonicalHost = normalizeSiteHost;
 export async function tenantFromHost(hostname:string){
- if(!process.env.DATABASE_URL)return null;
+ if(!hasDatabaseConfig())return null;
  const d=await prisma.domain.findUnique({where:{hostname:canonicalHost(hostname)},include:{tenant:true}});
  return d?.tenant.active?d:null;
 }
@@ -14,9 +15,10 @@ export async function getPublicContext():Promise<{tenant:PublicTenant;properties
  const hostname=h.get("host")||"";
  const preview=isPreviewHost(hostname);
  const demoContext={tenant:demoTenant,properties:demoProperties,demo:true} as const;
- if(!process.env.DATABASE_URL){
-   if(preview||process.env.NODE_ENV!=="production")return demoContext;
-   notFound();
+ if(!hasDatabaseConfig()){
+   if(preview)return demoContext;
+   if(process.env.NODE_ENV!=="production")return demoContext;
+   redirect("/instalar");
  }
  let d:Awaited<ReturnType<typeof tenantFromHost>>;
  try{d=await tenantFromHost(hostname);}
