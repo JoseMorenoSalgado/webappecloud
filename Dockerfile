@@ -22,7 +22,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 COPY --from=build /app/prisma ./prisma
-RUN chown -R node:node /app
+RUN mkdir -p /app/.runtime && chown -R node:node /app
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=8s --start-period=60s --retries=3 \
