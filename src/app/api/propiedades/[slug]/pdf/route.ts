@@ -1,3 +1,4 @@
+import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {PDFDocument,StandardFonts,rgb} from "pdf-lib";
 import {prisma} from "@/lib/prisma";
@@ -10,7 +11,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
  let demoPdf=false;
  const hostname=req.headers.get("host")||"";
  const preview=isPreviewHost(hostname);
- if(!process.env.DATABASE_URL){
+ if(!hasDatabaseConfig()){
    if(preview||process.env.NODE_ENV!=="production"){
      p=demoProperties.find(x=>x.slug===slug);
      demoPdf=Boolean(p);
