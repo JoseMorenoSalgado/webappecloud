@@ -21,7 +21,7 @@ async function main(){
  if(email&&password){
   if(password.length<14)throw Error("ADMIN_PASSWORD requiere al menos 14 caracteres");
   const salt=randomBytes(16).toString("hex"),hash="scrypt$"+salt+"$"+scryptSync(password,salt,64).toString("hex");
-  await prisma.adminUser.upsert({where:{email},update:{},create:{tenantId:t.id,email,name:"Administrador Nexus",passwordHash:hash,role:"admin"}});
+  await prisma.adminUser.upsert({where:{tenantId_email:{tenantId:t.id,email}},update:{},create:{tenantId:t.id,email,name:"Administrador Nexus",passwordHash:hash,role:"admin"}});
   console.log("Administrador inicial registrado si no existía. Nunca se actualiza su contraseña desde el seed.");
  }else console.log("Sin ADMIN_EMAIL/ADMIN_PASSWORD: no se ha creado administrador.");
  console.log("Plantilla Nexus lista. Actualizar dominio y propiedades reales antes de producción.");

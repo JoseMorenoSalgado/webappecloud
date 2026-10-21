@@ -105,13 +105,14 @@ model AdminUser {
   id String @id @default(cuid())
   tenantId String
   tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Cascade)
-  email String @unique
+  email String
   name String
   passwordHash String
   role String @default("admin")
   active Boolean @default(true)
   sessions AdminSession[]
   createdAt DateTime @default(now())
+  @@unique([tenantId,email])
   @@index([tenantId])
 }
 model AdminSession {

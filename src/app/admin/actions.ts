@@ -10,22 +10,21 @@ export async function signIn(form:FormData){
  if(!hasDatabaseConfig())redirect("/instalar");
  const email=String(form.get("email")||"").trim().toLowerCase().slice(0,180);
  const password=String(form.get("password")||"");
- if(!email||password.length<8)redirect("/admin/acceso?error=credenciales");
- const key=createHash("sha256").update(email).digest("hex"),now=new Date();
+ if(!email||password.length<8||password.length>256)redirect("/admin/acceso?error=credenciales");
+ const h=(await import("next/headers")).headers;
+ const hostname=normalizeSiteHost((await h()).get("host")||"");
+ const domain=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
+ if(!domain)redirect("/admin/acceso?error=credenciales");
+ const key=createHash("sha256").update(domain.tenantId+":"+email).digest("hex"),now=new Date();
  const previous=await prisma.adminLoginThrottle.findUnique({where:{key}});
  if(previous&&previous.expiresAt>now&&previous.attempts>=8)redirect("/admin/acceso?error=bloqueado");
- const user=await prisma.adminUser.findUnique({where:{email},include:{tenant:true}});
+ const user=await prisma.adminUser.findUnique({where:{tenantId_email:{tenantId:domain.tenantId,email}},include:{tenant:true}});
  if(!user||!user.active||!user.tenant.active||!verifyPassword(password,user.passwordHash)){
   const expiresAt=new Date(Date.now()+15*60*1000);
   if(previous&&previous.expiresAt>now)await prisma.adminLoginThrottle.update({where:{key},data:{attempts:{increment:1}}});
   else await prisma.adminLoginThrottle.upsert({where:{key},create:{key,attempts:1,expiresAt},update:{attempts:1,expiresAt}});
   redirect("/admin/acceso?error=credenciales");
  }
- // Asegurar que la cuenta pertenezca al dominio donde se está iniciando sesión.
- const h=(await import("next/headers")).headers;
- const hostname=normalizeSiteHost((await h()).get("host")||"");
- const allowed=await prisma.domain.findFirst({where:{tenantId:user.tenantId,hostname}});
- if(!allowed)redirect("/admin/acceso?error=dominio");
  await prisma.adminLoginThrottle.deleteMany({where:{key}});
  await startSession(user.id);
  redirect("/admin");

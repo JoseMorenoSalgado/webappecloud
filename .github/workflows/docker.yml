@@ -1,6 +1,18 @@
 name: Validar imagen de Docker para Dockploy
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.dockerignore'
+      - '.github/workflows/docker.yml'
+      - 'scripts/**'
+      - 'src/**'
+      - 'package.json'
+      - 'prisma/**'
   pull_request:
     paths:
       - 'Dockerfile'
