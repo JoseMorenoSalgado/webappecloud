@@ -25,6 +25,7 @@ jobs:
           DATABASE_URL: mysql://webappecloud:testpassword@db:3306/webappecloud
           MARIADB_PASSWORD: testpassword
           MARIADB_ROOT_PASSWORD: testrootpassword
+          INSTALLER_TOKEN: CI-ONLY-NOT-A-SECRET-INTEGRATION-2026
         run: docker compose config --quiet
       - name: Construir imagen de aplicación
         run: docker build --progress=plain -t webappecloud:ci .
