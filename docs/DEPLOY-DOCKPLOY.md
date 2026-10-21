@@ -12,7 +12,7 @@ Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Doc
 ## Crear servicio en Dockploy
 
 1. Projects → proyecto nuevo **WebAppECloud – Staging** (distinto al de Edvorya).
-2. Add service → **Compose** (Docker Compose).
+2. Add service → **Compose** (Docker Compose). Activar **Isolated Deployments** en las utilidades de Compose para que Traefik alcance la app sin compartir red con Edvorya. En **Preview Compose** comprobar que el servicio `app` está conectado a la red creada por Dockploy.
 3. Source: GitHub → `JoseMorenoSalgado/webappecloud`, rama `feat/nexus-real-estate-starter`.
 4. Compose file: `./docker-compose.yml`. Contenedor público: servicio `app`, puerto interno **3000**.
 5. Configurar variables secretas EN DOCKPLOY (nunca en Git):
@@ -23,7 +23,7 @@ Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Doc
 
    IMPORTANTE: Los caracteres especiales de la contraseña deben estar codificados como URL en `DATABASE_URL` (por ejemplo `@` → `%40`). La contraseña de `MARIADB_PASSWORD` permanece sin codificar. Se recomienda almacenarlas solo como variables de entorno/secretos del despliegue.
 
-6. Compilar y desplegar. **No** habilitar `ports: "3000:3000"` ni `3306:3306`: se colisionaría con servicios existentes o expondría la base de datos.
+6. Antes de desplegar, revisar **Preview Compose** y verificar que `app` tenga dos redes: la privada `webapp-internal` para comunicarse con `db`, y la red aislada añadida por Dockploy para Traefik. Compilar y desplegar. **No** habilitar `ports: "3000:3000"` ni `3306:3306`: se colisionaría con servicios existentes o expondría la base de datos.
 7. Abrir terminal **del contenedor app** y ejecutar, SOLO PARA STAGING:
 
    ```bash
