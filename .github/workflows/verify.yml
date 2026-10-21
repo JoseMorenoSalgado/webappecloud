@@ -83,6 +83,43 @@ jobs:
           echo 'Smoke tests exitosos'
         env:
           NODE_ENV: production
+      - name: Probar vista previa sin MariaDB, solo en dominio autorizado
+        run: |
+          set -euo pipefail
+          env -u DATABASE_URL SITE_PREVIEW_MODE=true SITE_PREVIEW_HOST=inmo.elearningcloud.org PORT=3001 NODE_ENV=production npm run start > /tmp/webappecloud-preview.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3001/api/live >/dev/null; do sleep 2; done'
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/ -o /tmp/nexus-preview-home.html
+          grep -qi 'Vista previa de NEXUS' /tmp/nexus-preview-home.html
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/propiedades -o /tmp/nexus-preview-catalog.html
+          grep -qi 'Catálogo de propiedades' /tmp/nexus-preview-catalog.html
+          curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/api/propiedades/casa-zona-ejecutiva/pdf -o /tmp/nexus-demo.pdf
+          head -c 5 /tmp/nexus-demo.pdf | grep -q '%PDF-'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: example.com' http://localhost:3001/)" = "307"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3001/api/health)" = "503"
+        env:
+          NODE_ENV: production
+      - name: Prueba real del asistente de instalación MariaDB
+        run: |
+          set -euo pipefail
+          printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/webappecloud_ci" --stdin
+          INSTALL_TMP="$(mktemp -d)"
+          env -u DATABASE_URL APP_CONFIG_DIR="$INSTALL_TMP" INSTALLER_TOKEN="CI-test-installer-very-long-secure-token-2026" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
+          timeout 90 bash -c 'until curl -fsS http://localhost:3002/api/live >/dev/null; do sleep 2; done'
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/)" = "307"
+          curl -fsS http://localhost:3002/instalar -o /tmp/nexus-wizard.html
+          grep -qi "instalación inicial" /tmp/nexus-wizard.html
+          curl -fsS -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
+            --data '{"setupToken":"CI-test-installer-very-long-secure-token-2026","dbHost":"127.0.0.1","dbPort":"3306","dbName":"webappecloud_install_ci","dbUser":"ciuser","dbPassword":"ci_password_only","institution":"Nexus Real Estate","institutionEmail":"nexus@example.com","adminName":"Administrador Nexus","adminEmail":"admin-nexus@example.com","adminPassword":"long-safe-password-for-test-1234"}' | grep -q '"ok":true'
+          curl -fsS http://localhost:3002/api/health | grep -q '"status":"ok"'
+          curl -fsS http://localhost:3002/ -o /tmp/nexus-after-install.html
+          grep -qi 'NEXUS' /tmp/nexus-after-install.html
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/instalar)" = "307"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -d '{}' http://localhost:3002/api/install)" = "409"
+        env:
+          NODE_ENV: production
       - name: Mostrar logs si falla
         if: failure()
-        run: cat /tmp/webappecloud-next.log 2>/dev/null || true
+        run: |
+          cat /tmp/webappecloud-next.log 2>/dev/null || true
+          cat /tmp/webappecloud-preview.log 2>/dev/null || true
+          cat /tmp/webappecloud-installer.log 2>/dev/null || true

@@ -1,0 +1,67 @@
+"use client";
+import {useState,type FormEvent} from "react";
+import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
+
+type Values={
+ setupToken:string;dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
+};
+const defaults:Values={
+ setupToken:"",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
+ institution:"Nexus Real Estate",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:""
+};
+export default function InstallerForm({domain}:{domain:string}){
+ const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
+ const [error,setError]=useState(""),[busy,setBusy]=useState(false),[complete,setComplete]=useState(false);
+ function change(name:keyof Values,value:string){setValues(v=>({...v,[name]:value}));}
+ async function submit(event:FormEvent<HTMLFormElement>){
+  event.preventDefault();setError("");
+  if(step===1){setStep(2);return;}
+  if(values.adminPassword.length<14){setError("La contraseña administrativa debe tener al menos 14 caracteres.");return;}
+  setBusy(true);
+  try{
+   const r=await fetch("/api/install",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify(values)});
+   const json=await r.json();
+   if(!r.ok)throw Error(json.error||"Error durante la instalación");
+   setComplete(true);setValues(v=>({...v,dbPassword:"",adminPassword:"",setupToken:""}));
+  }catch(e){setError(e instanceof Error?e.message:"No fue posible completar la instalación.");}
+  finally{setBusy(false);}
+ }
+ const input=(name:keyof Values,label:string,options:{type?:string;required?:boolean;hint?:string;minLength?:number;autoComplete?:string;placeholder?:string}={})=><label className="wizard-field" key={name}>
+   <span>{label}</span>
+   <input value={values[name]} type={options.type||"text"} required={options.required!==false} minLength={options.minLength} autoComplete={options.autoComplete||"off"} placeholder={options.placeholder} onChange={e=>change(name,e.target.value)} disabled={busy}/>
+   {options.hint&&<small>{options.hint}</small>}
+ </label>;
+ if(complete)return <div className="wizard-success">
+  <CheckCircle2 size={48} color="#0a9e5a"/>
+  <h2>Instalación completada</h2>
+  <p>La base de datos, la institución y el administrador han sido creados. El asistente ha quedado bloqueado.</p>
+  <a className="btn btn-red" href="/admin/acceso?installed=1">Entrar al panel administrativo <ArrowRight size={17}/></a>
+ </div>;
+ return <form className="install-form" onSubmit={submit}>
+  <div className="install-steps"><span className={step===1?"current":"completed"}><Database size={17}/> 1. Base de datos</span><span className={step===2?"current":""}><Building2 size={17}/> 2. Institución y administrador</span></div>
+  {step===1?<section>
+    <h2>Conexión a MariaDB / MySQL</h2>
+    <p>Utiliza una base de datos <strong>vacía</strong> que hayas creado previamente en cPanel o Dockploy. Sus credenciales no se guardan en GitHub.</p>
+    <div className="wizard-grid">{input("dbHost","Servidor de base de datos",{hint:"En Docker, utiliza el nombre del servicio (por ejemplo: db)."})}{input("dbPort","Puerto",{hint:"Habitualmente 3306."})}</div>
+    {input("dbName","Nombre de la base de datos")}
+    {input("dbUser","Usuario de la base de datos")}
+    {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
+    {input("setupToken","Clave de instalación",{type:"password",minLength:24,hint:"La defines previamente como INSTALLER_TOKEN en Dockploy. Solo se utiliza una vez."})}
+    <p className="wizard-warning"><ShieldCheck size={18}/> El usuario de MariaDB necesita permisos para crear las tablas. No utilices la base de datos de Edvorya.</p>
+    <button className="btn btn-red" type="submit">Continuar <ArrowRight size={16}/></button>
+  </section>:<section>
+    <h2>Información de la institución</h2>
+    <p>Estos datos identificarán el sitio que se administrará desde WebAppECloud.</p>
+    {input("institution","Nombre de la institución o empresa",{minLength:3})}
+    {input("institutionEmail","Correo institucional",{type:"email",autoComplete:"email"})}
+    <div className="wizard-domain"><span>Dominio detectado:</span> <strong>{domain}</strong></div>
+    <h3>Cuenta administradora</h3>
+    {input("adminName","Nombre del administrador",{minLength:2,autoComplete:"name"})}
+    {input("adminEmail","Correo del administrador",{type:"email",autoComplete:"email"})}
+    {input("adminPassword","Contraseña del administrador",{type:"password",minLength:14,autoComplete:"new-password",hint:"Mínimo 14 caracteres. Se guarda un hash seguro, nunca el texto original."})}
+    <div className="wizard-actions"><button className="btn wizard-back" type="button" onClick={()=>setStep(1)} disabled={busy}><ArrowLeft size={16}/> Atrás</button><button className="btn btn-red" type="submit" disabled={busy}>{busy?"Configurando...":"Instalar plataforma"} <CheckCircle2 size={16}/></button></div>
+  </section>}
+  {error&&<div className="wizard-error" role="alert">{error}</div>}
+ </form>;
+}

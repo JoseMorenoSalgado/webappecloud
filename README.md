@@ -2,7 +2,7 @@
 
 **Primera implementación:** NEXUS REAL ESTATE · «Pensando en tu futuro».
 
-Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Rama de desarrollo**, no apta aún para producción sin pruebas de instalación, seguridad, dominio y carga.
+Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Estado:** primera versión de pruebas, no apta aún para clientes reales sin completar migraciones, respaldos y auditoría de seguridad.
 
 ## Funcionalidades implementadas
 
@@ -15,13 +15,17 @@ Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL**, prepar
 - Esquema multiempresa en MariaDB: tenants, domains, propiedades, leads, páginas, eventos, cuentas y sesiones.
 - Diseño móvil del home y dashboard, basado en la referencia aprobada y la paleta roja/gris de Nexus.
 
+### Instalador inicial
+
+Abre `/instalar` para configurar por primera vez **MariaDB/MySQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL previamente creada, un `INSTALLER_TOKEN` seguro y volumen persistente. Consulta [Instalación web](docs/INSTALACION-WEB.md).
+
 ### Aún pendiente
 
 - Logo vectorial/fotografías definitivas de NEXUS en el repositorio.
 - Editor de páginas, carga de medios y administración de plantillas/módulos para otros sectores.
 - Gestión de categorías, agentes, CRM, edición/eliminación de propiedades, informes avanzados.
 - Rate limiting del formulario público, anti-bots, auditoría de seguridad y protección de datos (login incluye control básico de intentos).
-- Migraciones iniciales versionadas, pruebas CI y proceso de despliegue concreto del cPanel.
+- Migraciones iniciales versionadas, backups, pruebas de seguridad y despliegue validado en cPanel.
 
 ## Desarrollo local
 
@@ -51,6 +55,6 @@ Necesita Node.js / Passenger, Application Manager o Web Apps, más una versión 
 
 ## Estado de validación
 
-No se ha ejecutado `npm install` ni compilación en este entorno sin conexión a npm. La rama se deja para revisión y pruebas sobre un ambiente de desarrollo, **sin fusionar automáticamente con main**.
+La compilación inicial de Next.js/MariaDB y Docker superó CI. La nueva función del instalador debe superar CI antes de su integración a `main`; Dockploy requiere pruebas de funcionamiento adicionales.
 
 Referencias de diseño: [docs/UX-BRIEF.md](docs/UX-BRIEF.md).

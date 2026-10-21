@@ -6,3 +6,8 @@ node_modules
 *.log
 .DS_Store
 coverage
+
+# Credenciales y bloqueo persistentes del instalador
+.runtime/
+*.installer.lock
+installation.json

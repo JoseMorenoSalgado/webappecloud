@@ -1,8 +1,9 @@
+import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {tenantFromHost} from "@/lib/tenant";
 export async function POST(req:NextRequest){
- if(!process.env.DATABASE_URL)return NextResponse.json({error:"Formulario disponible cuando se configure MariaDB."},{status:503});
+ if(!hasDatabaseConfig())return NextResponse.json({error:"Formulario disponible cuando se configure MariaDB."},{status:503});
  const origin=req.headers.get("origin");if(origin){try{if(new URL(origin).host!==req.headers.get("host"))return NextResponse.json({error:"Origen no autorizado"},{status:403});}catch{return NextResponse.json({error:"Origen inválido"},{status:403});}}
  let b:Record<string,unknown>;try{b=await req.json();}catch{return NextResponse.json({error:"Datos inválidos"},{status:400});}
  if(b.website)return NextResponse.json({ok:true});

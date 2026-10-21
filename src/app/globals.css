@@ -16,3 +16,43 @@
 .mobile-menu{display:none}.mobile-menu summary{list-style:none;cursor:pointer;padding:9px}.mobile-menu summary::-webkit-details-marker{display:none}.mobile-menu>div{position:absolute;top:70px;left:0;right:0;background:white;padding:16px 26px;display:grid;gap:17px;box-shadow:0 12px 24px #0002}.mobile-menu a{font-size:15px;font-weight:700}.mobile-menu a:hover{color:var(--red)}@media(max-width:720px){.mobile-menu{display:block}}
 
 .brand-icon{background:transparent;border-radius:0;width:49px;height:55px}.brand-icon img{max-width:48px;max-height:52px;object-fit:contain}
+
+/* Vista previa explícita de staging: mostrar contenidos ficticios sin captar leads */
+.nexus-preview-banner{padding:13px 24px;background:#fff5dd;border-bottom:1px solid #e7bf70;color:#67491b;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;font-size:13px}
+.nexus-preview-banner strong{font-size:13px}.preview-form-note{color:#5d6470;background:#f5f6f8;border:1px solid #e1e4e9;padding:18px;border-radius:9px;font-size:14px;line-height:1.55}
+
+
+/* Instalador inicial — superficies independientes del dashboard público */
+.install-screen{min-height:100vh;background:#f4f6f8;padding:42px 18px 60px;color:#202833}
+.install-wrap{max-width:820px;margin:auto}
+.install-header{display:flex;align-items:center;justify-content:center;gap:12px;margin:0 0 24px}
+.install-header .install-logo{width:45px;height:45px;background:#cf202b;color:white;display:grid;place-items:center;border-radius:12px;font-size:23px;font-weight:800}
+.install-header strong,.install-header span{display:block;line-height:1.3}
+.install-header strong{font-size:19px}.install-header span{font-size:12px;color:#647084}
+.install-card{padding:38px;background:white;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 15px 48px rgba(24,33,45,.055)}
+.install-kicker{color:#cf202b;font-size:11px;letter-spacing:.15em;font-weight:800}
+.install-head h1{font-size:33px;margin:12px 0 9px}.install-head p{color:#647084}
+.install-steps{display:flex;gap:10px;margin:28px 0;padding:6px;border-radius:11px;background:#f4f6f8}
+.install-steps span{width:50%;display:flex;align-items:center;justify-content:center;gap:9px;text-align:center;color:#697587;font-size:13px;font-weight:700;padding:12px;border-radius:8px}
+.install-steps .current{background:white;color:#b81822;box-shadow:0 3px 12px #2221}
+.install-steps .completed{color:#138b55}
+.install-form h2{font-size:25px;margin:20px 0 10px}
+.install-form p{font-size:14px;color:#5f6878}
+.install-form h3{font-size:18px;border-top:1px solid #e5e7eb;margin-top:25px;padding-top:22px}
+.wizard-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:14px}
+.wizard-field{display:grid;gap:6px;margin:14px 0;font-size:13px;font-weight:700;color:#344052}
+.wizard-field>input{border:1px solid #dce1e7;border-radius:9px;padding:12px 13px;font-weight:400;color:#1f2937;background:white;width:100%;min-height:46px}
+.wizard-field>input:focus-visible{outline:2px solid #cf202b;outline-offset:1px}
+.wizard-field>small{font-weight:400;color:#778395}
+.wizard-warning{display:flex;align-items:flex-start;gap:9px;padding:14px;border:1px solid #e8dbb6;background:#fffbf0;border-radius:9px}
+.wizard-warning svg{flex-shrink:0;color:#ac7727}
+.wizard-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:25px}
+.wizard-back{border:1px solid #dce1e7;background:#fff;color:#344052}
+.wizard-error{background:#fff2f2;color:#941b23;border:1px solid #f3c8c9;border-radius:9px;padding:15px;margin-top:18px;font-size:14px}
+.wizard-domain{padding:13px;background:#f5f7f9;border:1px solid #e5e7eb;border-radius:8px;display:flex;gap:12px;flex-wrap:wrap;font-size:13px}
+.wizard-domain span{color:#647084}
+.wizard-success{text-align:center;padding:40px 16px}
+.wizard-success svg{margin:0 auto 15px}.wizard-success h2{font-size:27px}
+.wizard-success p{color:#647084;max-width:480px;margin:0 auto 23px}
+.install-footer{text-align:center;font-size:12px;color:#778395;margin-top:20px}
+@media(max-width:680px){.install-card{padding:22px 17px}.install-head h1{font-size:27px}.install-steps span{font-size:11px}.wizard-grid{grid-template-columns:1fr}.wizard-actions .btn{flex:1}}

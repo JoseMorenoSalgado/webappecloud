@@ -1,6 +1,6 @@
 # Ambiente de STAGING aislado de Edvorya. No publica puertos al host.
 # Variables requeridas en Dockploy:
-# MARIADB_PASSWORD, MARIADB_ROOT_PASSWORD, DATABASE_URL, SEED_DOMAIN
+# MARIADB_PASSWORD, MARIADB_ROOT_PASSWORD, INSTALLER_TOKEN; DATABASE_URL opcional
 # DATABASE_URL: mysql://webappecloud:URL_ENCODED_PASSWORD@db:3306/webappecloud
 services:
   app:
@@ -12,7 +12,13 @@ services:
       NODE_ENV: production
       PORT: "3000"
       NEXT_TELEMETRY_DISABLED: "1"
-      DATABASE_URL: ${DATABASE_URL:?Configura DATABASE_URL en Dockploy}
+      DATABASE_URL: ${DATABASE_URL:-}
+      INSTALLER_TOKEN: ${INSTALLER_TOKEN:?Configura INSTALLER_TOKEN largo y aleatorio}
+      APP_CONFIG_DIR: /app/.runtime
+      SITE_PREVIEW_MODE: ${SITE_PREVIEW_MODE:-false}
+      SITE_PREVIEW_HOST: ${SITE_PREVIEW_HOST:-inmo.elearningcloud.org}
+    volumes:
+      - webapp-config:/app/.runtime
     expose:
       - "3000"
     depends_on:
@@ -48,6 +54,7 @@ services:
         limits:
           memory: 1024M
 volumes:
+  webapp-config:
   webapp-mariadb:
 networks:
   webapp-internal:
