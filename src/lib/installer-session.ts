@@ -1,6 +1,6 @@
 import "server-only";
 import {createHash, randomBytes, timingSafeEqual} from "node:crypto";
-import {existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
+import {closeSync, existsSync, mkdirSync, openSync, readFileSync, unlinkSync, writeFileSync} from "node:fs";
 import {join} from "node:path";
 import {configDir, installerAvailable} from "@/lib/server-config";
 
@@ -32,18 +32,26 @@ export function validInstallerSession(token: string | undefined){
 export function issueInstallerSession(): string | null {
  if (!installerAvailable() || !automaticInstallerEnabled()) return null;
  mkdirSync(configDir(), {recursive:true, mode:0o700});
- const previous = readClaim();
- if (previous && previous.expiresAt > Date.now()) return null;
- const path = claimPath();
- if (existsSync(path)) unlinkSync(path);
- const token = randomBytes(32).toString("hex");
- const claim: Claim = {version:1, tokenHash:digest(token), expiresAt:Date.now() + INSTALLER_SESSION_SECONDS * 1000};
- try {
-  writeFileSync(path, JSON.stringify(claim), {flag:"wx", mode:0o600});
-  return token;
- } catch(error) {
+ // Serialize claims so simultaneous visitors cannot overwrite the first session.
+ const lockPath=join(configDir(), ".installer-session.lock");
+ let fd:number;
+ try {fd=openSync(lockPath, "wx", 0o600);}
+ catch(error){
   if (error instanceof Error && "code" in error && error.code === "EEXIST") return null;
   throw error;
+ }
+ try {
+  const previous=readClaim();
+  if (previous && previous.expiresAt > Date.now()) return null;
+  const path=claimPath();
+  if (existsSync(path)) unlinkSync(path);
+  const token=randomBytes(32).toString("hex");
+  const claim:Claim={version:1, tokenHash:digest(token), expiresAt:Date.now()+INSTALLER_SESSION_SECONDS*1000};
+  writeFileSync(path, JSON.stringify(claim), {flag:"wx", mode:0o600});
+  return token;
+ } finally {
+  closeSync(fd);
+  unlinkSync(lockPath);
  }
 }
 export function clearInstallerSession(){
