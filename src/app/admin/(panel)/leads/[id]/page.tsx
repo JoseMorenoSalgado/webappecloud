@@ -26,7 +26,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
   include:{crm:true,notes:{where:{tenantId:admin.tenantId},orderBy:{createdAt:"desc"},take:50},property:{select:{refCode:true,title:true,slug:true}}}
  });
  if(!lead)notFound();
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const wa=whatsappLeadUrl(lead.phone,admin.tenantName,lead.property?.refCode);
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
  return <>
