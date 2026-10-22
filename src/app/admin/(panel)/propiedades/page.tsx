@@ -25,7 +25,7 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  const filters=new URLSearchParams({q,status,operation}),nextUrl=(p:number)=>{const params=new URLSearchParams(filters);params.set("page",String(p));return "/admin/propiedades?"+params.toString();};
  const canEdit=admin.role==="admin"||admin.role==="editor";
  return <>
-  <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de NEXUS Real Estate.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
+  <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de tu inmobiliaria.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
   {(x.updated||x.deleted)&&<div className="property-success" role="status">{x.deleted?"Propiedad eliminada.":"Estado de publicación actualizado."}</div>}
   {x.error&&<div className="admin-error" role="alert">No fue posible completar la operación solicitada.</div>}
   <div className="property-summary"><div><strong>{activeCount+draftCount}</strong><span>Propiedades totales</span></div><div><strong>{activeCount}</strong><span>Publicadas</span></div><div><strong>{draftCount}</strong><span>Borradores</span></div></div>
