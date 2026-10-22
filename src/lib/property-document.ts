@@ -40,6 +40,11 @@ export async function sanitizePropertyPdf(raw:Uint8Array){
  catch{throw new Error("INVALID");}
  const n=original.getPageCount();
  if(n<1||n>MAX_CUSTOM_PDF_PAGES)throw new Error("PAGES");
+ // Discard interactive structures before copying to avoid importing their objects.
+ for(const page of original.getPages()){
+  page.node.delete(PDFName.of("Annots"));
+  page.node.delete(PDFName.of("AA"));
+ }
  const clean=await PDFDocument.create();
  const pages=await clean.copyPages(original,original.getPageIndices());
  for(const page of pages){
