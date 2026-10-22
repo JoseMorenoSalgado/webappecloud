@@ -852,3 +852,58 @@
  .cms-publish-switch{margin-left:auto}
  .cms-editor-actions .btn{flex:1;justify-content:center}
 }
+
+
+/* Inmuebles: la ficha muestra la foto entera a su tamaño natural.
+   Nunca usar cover en la vista de detalle: recorta fachadas y agranda fotos pequeñas. */
+.public-site .public-gallery{margin-top:19px;margin-bottom:26px;gap:10px}
+.public-site .public-gallery-main{
+ display:flex;align-items:center;justify-content:center;position:relative;
+ height:clamp(310px,47vw,565px);
+ background:linear-gradient(145deg,#f4f5f7,#e8edf0);
+ border:1px solid #e3e8ed;border-radius:14px;overflow:hidden
+}
+.public-site .public-gallery-main>img{
+ display:block;width:auto;height:auto;max-width:100%;max-height:100%;
+ object-fit:contain;object-position:center;
+}
+.public-site .public-gallery-expand{
+ position:absolute;left:14px;bottom:14px;display:inline-flex;align-items:center;gap:8px;
+ border:1px solid #e2e8f0;background:#ffffffef;color:#27394d;
+ box-shadow:0 3px 15px #1b2b4126;border-radius:9px;padding:11px 12px;
+ font-size:12px;font-weight:800;cursor:pointer
+}
+.public-site .public-gallery-expand:hover{background:#fff}
+.public-site .public-gallery-hint{font-size:11px;color:#728199;margin:0 0 1px}
+.public-site .public-gallery-controls{right:13px;bottom:13px;background:#1a293acb}
+.public-site .public-gallery-thumbs button{cursor:pointer;border-color:#e3e8ed;background:#f4f7fa}
+.public-site .public-gallery-thumbs button[aria-pressed=true]{border-color:var(--red)}
+.public-site .public-gallery-thumbs img{object-fit:contain;background:#f4f7fa}
+.public-site .public-gallery-dialog{
+ position:fixed;inset:0;margin:auto;border:1px solid #34465c;border-radius:13px;padding:0;
+ width:min(1200px,calc(100vw - 38px));height:min(900px,calc(100dvh - 38px));
+ max-width:none;max-height:none;overflow:hidden;background:#162330;color:white;
+ box-shadow:0 28px 90px #0008
+}
+.public-site .public-gallery-dialog::backdrop{background:#07101bdc;backdrop-filter:blur(4px)}
+.public-site .public-gallery-dialog[open]{display:flex;flex-direction:column}
+.public-site .public-gallery-dialog-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 18px;border-bottom:1px solid #ffffff24;min-height:58px}
+.public-site .public-gallery-dialog-bar>span{font-size:13px;color:#f3f6fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.public-site .public-gallery-dialog-bar>button{display:grid;place-items:center;border:1px solid #ffffff33;color:white;background:#ffffff18;width:38px;height:38px;flex-shrink:0;border-radius:8px;cursor:pointer}
+.public-site .public-gallery-dialog-image{display:flex;align-items:center;justify-content:center;min-height:0;flex:1;overflow:auto;padding:12px}
+.public-site .public-gallery-dialog-image>img{display:block;width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain}
+.public-site .public-gallery-dialog-actions{display:flex;justify-content:center;gap:15px;padding:12px 16px;border-top:1px solid #ffffff24}
+.public-site .public-gallery-dialog-actions>button{display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:8px;border:1px solid #ffffff44;background:#ffffff16;color:white;cursor:pointer;font-size:13px}
+.public-site .public-gallery-expand:focus-visible,
+.public-site .public-gallery-dialog button:focus-visible,
+.public-site .public-gallery-thumbs button:focus-visible{outline:3px solid #ed7b87;outline-offset:2px}
+@media(max-width:720px){
+ .public-site .public-gallery-main{height:clamp(245px,68vw,410px);border-radius:11px}
+ .public-site .public-gallery-expand{left:9px;bottom:9px;padding:10px}
+ .public-site .public-gallery-expand span{display:none}
+ .public-site .public-gallery-controls{right:9px;bottom:9px;gap:5px;padding:5px}
+ .public-site .public-gallery-controls button{width:33px;height:33px}
+ .public-site .public-gallery-dialog{width:calc(100vw - 16px);height:calc(100dvh - 22px);border-radius:10px}
+ .public-site .public-gallery-dialog-image{padding:7px}
+}
+@media(prefers-reduced-motion:reduce){.public-site .public-gallery-dialog::backdrop{backdrop-filter:none}}
