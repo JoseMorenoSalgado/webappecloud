@@ -4,7 +4,7 @@ type Data={
  description:string;featured:boolean;published:boolean;
 };
 export function AdminPropertyFields({property}:{property?:Data}){
- const value=(key:keyof Data,fallback:string|number="")=>property?.[key]??fallback;
+ const value=(key:keyof Data,fallback:string|number=""):string|number=>{const x=property?.[key];return typeof x==="string"||typeof x==="number"?x:fallback;};
  return <>
   <div className="property-form-section"><h2>Datos del inmueble</h2><p>Información que se mostrará en el catálogo y en la ficha técnica.</p>
    <div className="admin-form-grid">
