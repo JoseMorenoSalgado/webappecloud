@@ -23,7 +23,9 @@
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.4"
+    "sharp": "^0.34.4",
+    "embla-carousel-react": "^8.6.0",
+    "yet-another-react-lightbox": "^3.32.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
