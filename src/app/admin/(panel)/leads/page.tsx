@@ -4,6 +4,7 @@ import {Prisma} from "@prisma/client";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
+import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {CRM_STATUSES,crmStatusLabel,isCrmStatus,whatsappLeadUrl} from "@/lib/crm-status";
 
 export const dynamic="force-dynamic";
@@ -23,7 +24,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
    <h2>Activar seguimiento comercial</h2>
    <p>Conservaremos todos los prospectos actuales y añadiremos tablas independientes para registrar estados, próximas llamadas y notas. Esta ampliación no elimina ni modifica los contactos recibidos.</p>
    {params.error&&<p className="admin-error" role="alert">No fue posible activar el CRM. Comprueba los permisos de creación de tablas de MariaDB en Dokploy.</p>}
-   {admin.role==="admin"?<form action="/api/admin/crm/activate" method="post"><button className="btn btn-red">Activar CRM de prospectos</button></form>:<p>Un administrador debe activar la función para empezar a utilizarla.</p>}
+   {admin.roles.includes("admin")?<form action="/api/admin/crm/activate" method="post"><button className="btn btn-red">Activar CRM de prospectos</button></form>:<p>Un administrador debe activar la función para empezar a utilizarla.</p>}
   </section>
  </>;
  const filters:Prisma.LeadWhereInput[]=[];
@@ -33,22 +34,24 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  ]});
  if(status==="nuevo")filters.push({OR:[{crm:{is:null}},{crm:{is:{status:"nuevo",tenantId:admin.tenantId}}}]});
  else if(status)filters.push({crm:{is:{status,tenantId:admin.tenantId}}});
- const where:Prisma.LeadWhereInput={tenantId:admin.tenantId,...(filters.length?{AND:filters}:{})};
+ const base=leadWhere(admin);
+ const where:Prisma.LeadWhereInput={...base,...(filters.length?{AND:filters}:{})};
  const [total,leads,allCount,managed]=await Promise.all([
   prisma.lead.count({where}),
   prisma.lead.findMany({where,orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12,
    include:{property:{select:{refCode:true,title:true}},crm:true}}),
-  prisma.lead.count({where:{tenantId:admin.tenantId}}),
-  prisma.leadCrm.groupBy({by:["status"],where:{tenantId:admin.tenantId},_count:{_all:true}})
+  prisma.lead.count({where:base}),
+  prisma.leadCrm.groupBy({by:["status"],where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{lead:{is:base}}:{})},_count:{_all:true}})
  ]);
  const counts=new Map(managed.map(x=>[x.status,x._count._all]));
  const newCount=allCount-managed.filter(x=>x.status!=="nuevo").reduce((n,x)=>n+x._count._all,0);
  const paramsFor=(p:number)=>{const u=new URLSearchParams({q,status,page:String(p)});return "/admin/leads?"+u.toString();};
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
-  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{["admin","editor"].includes(admin.role)&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
+  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
   {params.activated&&<p className="property-success" role="status">CRM activado correctamente. Los contactos anteriores se conservaron.</p>}
   {params.error&&<p className="admin-error" role="alert">No se pudo completar la operación. Comprueba los permisos del usuario.</p>}
+  {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente las consultas de propiedades asignadas a tu cuenta.</p>}
   <div className="crm-overview">
    <div><span>Total de consultas</span><strong>{allCount}</strong><Users size={20}/></div>
    <div><span>Nuevos prospectos</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
