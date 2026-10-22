@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {Building2,ExternalLink,ImageIcon,LayoutTemplate,Save,Star,MessageCircle} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {getSiteSettings} from "@/lib/site-settings";
 import {hasSiteAsset} from "@/lib/site-assets";
@@ -15,7 +15,7 @@ const errors:Record<string,string>={
  servidor:"No se pudieron guardar los cambios. Consulta los registros en Dokploy."
 };
 export default async function SiteEditor({searchParams}:{searchParams:Promise<Status>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const [settings,tenant,properties,heroExists,logoExists,q]=await Promise.all([
   getSiteSettings(admin.tenantId),
   prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,whatsapp:true,contactEmail:true,primaryColor:true}}),
