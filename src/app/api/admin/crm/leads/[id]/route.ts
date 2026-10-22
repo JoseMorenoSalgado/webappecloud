@@ -20,7 +20,7 @@ function parseContactDate(raw:string){
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return back(id,"error=permisos");
+ if(!["admin","editor","agente"].includes(admin.role))return back(id,"error=permisos");
  if(!validMutationOrigin(req))return back(id,"error=origen");
  const length=Number(req.headers.get("content-length")||0);
  if(!Number.isFinite(length)||length>15000)return back(id,"error=datos");
