@@ -51,6 +51,9 @@ model Property {
   published Boolean @default(false)
   photos Photo[]
   leads Lead[]
+  assignedAgentId String?
+  assignedAgent AdminUser? @relation("AgentProperties",fields:[assignedAgentId],references:[id],onDelete:SetNull)
+  @@index([assignedAgentId])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@unique([tenantId,slug])
@@ -113,6 +116,7 @@ model AdminUser {
   role String @default("admin")
   active Boolean @default(true)
   sessions AdminSession[]
+  assignedProperties Property[] @relation("AgentProperties")
   createdAt DateTime @default(now())
   @@unique([tenantId,email])
   @@index([tenantId])
