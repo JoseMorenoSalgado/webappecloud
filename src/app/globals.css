@@ -1177,3 +1177,16 @@
  .admin-nav-mobile[open]{z-index:80}
  .admin-nav-mobile .admin-nav{box-shadow:0 20px 55px rgba(16,30,45,.22)}
 }
+
+/* Accessible off-canvas dashboard navigation */
+@media(max-width:720px){
+ .admin-nav-mobile{position:relative;display:block;z-index:90}
+ .admin-nav-mobile .admin-mobile-trigger{display:flex;align-items:center;gap:9px;min-height:44px;padding:9px 12px;border:1px solid #e2e6ec;border-radius:10px;background:#fff;color:#273243;font-size:14px;font-weight:750}
+ .admin-mobile-overlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;border:0!important;background:rgba(12,23,36,.52)!important;z-index:900!important}
+ .admin-mobile-drawer{position:fixed!important;right:0;top:0;bottom:0;width:min(360px,88vw);height:100dvh;background:white;border-radius:0;z-index:901;box-shadow:-18px 0 55px rgba(12,23,36,.27);display:flex;flex-direction:column;padding:20px 14px;overflow:auto}
+ .admin-mobile-drawer-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 8px 18px;border-bottom:1px solid #e7ecf1;margin-bottom:10px}
+ .admin-mobile-drawer-head strong{font-size:18px;color:#243349}
+ .admin-mobile-drawer-head button{padding:8px 10px;background:#f3f5f8;border:1px solid #e2e7ee;border-radius:8px}
+ .admin-nav-mobile .admin-mobile-drawer .admin-nav{display:grid!important;position:static!important;top:auto!important;right:auto!important;width:100%!important;max-width:none!important;max-height:none!important;box-shadow:none!important;border:0!important;padding:0!important;overflow:visible!important;gap:5px!important}
+ .admin-nav-mobile .admin-mobile-drawer .admin-nav a{min-height:47px;font-size:14px}
+}
