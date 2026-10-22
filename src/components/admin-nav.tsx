@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useRef} from "react";
+import {useEffect,useRef,useState} from "react";
 import {usePathname} from "next/navigation";
 import {LayoutDashboard,Building2,UsersRound,Settings,Tags,UserRound,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck} from "lucide-react";
 
@@ -19,8 +19,9 @@ const upcoming=[
 export function AdminNav({role="admin"}:{role?:string}){
  const pathname=usePathname();
  const mobileRef=useRef<HTMLDetailsElement>(null);
- useEffect(()=>{const close=()=>{if(mobileRef.current)mobileRef.current.open=false;};close();const onPointer=(event:PointerEvent)=>{if(mobileRef.current&&!mobileRef.current.contains(event.target as Node))close();};const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")close();};document.addEventListener("pointerdown",onPointer);document.addEventListener("keydown",onKey);return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};},[pathname]);
- const closeMobile=()=>{if(mobileRef.current)mobileRef.current.open=false;};
+ const [mobileOpen,setMobileOpen]=useState(false);
+ useEffect(()=>{const close=()=>{setMobileOpen(false);};close();const onPointer=(event:PointerEvent)=>{if(mobileRef.current&&!mobileRef.current.contains(event.target as Node))close();};const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")close();};document.addEventListener("pointerdown",onPointer);document.addEventListener("keydown",onKey);return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};},[pathname]);
+ const closeMobile=()=>setMobileOpen(false);
  const visible=available.filter(x=>role==="admin"|| (role==="editor"&&x.href!=="/admin/reportes")||(role==="agente"&&["/admin","/admin/leads"].includes(x.href))||(role==="lector"&&x.href==="/admin"));
  const items=()=> <>
   {visible.map(x=>{
