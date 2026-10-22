@@ -145,14 +145,26 @@ jobs:
           INSTALL_PG_TMP="$(mktemp -d)"
           env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3003/api/live >/dev/null; do sleep 2; done'
+          echo "CI PG: server ready; requesting installer page"
           curl -fsSL -c /tmp/pg-install-cookies.txt -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
+          echo "CI PG: page retrieved; contains PostgreSQL? $(grep -q 'PostgreSQL' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
+          echo "CI PG: contains installer form? $(grep -q 'install-form' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
+          echo "CI PG: claim file present? $(test -s "$INSTALL_PG_TMP/installer-session.json" && echo yes || echo no)"
           grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
           test -s "$INSTALL_PG_TMP/installer-session.json"
+          echo "CI PG: installer authorized; proceeding to install"
           node -e 'const fs=require("fs");const body={dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});'
-          curl -fsS -b /tmp/pg-install-cookies.txt -X POST http://localhost:3003/api/install \
+          PG_HTTP="$(curl -sS -b /tmp/pg-install-cookies.txt -o /tmp/webappecloud-pg-result.json -w '%{http_code}' -X POST http://localhost:3003/api/install \
             -H 'Origin: http://localhost:3003' \
             -H 'Content-Type: application/json' \
-            --data-binary @/tmp/webappecloud-pg-request.json | grep -q '"ok":true'
+            --data-binary @/tmp/webappecloud-pg-request.json)"
+          echo "CI PG: setup HTTP status=$PG_HTTP"
+          if [ "$PG_HTTP" != "200" ]; then
+            node -e 'const fs=require("fs");try{const r=JSON.parse(fs.readFileSync("/tmp/webappecloud-pg-result.json","utf8"));console.error("CI PG installer:",String(r.error||"unknown error").slice(0,200));}catch{console.error("CI PG: non-JSON error response");}'
+            exit 1
+          fi
+          grep -q '"ok":true' /tmp/webappecloud-pg-result.json
+          echo "CI PG: install completed"
           curl -fsS http://localhost:3003/api/health | grep -q '"status":"ok"'
           curl -fsS http://localhost:3003/ -o /tmp/nexus-postgres-home.html
           grep -qi 'NEXUS' /tmp/nexus-postgres-home.html
