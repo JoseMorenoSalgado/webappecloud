@@ -1101,3 +1101,30 @@
 .property-photo-preview>button{position:absolute;right:10px;top:8px;min-height:39px;border:1px solid #ffffff55;border-radius:8px;padding:8px 13px;background:#ffffff20;color:white;font-weight:800}
 .property-photo-sort-actions button:focus-visible,.property-photo-make-cover:focus-visible,.property-photo-preview button:focus-visible{outline:3px solid #d95768;outline-offset:2px}
 @media(max-width:600px){.property-photo-sort-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.property-photo-sort-actions{gap:3px;padding:6px}.property-photo-sort-actions button{min-width:30px!important;height:32px!important}.property-photo-resolution{font-size:10px;padding:8px 7px 3px}}
+
+/* Catalogo publico: fotos de portada llenan la tarjeta igual que en el dashboard.
+   La ficha individual conserva object-fit:contain para mostrar la foto completa. */
+.public-site .property-grid .property-card .property-photo{
+ display:block;
+ position:relative;
+ width:100%;
+ height:auto;
+ aspect-ratio:16 / 10;
+ background:#edf0f3;
+ overflow:hidden;
+}
+.public-site .property-grid .property-card .property-photo>img{
+ display:block;
+ width:100%!important;
+ height:100%!important;
+ max-width:none;
+ max-height:none;
+ object-fit:cover!important;
+ object-position:center center;
+}
+.public-site .property-grid .property-card:hover .property-photo>img{
+ transform:scale(1.025);
+}
+@media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){
+ .public-site .property-grid .property-card:hover .property-photo>img{transform:none}
+}
