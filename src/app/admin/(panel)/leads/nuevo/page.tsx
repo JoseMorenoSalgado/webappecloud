@@ -4,6 +4,7 @@ import {redirect} from "next/navigation";
 import {requireRole} from "@/lib/auth";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {prisma} from "@/lib/prisma";
+import {managesAllLeads} from "@/lib/agent-scope";
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
  datos:"Revisa el nombre, teléfono y los campos del formulario.",
@@ -17,8 +18,8 @@ const errors:Record<string,string>={
 export default async function CreateLead({searchParams}:{searchParams:Promise<{error?:string}>}){
  const admin=await requireRole(["admin","editor","agente"]);
  if(!await crmTablesReady())redirect("/admin/leads");
- const props=await prisma.property.findMany({where:{tenantId:admin.tenantId},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
- const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
+ const props=await prisma.property.findMany({where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
+ const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  const q=await searchParams;
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link></div>
@@ -34,7 +35,7 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
      <label>Correo electrónico<input name="email" type="email" maxLength={180} placeholder="cliente@ejemplo.com"/></label>
      <label>Canal de entrada<select name="source" defaultValue="whatsapp"><option value="whatsapp">WhatsApp</option><option value="telefono">Llamada telefónica</option><option value="manual">Atención directa</option></select></label>
     </div>
-    <label>Propiedad de interés<select name="propertyId" defaultValue=""><option value="">Consulta general, sin propiedad específica</option>{props.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    <label>Propiedad de interés<select name="propertyId" defaultValue="" required={!managesAllLeads(admin)}><option value="">{managesAllLeads(admin)?"Consulta general, sin propiedad específica":"Selecciona una de tus propiedades"}</option>{props.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
     <label>Observaciones de la consulta<textarea name="message" maxLength={2000} placeholder="Ej.: Solicita precio y disponibilidad para visitar la propiedad."/></label>
    </div>
    <div className="property-form-section"><h2>Privacidad del contacto</h2>
