@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {ArrowLeft,Building2,CalendarClock,Mail,MessageCircle,Phone,Save,StickyNote} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {CRM_STATUSES,crmStatusLabel,whatsappLeadUrl} from "@/lib/crm-status";
@@ -18,7 +18,7 @@ const errors:Record<string,string>={
  servidor:"No fue posible guardar el cambio. Revisa los registros del servidor."
 };
 export default async function CrmLead({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<Params>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor","agente"]);
  if(!await crmTablesReady())redirect("/admin/leads");
  const {id}=await params,q=await searchParams;
  const lead=await prisma.lead.findFirst({
