@@ -1,11 +1,11 @@
 import Link from "next/link";
 import {ArrowLeft,ExternalLink,ListTree} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
 import {SiteMenuEditor} from "@/components/site-menu-editor";
 export const dynamic="force-dynamic";
 export default async function MenuSettings({searchParams}:{searchParams:Promise<{error?:string;saved?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const pages=await getPageDefinitions(admin.tenantId);
  const menu=await getSiteMenu(admin.tenantId,pages);
  const q=await searchParams;
