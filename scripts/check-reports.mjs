@@ -55,7 +55,7 @@ assert.ok(!exportText.includes("private-report-only@example.invalid"),"CSV must 
 assert.ok(!exportText.includes("88885555"),"CSV must not expose lead phone");
 const invalid=await fetch(origin+"/admin/reportes?periodo=730",{headers:{Cookie:cookie}});
 assert.equal(invalid.status,200);
-assert.match(await invalid.text(),/class="selected" href="\\/admin\\/reportes\\?periodo=30"/,"Invalid date range must select the safe 30-day default");
+assert.ok((await invalid.text()).includes('class="selected" href="/admin/reportes?periodo=30"'),"Invalid date range must select the 30-day default");
 const otherTenant=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: other-tenant.invalid","-H","Cookie: "+cookie,origin+"/api/admin/reportes/csv"],{encoding:"utf8"}).trim();
 assert.ok(["303","307","308","404"].includes(otherTenant),"Foreign tenant must not access reports");
 console.log("Reports: tenant auth, period filters, events, property attribution, CSV escaping and privacy passed.");
