@@ -117,6 +117,8 @@ jobs:
         run: node scripts/check-public-pages.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
         run: node scripts/check-site-cms.mjs
+      - name: Validar editores independientes y administrador compacto
+        run: node scripts/check-independent-pages.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
