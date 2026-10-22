@@ -18,7 +18,7 @@ const upcoming=[
 
 export function AdminNav({role="admin",roles=[role]}:{role?:string;roles?:string[]}){
  const pathname=usePathname();
- const mobileRef=useRef<HTMLDetailsElement>(null);
+ const mobileRef=useRef<HTMLDivElement>(null);
  const [mobileOpen,setMobileOpen]=useState(false);
  useEffect(()=>{const close=()=>{setMobileOpen(false);};close();const onPointer=(event:PointerEvent)=>{if(mobileRef.current&&!mobileRef.current.contains(event.target as Node))close();};const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")close();};document.addEventListener("pointerdown",onPointer);document.addEventListener("keydown",onKey);return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};},[pathname]);
  const closeMobile=()=>setMobileOpen(false);
