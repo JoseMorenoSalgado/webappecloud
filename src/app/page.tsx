@@ -1,23 +1,113 @@
 import Link from "next/link";
-import {Search,ArrowUpRight,ShieldCheck,Building2,MapPin} from "lucide-react";
+import {ArrowRight,ArrowUpRight,Building2,KeyRound,MapPin,Search,ShieldCheck,Sparkles,CheckCircle2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
-import {SiteNav} from "@/components/site-nav";
 import {PropertyCard} from "@/components/property-card";
+import {PublicFrame} from "@/components/public-frame";
 import {ContactForm} from "@/components/contact-form";
-import {PreviewBanner} from "@/components/preview-banner";
-import {PageView,FloatingWhatsapp} from "@/components/traffic-events";
 export const dynamic="force-dynamic";
 const DEFAULT_EYEBROW="NEXUS REAL ESTATE · NICARAGUA";
+const services=[
+ {href:"/servicios#comprar",Icon:Building2,number:"01",title:"Compra y venta",desc:"Opciones para encontrar una vivienda o explorar oportunidades inmobiliarias."},
+ {href:"/servicios#alquilar",Icon:KeyRound,number:"02",title:"Alquileres",desc:"Alternativas para vivir o establecer tu proyecto según tus necesidades."},
+ {href:"/servicios#asesoria",Icon:ShieldCheck,number:"03",title:"Acompañamiento",desc:"Información clara y atención directa para tomar decisiones con confianza."}
+];
 export default async function Home(){
  const {tenant,properties,demo,settings,heroImage}=await getPublicContext();
- const chosen=settings.featuredIds.length>0?properties.filter(p=>settings.featuredIds.includes(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):properties;
- const displayed=chosen.length?chosen.slice(0,3):properties.slice(0,3);
- const siteStyle={"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties;
- return <div style={siteStyle}><SiteNav tenant={tenant}/>{demo?<PreviewBanner/>:<PageView/>}<main>
-  <section className={"hero "+(heroImage?"has-custom-hero":"")}><div className="container hero-content"><p className="eyebrow light">{demo?settings.heroEyebrow:settings.heroEyebrow===DEFAULT_EYEBROW?tenant.name.toUpperCase()+" · NICARAGUA":settings.heroEyebrow}</p><h1>{settings.heroHeading} <em>{settings.heroHighlight}</em></h1><p>{settings.heroDescription}</p><Link href="/propiedades" className="btn btn-red">{settings.heroButton} <ArrowUpRight size={17}/></Link></div></section>
-  <div className="container"><form method="get" action="/propiedades" className="search-panel"><div><label>Operación</label><select name="operacion"><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></div><div><label>Tipo de propiedad</label><select name="tipo"><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></div><div><label>Ubicación</label><input name="ubicacion" placeholder="Ciudad o zona"/></div><button className="btn btn-dark"><Search size={18}/> Buscar propiedades</button></form></div>
-  <section className="section"><div className="container"><p className="eyebrow">{settings.sectionEyebrow}</p><div className="heading-row"><div><h2>{settings.sectionHeading} <em>{settings.sectionHighlight}</em></h2><p>{settings.sectionDescription}</p></div><Link href="/propiedades" className="inline-link">Ver todo <ArrowUpRight size={18}/></Link></div>{demo&&<p className="demo-note">Propiedades y precios ilustrativos; se reemplazarán por el catálogo real.</p>}<div className="property-grid">{displayed.map(p=><PropertyCard property={p} key={p.id}/>)}</div>{properties.length===0&&<p>No hay propiedades publicadas todavía.</p>}</div></section>
-  <section className="section features-strip" id="nosotros"><div className="container feature-columns"><div><ShieldCheck size={28}/><h3>{settings.aboutTitle}</h3><p>{settings.aboutDescription}</p></div><div><Building2 size={28}/><h3>Opciones para tu futuro</h3><p>Propiedades para compra, alquiler e inversión.</p></div><div><MapPin size={28}/><h3>Conectados contigo</h3><p>Recibe atención y consulta las opciones disponibles.</p></div></div></section>
-  <section className="section contact-section" id="contacto"><div className="container contact-grid"><div><p className="eyebrow light">{tenant.tagline||"PENSANDO EN TU FUTURO"}</p><h2>{settings.contactHeading} <em>{settings.contactHighlight}</em></h2><p>{settings.contactDescription}</p>{tenant.contactEmail&&<p><a href={"mailto:"+tenant.contactEmail}>{tenant.contactEmail}</a></p>}</div><div className="form-panel"><h3>Solicitar información</h3>{demo?<p className="preview-form-note">Formulario desactivado durante la vista previa. Configuraremos los contactos al conectar MariaDB.</p>:<ContactForm/>}</div></div></section>
- </main><FloatingWhatsapp tenant={tenant}/><footer><div className="container footer-content"><strong>{tenant.name.toUpperCase()}</strong><span>{tenant.tagline||"Pensando en tu futuro"} · {new Date().getFullYear()}</span><Link href="/admin">Acceso administrativo</Link></div></footer></div>;
+ const chosen=settings.featuredIds.length?
+  properties.filter(p=>settings.featuredIds.includes(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):
+  properties;
+ const displayed=(chosen.length?chosen:properties).slice(0,3);
+ return <PublicFrame tenant={tenant} demo={demo}>
+  <main id="contenido">
+   <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
+    <div className="container nexus-hero-layout">
+     <div className="nexus-hero-copy">
+      <p className="nexus-eyebrow-on-dark"><span className="nexus-eyebrow-line"/> {settings.heroEyebrow===DEFAULT_EYEBROW?tenant.name.toUpperCase()+" · NICARAGUA":settings.heroEyebrow}</p>
+      <h1>{settings.heroHeading} <em>{settings.heroHighlight}</em></h1>
+      <p className="nexus-hero-lead">{settings.heroDescription}</p>
+      <div className="nexus-hero-actions">
+       <Link href="/propiedades" className="btn nexus-hero-primary">{settings.heroButton}<ArrowUpRight size={18}/></Link>
+       <Link href="/nosotros" className="nexus-hero-secondary">Conócenos <ArrowRight size={17}/></Link>
+      </div>
+     </div>
+     <div className="nexus-hero-side" aria-label="Orientación inmobiliaria">
+      <span className="nexus-hero-side-mark"><Sparkles size={19}/></span>
+      <p>Una decisión importante merece una buena guía.</p>
+      <span>Compra · Alquila · Invierte</span>
+     </div>
+    </div>
+    <div className="nexus-hero-bottom"><div className="container"><span>01 / EXPERIENCIAS INMOBILIARIAS</span><span>NICARAGUA <MapPin size={14}/></span></div></div>
+   </section>
+
+   <section className="nexus-search-wrap" aria-label="Buscador de inmuebles">
+    <div className="container">
+     <div className="nexus-search-header"><strong>Encuentra tu próxima propiedad</strong><span>Busca entre las opciones disponibles</span></div>
+     <form method="get" action="/propiedades" className="nexus-search-form">
+      <label>Operación<select name="operacion" defaultValue=""><option value="">Comprar o alquilar</option><option value="venta">Comprar</option><option value="alquiler">Alquilar</option></select></label>
+      <label>Tipo de inmueble<select name="tipo" defaultValue=""><option value="">Cualquier tipo</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
+      <label>Ubicación<input name="ubicacion" placeholder="Ciudad o sector" maxLength={90}/></label>
+      <button className="btn btn-red" type="submit"><Search size={19}/> Buscar inmuebles</button>
+     </form>
+    </div>
+   </section>
+
+   <section className="nexus-section nexus-featured" aria-labelledby="featured-title">
+    <div className="container">
+     <div className="nexus-section-heading">
+      <div><span className="nexus-section-kicker">{settings.sectionEyebrow}</span>
+       <h2 id="featured-title">{settings.sectionHeading} <em>{settings.sectionHighlight}</em></h2>
+       <p>{settings.sectionDescription}</p>
+      </div>
+      <Link href="/propiedades" className="nexus-text-link">Ver catálogo completo <ArrowUpRight size={19}/></Link>
+     </div>
+     {demo&&<p className="demo-note">Propiedades de demostración: los precios y características son ilustrativos.</p>}
+     {displayed.length?<div className="property-grid nexus-featured-grid">{displayed.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:
+      <div className="nexus-empty-listing"><Building2 size={32}/><h3>Próximamente, nuevas oportunidades</h3><p>Estamos preparando nuestro catálogo inmobiliario.</p><Link href="/contacto" className="nexus-text-link">Cuéntanos qué buscas <ArrowUpRight size={16}/></Link></div>}
+    </div>
+   </section>
+
+   <section className="nexus-section nexus-services-preview">
+    <div className="container">
+     <div className="nexus-section-heading nexus-services-heading"><div><span className="nexus-section-kicker">A TU LADO EN CADA PASO</span>
+      <h2>Más que propiedades, <em>soluciones.</em></h2>
+      <p>Un servicio inmobiliario cercano, con opciones para tus diferentes objetivos.</p></div>
+      <Link href="/servicios" className="nexus-text-link">Conocer servicios <ArrowUpRight size={18}/></Link>
+     </div>
+     <div className="nexus-services-grid">{services.map(({href,Icon,number,title,desc})=><Link href={href} key={href} className="nexus-service-card">
+      <span className="nexus-service-top"><Icon size={27} strokeWidth={1.65}/><small>{number}</small></span>
+      <h3>{title}</h3><p>{desc}</p><span className="nexus-service-more">Conocer más <ArrowUpRight size={18}/></span>
+     </Link>)}</div>
+    </div>
+   </section>
+
+   <section className="nexus-section nexus-story">
+    <div className="container nexus-story-layout">
+     <div className="nexus-story-panel">
+      <span className="nexus-section-kicker">CONOCE NUESTRA ESENCIA</span>
+      <h2>La propiedad importa. <em>Las personas, más.</em></h2>
+      <p>{settings.aboutDescription}</p>
+      <Link href="/nosotros" className="btn nexus-story-button">Descubre quiénes somos <ArrowUpRight size={17}/></Link>
+     </div>
+     <div className="nexus-story-steps">
+      <div><span><CheckCircle2 size={21}/></span><div><strong>Escuchamos tus necesidades</strong><p>Conocemos tus preferencias y objetivos antes de presentarte opciones.</p></div></div>
+      <div><span><Search size={21}/></span><div><strong>Exploramos alternativas</strong><p>Te ayudamos a identificar inmuebles que se ajusten a lo que buscas.</p></div></div>
+      <div><span><ShieldCheck size={21}/></span><div><strong>Te acompañamos</strong><p>Respondemos tus dudas y facilitamos la comunicación durante el proceso.</p></div></div>
+     </div>
+    </div>
+   </section>
+
+   <section className="nexus-section nexus-contact-home">
+    <div className="container nexus-contact-home-layout">
+     <div><span className="nexus-section-kicker nexus-kicker-light">HABLEMOS DE TU PRÓXIMO PASO</span>
+      <h2>{settings.contactHeading} <em>{settings.contactHighlight}</em></h2>
+      <p>{settings.contactDescription}</p>
+      <Link href="/contacto" className="nexus-contact-page-link">Ver información de contacto <ArrowUpRight size={18}/></Link>
+     </div>
+     <div className="nexus-lead-panel"><span>TE ESCUCHAMOS</span><h3>¿Qué propiedad tienes en mente?</h3>
+      {demo?<p className="preview-form-note">El formulario se habilitará cuando el sitio tenga una instalación activa.</p>:<ContactForm/>}
+     </div>
+    </div>
+   </section>
+  </main>
+ </PublicFrame>;
 }
