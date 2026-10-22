@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {Building2,BedDouble,Bath,Maximize2,MapPin,Pencil,Plus,Search,Image as ImageIcon,ExternalLink} from "lucide-react";
 import {prisma} from "@/lib/prisma";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 export const dynamic="force-dynamic";
 type Filters={q?:string;status?:string;operation?:string;page?:string;updated?:string;deleted?:string;error?:string};
 const money=(x:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(x);
 export default async function AdminProperties({searchParams}:{searchParams:Promise<Filters>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const x=await searchParams;
  const q=(x.q||"").trim().slice(0,70),status=x.status||"",operation=x.operation||"";
  const page=Math.max(1,Math.min(10000,Number.parseInt(x.page||"1",10)||1));
