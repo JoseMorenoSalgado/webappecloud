@@ -145,22 +145,13 @@ jobs:
           INSTALL_PG_TMP="$(mktemp -d)"
           env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3003/api/live >/dev/null; do sleep 2; done'
-          echo "CI PG: server ready; requesting installer page"
-          curl -fsSL -c /tmp/pg-install-cookies.txt -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
-          echo "CI PG: page retrieved; contains PostgreSQL? $(grep -q 'PostgreSQL' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
-          echo "CI PG: contains installer form? $(grep -q 'install-form' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
-          echo "CI PG: claim file present? $(test -s "$INSTALL_PG_TMP/installer-session.json" && echo yes || echo no)"
-          echo "CI PG: cookie file present? $(test -s /tmp/pg-install-cookies.txt && echo yes || echo no)"
-          echo "CI PG: cookie field present? $(grep -q wec_setup_session /tmp/pg-install-cookies.txt && echo yes || echo no)"
-          echo "CI PG: claim and cookie match? $(node -e 'const fs=require("fs"),crypto=require("crypto");try{const lines=fs.readFileSync("/tmp/pg-install-cookies.txt","utf8").split(String.fromCharCode(10));const cookie=lines.find(x=>x.includes("wec_setup_session"));const token=cookie?.split(String.fromCharCode(9)).at(-1);const hash=crypto.createHash("sha256").update(token||"").digest("hex");const claim=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(claim.tokenHash===hash?"yes":"no")}catch{process.stdout.write("unreadable")}' "$INSTALL_PG_TMP/installer-session.json")"
-          for marker in "Otra sesión" "almacenamiento" "Instalador protegido" "No se pudo" "Configuración inicial" "CONFIGURACIÓN INICIAL"; do
-            if grep -qi "$marker" /tmp/nexus-postgres-installer.html; then echo "CI PG: page marker: $marker"; fi
-          done
-          echo "CI PG: testing a second clean GET using the saved cookie"
-          curl -fsS -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/pg-second-get.html
-          echo "CI PG: authorized on second GET? $(grep -q 'PostgreSQL' /tmp/pg-second-get.html && echo yes || echo no)"
-          grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
+          # First request creates the HttpOnly session cookie.
+          # A clean second request tests the form independently of curl's redirect/cookie timing.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3003/instalar)" = "307"
+          curl -fsS -c /tmp/pg-install-cookies.txt -b /tmp/pg-install-cookies.txt -o /dev/null http://localhost:3003/api/install/session
           test -s "$INSTALL_PG_TMP/installer-session.json"
+          curl -fsS -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
+          grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
           echo "CI PG: installer authorized; proceeding to install"
           node -e 'const fs=require("fs");const body={dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});'
           PG_HTTP="$(curl -sS -b /tmp/pg-install-cookies.txt -o /tmp/webappecloud-pg-result.json -w '%{http_code}' -X POST http://localhost:3003/api/install \
