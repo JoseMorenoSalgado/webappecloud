@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users} from "lucide-react";
+import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus} from "lucide-react";
 import {Prisma} from "@prisma/client";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -46,7 +46,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  const paramsFor=(p:number)=>{const u=new URLSearchParams({q,status,page:String(p)});return "/admin/leads?"+u.toString();};
  const canEdit=["admin","editor"].includes(admin.role);
  return <>
-  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div></div>
+  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{["admin","editor"].includes(admin.role)&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
   {params.activated&&<p className="property-success" role="status">CRM activado correctamente. Los contactos anteriores se conservaron.</p>}
   {params.error&&<p className="admin-error" role="alert">No se pudo completar la operación. Comprueba los permisos del usuario.</p>}
   <div className="crm-overview">

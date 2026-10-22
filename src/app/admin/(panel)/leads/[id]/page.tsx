@@ -6,7 +6,7 @@ import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {CRM_STATUSES,crmStatusLabel,whatsappLeadUrl} from "@/lib/crm-status";
 export const dynamic="force-dynamic";
-type Params={error?:string;saved?:string;noteSaved?:string};
+type Params={error?:string;saved?:string;noteSaved?:string;created?:string};
 const date=(v:Date)=>v.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 const errors:Record<string,string>={
  origen:"El formulario no tiene un origen válido. Recarga la página.",
@@ -31,8 +31,8 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link><span className={"crm-status crm-status-"+(lead.crm?.status||"nuevo")}>{crmStatusLabel(lead.crm?.status||"nuevo")}</span></div>
-  <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source}</p></div></div>
-  {(q.saved||q.noteSaved)&&<p className="property-success" role="status">{q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
+  <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source==="whatsapp"?"WhatsApp (registro manual)":lead.source==="telefono"?"Llamada telefónica":"Atención directa"}</p></div></div>
+  {(q.saved||q.noteSaved||q.created)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="crm-detail-grid">
    <div className="crm-detail-primary">
