@@ -7,7 +7,7 @@ export const runtime="nodejs";
 function redirect(req:NextRequest,status:string){return NextResponse.redirect(new URL("/admin/clientes-agentes?status="+status,req.url),303);}
 export async function POST(req:NextRequest){
  const admin=await currentAdmin();
- if(!admin||admin.role!=="admin")return new NextResponse("No autorizado",{status:403});
+ if(!admin||!admin.roles.includes("admin"))return new NextResponse("No autorizado",{status:403});
  if(!validMutationOrigin(req))return new NextResponse("Origen no autorizado",{status:403});
  const size=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(size)||size>10000)return redirect(req,"datos");
