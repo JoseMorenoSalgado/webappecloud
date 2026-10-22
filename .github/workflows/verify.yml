@@ -111,6 +111,8 @@ jobs:
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
         run: node scripts/check-reports.mjs
+      - name: Probar personalización pública, imágenes y separación multicliente
+        run: node scripts/check-site-customization.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
