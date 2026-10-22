@@ -5,6 +5,9 @@ import {requireAdmin} from "@/lib/auth";
 import {getCustomPage,textBlocks} from "@/lib/site-pages";
 import {getSiteSettings} from "@/lib/site-settings";
 import {prisma} from "@/lib/prisma";
+import {CustomPageEditor} from "@/components/custom-page-editor";
+import {SiteTextInput} from "@/components/site-text-input";
+import {getPageDefinitions} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 type Field={name:string;label:string;max:number;multiline?:boolean;hint?:string};
 type Builtin="home"|"propiedades"|"nosotros"|"servicios"|"contacto";
@@ -53,28 +56,27 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
  const {slug}=await params,q=await searchParams;
  const canEdit=canEditRole(admin.role);
  if(isBuiltin(slug)){
-  const [settings,properties,tenant]=await Promise.all([
+  const [settings,properties,tenant,pageDefinitions]=await Promise.all([
    getSiteSettings(admin.tenantId),
    slug==="propiedades"?prisma.property.findMany({where:{tenantId:admin.tenantId,published:true},
     select:{id:true,refCode:true,title:true},orderBy:{createdAt:"desc"},take:200}):Promise.resolve([]),
-   slug==="contacto"?prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{contactEmail:true,whatsapp:true}}):Promise.resolve(null)
+   slug==="contacto"?prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{contactEmail:true,whatsapp:true}}):Promise.resolve(null),
+   getPageDefinitions(admin.tenantId)
   ]);
   const section=sections[slug];
+  const isPublished=pageDefinitions.find(x=>x.id===slug)?.published!==false;
   return <>
    <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Todas las páginas</Link>
     <h1>Editar: {section.title}</h1><p>{section.description}</p></div>
-    <Link className="btn wizard-back" href={section.path} target="_blank">Ver página <ExternalLink size={16}/></Link>
+    {isPublished&&<Link className="btn wizard-back" href={section.path} target="_blank">Ver página <ExternalLink size={16}/></Link>}
    </div>
    {q.saved&&<p role="status" className="property-success">Cambios de {section.title} guardados correctamente. No se modificaron las demás páginas.</p>}
    {q.error&&<p role="alert" className="admin-error">No se pudieron guardar los cambios. Verifica los datos y tus permisos.</p>}
    {canEdit?<form className="admin-panel site-page-editor site-section-independent" action="/api/admin/site-section" method="post">
     <input type="hidden" name="section" value={slug}/>
-    <h2>Contenido de {section.title.toLowerCase()}</h2>
-    {section.fields.map(f=><label key={f.name}>{f.label}
-     {f.multiline?<textarea name={f.name} maxLength={f.max} rows={4} required defaultValue={settings[f.name as keyof typeof settings] as string}/>:
-      <input name={f.name} maxLength={f.max} required defaultValue={settings[f.name as keyof typeof settings] as string}/>}
-     {f.hint&&<small>{f.hint}</small>}
-    </label>)}
+    <div className="cms-editor-section-heading"><div><h2>Contenido de {section.title.toLowerCase()}</h2><p>Los cambios se aplican exclusivamente a esta sección cuando pulses Guardar.</p></div></div>
+    <div className="cms-editor-status-line"><span className={"cms-status "+(isPublished?"cms-status-live":"cms-status-draft")}>{isPublished?"Página publicada":"Página en borrador"}</span><Link href="/admin/personalizar/paginas">Gestionar publicación</Link></div>
+    {section.fields.map(f=><SiteTextInput key={f.name} name={f.name} label={f.label} value={settings[f.name as keyof typeof settings] as string} max={f.max} multiline={f.multiline} hint={f.hint}/>)}
     {slug==="propiedades"&&<div className="site-featured-picker">
      <strong>Elegir propiedades destacadas (máximo 3)</strong>
      <p>Estas propiedades aparecen en la portada. Solo se pueden destacar inmuebles publicados.</p>
@@ -104,14 +106,9 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
    {page.published&&<Link href={"/pagina/"+slug} target="_blank" className="btn wizard-back">Ver página <ExternalLink size={16}/></Link>}</div>
   {(q.saved||q.created)&&<p className="property-success" role="status">Página {q.created?"creada":"actualizada"} correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudo guardar la página. Comprueba los textos y el estado de publicación.</p>}
-  {canEdit?<form className="admin-panel site-page-editor" method="post" action={"/api/admin/site-pages/"+slug}>
-   <label>Título<input name="title" required minLength={3} maxLength={90} defaultValue={page.title}/></label>
-   <p className="property-help">Dirección pública: /pagina/{slug} · No se modifica para conservar los enlaces existentes.</p>
-   <label>Descripción breve<textarea name="summary" maxLength={240} rows={3} defaultValue={blocks.summary}/></label>
-   <label>Contenido principal<textarea name="body" maxLength={10000} rows={13} defaultValue={blocks.body}/></label>
-   <label className="site-page-check"><input name="published" type="checkbox" defaultChecked={page.published}/> Página publicada</label>
-   <div className="site-page-form-actions"><button className="btn btn-red"><Save size={17}/> Guardar página</button>
-    <Link href="/admin/personalizar/menu" className="btn wizard-back">Organizar menú</Link></div>
-  </form>:<p className="admin-error">No tienes permisos para editar.</p>}
+  {canEdit?<CustomPageEditor mode="edit" slug={slug} title={page.title}
+    summary={blocks.summary} body={blocks.body} published={page.published}/>:
+    <p className="admin-error">No tienes permisos para editar.</p>}
+
  </>;
 }
