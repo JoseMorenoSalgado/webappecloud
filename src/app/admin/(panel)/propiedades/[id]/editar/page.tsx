@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ExternalLink,Save,Trash2} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 import {PropertyPhotoUploader} from "@/components/property-photo-uploader";
@@ -17,12 +17,12 @@ const errors:Record<string,string>={
  servidor:"No fue posible guardar los cambios. Revisa los registros de Dokploy."
 };
 export default async function EditProperty({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{error?:string;created?:string;saved?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const {id}=await params;
  const q=await searchParams;
  const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},include:{photos:{orderBy:{sortOrder:"asc"}}}});
  if(!property)notFound();
- const canEdit=admin.role==="admin"||admin.role==="editor";
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const hasDocument=await hasCustomPdf(admin.tenantId,property.id);
  return <>
   <div className="admin-heading"><div><h1>Editar propiedad</h1><p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p></div><Link href="/admin/propiedades" className="inline-link">← Propiedades</Link></div>
@@ -48,7 +48,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
    </div>
    <PropertyDocumentManager propertyId={id} hasDocument={hasDocument} canEdit={canEdit}/>
   </section>
-  {admin.role==="admin"&&<details className="property-danger"><summary><Trash2 size={16}/> Eliminar inmueble</summary>
+  {admin.roles.includes("admin")&&<details className="property-danger"><summary><Trash2 size={16}/> Eliminar inmueble</summary>
    <p>La eliminación es permanente. Las consultas de prospectos existentes se conservarán, pero dejarán de estar asociadas a este inmueble.</p>
    <form method="post" action={"/api/admin/properties/"+encodeURIComponent(id)}>
     <input type="hidden" name="intent" value="delete"/>
