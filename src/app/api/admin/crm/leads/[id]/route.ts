@@ -2,6 +2,7 @@ import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
+import {leadWhere} from "@/lib/agent-scope";
 import {isCrmStatus} from "@/lib/crm-status";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 
@@ -24,7 +25,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  if(!validMutationOrigin(req))return back(id,"error=origen");
  const length=Number(req.headers.get("content-length")||0);
  if(!Number.isFinite(length)||length>15000)return back(id,"error=datos");
- const lead=await prisma.lead.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true}});
+ const lead=await prisma.lead.findFirst({where:{id,...leadWhere(admin)},select:{id:true}});
  if(!lead)return propertyRedirect("/admin/leads?error=noexiste");
  if(!await crmTablesReady())return propertyRedirect("/admin/leads?error=inactivo");
  let form:FormData;
