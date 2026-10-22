@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {ArrowUpRight,BarChart3,CalendarClock,Download,Eye,House,MessageCircle,Users,CheckCircle2} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {generateReport,resolveReportPeriod} from "@/lib/real-estate-reports";
 export const dynamic="force-dynamic";
 const number=(value:number)=>new Intl.NumberFormat("es-NI").format(value);
@@ -9,7 +9,7 @@ function Metric({label,value,hint,Icon}:{label:string;value:string;hint:string;I
   <strong>{value}</strong><small>{hint}</small></div>;
 }
 export default async function Reports({searchParams}:{searchParams:Promise<{periodo?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const {periodo}=await searchParams;
  const days=resolveReportPeriod(periodo);
  const report=await generateReport(admin.tenantId,days);
