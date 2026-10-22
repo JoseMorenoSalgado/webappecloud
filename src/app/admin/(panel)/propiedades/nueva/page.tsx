@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {Plus} from "lucide-react";
 import {requireRole} from "@/lib/auth";
+import {prisma} from "@/lib/prisma";
+import {parseRoles} from "@/lib/roles";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
@@ -13,12 +15,14 @@ const errors:Record<string,string>={
 export default async function NewProperty({searchParams}:{searchParams:Promise<{error?:string}>}){
  const admin=await requireRole(["admin","editor"]);
  const {error}=await searchParams;
+ const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
+ const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  return <>
   <div className="admin-heading"><div><h1>Nueva propiedad</h1><p>Completa los datos y luego añade las fotografías desde tu móvil o computadora.</p></div><Link href="/admin/propiedades" className="inline-link">← Volver a propiedades</Link></div>
   {!admin.roles.some(r=>["admin","editor"].includes(r))?<p className="panel-notice">Tu cuenta no tiene permiso para crear propiedades.</p>:
   <form className="admin-form property-editor" method="post" action="/api/admin/properties">
    {error&&<div className="admin-error" role="alert">{errors[error]||errors.servidor}</div>}
-   <AdminPropertyFields/>
+   <AdminPropertyFields agents={agents}/>
    <div className="property-editor-actions"><button className="btn btn-red" type="submit"><Plus size={17}/> Crear propiedad y añadir fotos</button><Link className="btn wizard-back" href="/admin/propiedades">Cancelar</Link></div>
   </form>}
  </>;
