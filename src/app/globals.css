@@ -203,3 +203,20 @@
 .public-gallery-thumbs button:focus-visible{outline:3px solid #c91c29;outline-offset:2px}
 .detail-image-empty{display:grid;place-items:center;align-content:center;gap:12px;color:#8593a3}
 @media(max-width:720px){.public-gallery-main{height:265px}.public-gallery-thumbs button{flex-basis:86px;height:64px}.public-gallery-controls{right:8px;bottom:8px}}
+
+/* Fichas técnicas inmobiliarias: PDF automático + documento corporativo */
+.property-pdf-heading h2{margin:0 0 5px;font-size:18px}
+.property-pdf-heading p{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 14px}
+.property-pdf-auto{display:flex;align-items:center;justify-content:space-between;gap:15px;border:1px solid #e5e9ee;border-radius:11px;background:#fafbfc;padding:15px;margin-bottom:15px}
+.property-pdf-auto>div{display:grid;gap:4px;min-width:0}
+.property-pdf-auto strong,.property-document-status strong{font-size:14px;color:#1b2638}
+.property-pdf-auto span,.property-document-status span{display:block;color:var(--muted);font-size:12px;line-height:1.5}
+.property-document-manager{display:grid;gap:12px;min-width:0}
+.property-document-status{display:flex;gap:12px;align-items:start;color:#b81e29}
+.property-document-status>svg{flex:0 0 auto}
+.property-document-status>div{display:grid;gap:4px;min-width:0}
+.property-document-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.property-document-actions .btn{min-height:44px;font-size:13px}
+.property-pdf-downloads{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:15px}
+.property-pdf-downloads .btn{min-width:205px}
+@media(max-width:720px){.property-pdf-auto{flex-direction:column;align-items:stretch}.property-pdf-auto .btn{width:100%}.property-document-actions>*{width:100%;justify-content:center}.property-pdf-downloads{flex-direction:column;align-items:stretch}.property-pdf-downloads .btn{width:100%}}
