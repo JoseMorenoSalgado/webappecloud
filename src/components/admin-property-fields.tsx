@@ -1,9 +1,9 @@
 type Data={
  refCode:string;title:string;city:string;neighborhood:string|null;type:string;operation:string;
  price:number;bedrooms:number|null; bathrooms:number|null;areaM2:number|null;
- description:string;featured:boolean;published:boolean;
+ description:string;featured:boolean;published:boolean;assignedAgentId?:string|null;
 };
-export function AdminPropertyFields({property}:{property?:Data}){
+export function AdminPropertyFields({property,agents=[]}:{property?:Data;agents?:{id:string;name:string;email:string}[]}){
  const value=(key:keyof Data,fallback:string|number=""):string|number=>{const x=property?.[key];return typeof x==="string"||typeof x==="number"?x:fallback;};
  return <>
   <div className="property-form-section"><h2>Datos del inmueble</h2><p>Información que se mostrará en el catálogo y en la ficha técnica.</p>
@@ -33,6 +33,7 @@ export function AdminPropertyFields({property}:{property?:Data}){
    </div>
    <label>Descripción *<textarea name="description" minLength={10} maxLength={8000} defaultValue={value("description")} placeholder="Características, servicios y beneficios de la propiedad" required/></label>
   </div>
+  <div className="property-form-section"><h2>Responsable comercial</h2><p>Asigna un agente de esta empresa para el seguimiento del inmueble.</p><label>Agente asignado<select name="assignedAgentId" defaultValue={property?.assignedAgentId||""}><option value="">Sin asignar</option>{agents.map(agent=><option key={agent.id} value={agent.id}>{agent.name} — {agent.email}</option>)}</select></label></div>
   <div className="property-form-section"><h2>Visibilidad</h2>
    <label className="property-check"><input type="checkbox" name="published" defaultChecked={Boolean(property?.published)}/> Publicar en el sitio web</label>
    <label className="property-check"><input type="checkbox" name="featured" defaultChecked={Boolean(property?.featured)}/> Destacar esta propiedad</label>
