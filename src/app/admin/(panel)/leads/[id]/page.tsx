@@ -4,6 +4,7 @@ import {ArrowLeft,Building2,CalendarClock,Mail,MessageCircle,Phone,Save,StickyNo
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
+import {leadWhere} from "@/lib/agent-scope";
 import {CRM_STATUSES,crmStatusLabel,whatsappLeadUrl} from "@/lib/crm-status";
 export const dynamic="force-dynamic";
 type Params={error?:string;saved?:string;noteSaved?:string;created?:string};
@@ -22,11 +23,12 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
  if(!await crmTablesReady())redirect("/admin/leads");
  const {id}=await params,q=await searchParams;
  const lead=await prisma.lead.findFirst({
-  where:{id,tenantId:admin.tenantId},
-  include:{crm:true,notes:{where:{tenantId:admin.tenantId},orderBy:{createdAt:"desc"},take:50},property:{select:{refCode:true,title:true,slug:true}}}
+  where:{id,...leadWhere(admin)},
+  include:{crm:true,notes:{where:{tenantId:admin.tenantId},orderBy:{createdAt:"desc"},take:50},property:{select:{refCode:true,title:true,slug:true,published:true}}}
  });
  if(!lead)notFound();
- const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
+ const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
+ const canManageProperty=admin.roles.some(r=>["admin","editor"].includes(r));
  const wa=whatsappLeadUrl(lead.phone,admin.tenantName,lead.property?.refCode);
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
  return <>
@@ -68,7 +70,8 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      <label>Próximo contacto<input name="nextContactAt" type="date" defaultValue={lead.crm?.nextContactAt?.toISOString().slice(0,10)||""}/></label>
      <button className="btn btn-red" type="submit"><Save size={17}/> Guardar seguimiento</button>
     </form>:<div className="crm-contact-data"><strong>{crmStatusLabel(lead.crm?.status||"nuevo")}</strong>{lead.crm?.nextContactAt&&<span>Próximo contacto: {date(lead.crm.nextContactAt)}</span>}</div>}
-    {lead.property&&<Link className="inline-link" href={"/admin/propiedades/"+encodeURIComponent(lead.propertyId||"")+"/editar"}>Ver inmueble asociado →</Link>}
+    {lead.property&&canManageProperty&&<Link className="inline-link" href={"/admin/propiedades/"+encodeURIComponent(lead.propertyId||"")+"/editar"}>Gestionar inmueble →</Link>}
+    {lead.property?.published&&!canManageProperty&&<Link className="inline-link" target="_blank" href={"/propiedades/"+encodeURIComponent(lead.property.slug)}>Ver propiedad pública →</Link>}
    </aside>
   </div>
  </>;
