@@ -2,14 +2,19 @@ import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {ROLE_LABELS,parseRoles} from "@/lib/roles";
 import {redirect} from "next/navigation";
+import Link from "next/link";
 export const dynamic="force-dynamic";
 const messages:Record<string,string>={creado:"Usuario creado correctamente.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
 export default async function Users({searchParams}:{searchParams:Promise<{status?:string}>}){
  const admin=await requireAdmin();if(admin.role!=="admin")redirect("/admin");
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}});
+ const clientCount=await prisma.lead.count({where:{tenantId:admin.tenantId}});
+ const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  const {status}=await searchParams;
  return <section className="user-management">
   <div className="admin-heading"><div><h1>Clientes y agentes</h1><p>Gestiona colaboradores y asigna varios roles a cada cuenta.</p></div></div>
+  <div className="client-agent-summary"><div><strong>{agents.length}</strong><span>Agentes registrados</span></div><div><strong>{clientCount}</strong><span>Prospectos y clientes potenciales</span><Link href="/admin/leads">Abrir seguimiento comercial →</Link></div><div><strong>{users.length}</strong><span>Usuarios con acceso al dashboard</span></div></div>
+  <p className="property-help">Los clientes potenciales se gestionan en Solicitudes / Leads y no reciben automáticamente acceso administrativo. Los agentes son colaboradores con roles asignados.</p>
   {status&&messages[status]&&<p role="status" className={["creado","guardado"].includes(status)?"property-success":"admin-error"}>{messages[status]}</p>}
   <div className="admin-panel"><h2>Crear usuario</h2><form className="user-create-form" method="post" action="/api/admin/users">
    <input type="hidden" name="intent" value="create"/>
