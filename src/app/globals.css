@@ -337,3 +337,42 @@
 .reports-disclaimer{font-size:12px;color:#6a788c;line-height:1.7;margin:17px 0}
 @media(max-width:950px){.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.report-ratios{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-panels{grid-template-columns:1fr}}
 @media(max-width:600px){.report-kpis{gap:9px}.report-kpi{padding:13px}.report-kpi>strong{font-size:25px}.report-kpi-heading{font-size:11px}.report-kpi-heading svg{width:17px;height:17px}.report-ratios{grid-template-columns:1fr;gap:9px}.report-ratios>div{padding:13px}.report-setup-info{align-items:flex-start;flex-wrap:wrap}.report-setup-info .btn{width:100%}.reports-periods{width:100%;justify-content:space-around}.reports-periods a{flex:1;text-align:center}.reports-toolbar>span{font-size:11px}.report-property-panel .heading-row{display:grid;gap:10px}}
+
+
+/* Editor visual del sitio inmobiliario; compatible con el panel y con móviles */
+.hero.has-custom-hero:before{background-image:url("/api/site-media/hero")}
+.site-editor-images,.site-editor-form>.admin-panel{margin-bottom:18px}
+.site-editor-form{display:grid;gap:0}
+.site-section-heading{display:flex;align-items:flex-start;gap:13px;margin-bottom:19px;color:#bd202c}
+.site-section-heading>svg{flex:0 0 auto;margin-top:2px}
+.site-section-heading h2{font-size:20px;color:#243247;margin:0 0 5px}
+.site-section-heading p{margin:0;font-size:13px;color:#68788a;line-height:1.5}
+.site-image-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:18px}
+.site-image-grid>div{min-width:0}
+.site-image-grid h3{font-size:15px;color:#2d3a4d;letter-spacing:-.01em;margin:0 0 10px}
+.site-image-manager{display:grid;gap:12px}
+.site-image-preview{background:#f5f6f8;border:1px solid #e1e6ed;border-radius:11px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center}
+.site-image-preview img{height:100%;width:100%;object-fit:cover}
+.site-preview-hero{aspect-ratio:16/9}
+.site-preview-hero>span{display:grid;place-items:center;background:linear-gradient(135deg,#23323c,#697684);width:100%;height:100%;color:#fff;font-size:13px;font-weight:650;padding:15px;text-align:center}
+.site-preview-logo{aspect-ratio:16/9;background:#fff}
+.site-preview-logo img{object-fit:contain;padding:20px}
+.site-image-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.site-image-actions>.btn{font-size:13px}
+.site-editor-form>.admin-panel{min-width:0}
+.site-form-fields{display:grid;gap:16px}
+.site-form-fields label{display:grid;gap:7px;min-width:0;font-weight:700;font-size:13px;color:#48566d}
+.site-form-fields input,.site-form-fields textarea{width:100%;min-height:46px;padding:11px 13px;border:1px solid #dce2e9;border-radius:9px;background:white;color:#25344b;outline:none}
+.site-form-fields textarea{min-height:92px;resize:vertical}
+.site-form-fields input:focus-visible,.site-form-fields textarea:focus-visible,.site-image-actions button:focus-visible{border-color:#bd2632;outline:3px solid #cf202b3a}
+.site-form-fields input[type=color]{max-width:150px;min-height:51px;padding:5px;cursor:pointer}
+.site-featured-picker{border:1px solid #e1e6ec;background:#fafbfc;border-radius:11px;padding:16px;display:grid;gap:12px;max-height:345px;overflow-y:auto}
+.site-featured-picker>strong{display:flex;gap:8px;align-items:center;font-size:14px;color:#253347}
+.site-featured-picker>p{font-size:12px;color:#67758a;margin:0}
+.site-featured-picker label{display:flex;align-items:flex-start;gap:9px;font-size:13px;font-weight:500;color:#43536a;line-height:1.5}
+.site-featured-picker label input{height:18px;width:18px;min-height:18px;flex:0 0 auto;margin-top:2px;accent-color:#b91e2d}
+.site-featured-picker label strong{font-size:12px;color:#b91e2d}
+.site-save-bar{position:sticky;bottom:10px;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:15px;padding:15px 18px;border:1px solid #e3e8ed;border-radius:12px;background:#fffffff5;box-shadow:0 6px 26px #111f2c18;margin:0 0 22px}
+.site-save-bar p{font-size:12px;line-height:1.4;color:#67748a;margin:0;max-width:420px}
+@media(max-width:850px){.site-image-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.site-save-bar{bottom:0;flex-direction:column;align-items:stretch;padding:12px}.site-save-bar .btn{width:100%}.site-section-heading h2{font-size:18px}.site-image-actions>.property-upload-button{flex:1;justify-content:center}.site-image-actions>.btn{flex:1}}
