@@ -1078,3 +1078,26 @@
 @media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){
  .public-site .property-card:hover .property-photo img{transform:none}
 }
+
+/* Gestor de fotografías — orden, portada, inspección y acciones táctiles. */
+.property-photo-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.property-photo-instructions{font-size:12px;color:#718096;margin:10px 0 16px;line-height:1.6}
+.property-photo-sort-grid{gap:14px}
+.property-photo-sort-tile{display:flex;flex-direction:column;position:relative;overflow:hidden;background:white;border:1px solid #e3e9ef;border-radius:12px;min-width:0;cursor:grab}
+.property-photo-sort-tile:active{cursor:grabbing}
+.property-photo-sort-image{position:relative;aspect-ratio:4/3;overflow:hidden;background:#f0f3f7}
+.property-photo-sort-image img{width:100%;height:100%;object-fit:contain}
+.property-photo-sort-image .property-cover-label{display:flex;align-items:center;gap:4px;position:absolute;top:8px;left:8px;right:auto;bottom:auto;padding:5px 9px;border-radius:6px;font-size:11px;z-index:2}
+.property-photo-resolution{padding:10px 10px 3px;font-size:11px;color:#66778c;line-height:1.4}
+.property-photo-sort-actions{display:flex;align-items:center;gap:5px;padding:7px 9px 9px}
+.property-photo-sort-actions button,.property-photo-sort-tile .property-photo-make-cover{position:static!important;width:auto!important;height:34px!important;min-width:34px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #dfe5ed!important;border-radius:7px!important;background:#fff!important;color:#40516a!important;padding:6px!important;opacity:1!important}
+.property-photo-sort-actions button:disabled,.property-photo-make-cover:disabled{opacity:.38!important;cursor:not-allowed}
+.property-photo-sort-actions button:hover:not(:disabled){background:#f2f5f9!important}
+.property-photo-sort-actions .property-photo-remove{margin-left:auto;color:#bc2738!important}
+.property-photo-sort-tile .property-photo-make-cover{width:calc(100% - 18px)!important;margin:0 9px 10px;font-size:11px;font-weight:800;gap:6px;color:#a72638!important}
+.property-photo-preview-backdrop{position:fixed;inset:0;z-index:1000;background:#0b1424e8;display:grid;place-items:center;padding:20px}
+.property-photo-preview{position:relative;display:flex;align-items:center;justify-content:center;max-width:min(1100px,100%);width:100%;height:min(85dvh,800px);padding:55px 15px 15px}
+.property-photo-preview img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.property-photo-preview>button{position:absolute;right:10px;top:8px;min-height:39px;border:1px solid #ffffff55;border-radius:8px;padding:8px 13px;background:#ffffff20;color:white;font-weight:800}
+.property-photo-sort-actions button:focus-visible,.property-photo-make-cover:focus-visible,.property-photo-preview button:focus-visible{outline:3px solid #d95768;outline-offset:2px}
+@media(max-width:600px){.property-photo-sort-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.property-photo-sort-actions{gap:3px;padding:6px}.property-photo-sort-actions button{min-width:30px!important;height:32px!important}.property-photo-resolution{font-size:10px;padding:8px 7px 3px}}
