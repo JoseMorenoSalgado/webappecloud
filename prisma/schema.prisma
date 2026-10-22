@@ -77,6 +77,8 @@ model Lead {
   message String? @db.Text
   source String @default("web")
   consent Boolean @default(false)
+  crm LeadCrm?
+  notes LeadNote[]
   createdAt DateTime @default(now())
   @@index([tenantId,createdAt])
 }
@@ -128,4 +130,29 @@ model AdminLoginThrottle {
   key String @id
   attempts Int @default(0)
   expiresAt DateTime
+}
+
+/**
+ * Additive CRM tables: no changes to legacy Lead columns or records.
+ * Created via the admin-authorized CRM activation after deployment.
+ */
+model LeadCrm {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String @unique
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  status String @default("nuevo")
+  nextContactAt DateTime?
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,status])
+}
+model LeadNote {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorName String
+  body String @db.Text
+  createdAt DateTime @default(now())
+  @@index([tenantId,leadId,createdAt])
 }

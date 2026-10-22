@@ -220,3 +220,67 @@
 .property-pdf-downloads{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:15px}
 .property-pdf-downloads .btn{min-width:205px}
 @media(max-width:720px){.property-pdf-auto{flex-direction:column;align-items:stretch}.property-pdf-auto .btn{width:100%}.property-document-actions>*{width:100%;justify-content:center}.property-pdf-downloads{flex-direction:column;align-items:stretch}.property-pdf-downloads .btn{width:100%}}
+
+
+/* CRM comercial NEXUS — responsive and accessible, aligned with the existing admin. */
+.crm-activation{max-width:790px;display:grid;justify-items:start;gap:12px;padding:26px}
+.crm-activation h2{font-size:24px;margin:0}
+.crm-activation p{color:#5a697b;font-size:14px;max-width:62ch;margin:0 0 8px}
+.crm-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:8px 0 20px}
+.crm-overview>div{display:grid;gap:3px;background:#fff;border:1px solid #e6eaf0;border-radius:13px;padding:19px;min-width:0;position:relative;box-shadow:0 5px 16px #14253a06}
+.crm-overview>div>span{font-size:13px;color:#657286}
+.crm-overview>div>strong{font-size:29px;font-weight:800;color:#243146}
+.crm-overview>div>svg{position:absolute;right:18px;top:18px;color:#bf2633}
+.crm-filters{display:grid;grid-template-columns:minmax(220px,2fr) minmax(160px,1fr) auto;gap:12px;align-items:end;padding:17px;background:#fff;border:1px solid #e6eaf0;border-radius:13px}
+.crm-filters label{display:grid;gap:6px;font-size:12px;font-weight:700;color:#58667a;min-width:0}
+.crm-filters select{min-height:45px;border:1px solid #dce1e7;border-radius:9px;background:#fff;padding:9px 12px;color:#28344a;width:100%}
+.crm-filters .btn{min-height:45px}
+.crm-list{display:grid;gap:11px}
+.crm-lead-card{display:grid;grid-template-columns:minmax(200px,1.35fr) minmax(130px,1fr) minmax(210px,1fr);align-items:center;gap:14px;background:#fff;border:1px solid #e6eaf0;border-radius:13px;padding:18px;box-shadow:0 3px 13px #15293e07;min-width:0}
+.crm-lead-main{display:flex;align-items:center;gap:12px;min-width:0}
+.crm-avatar{width:44px;height:44px;display:grid;place-items:center;flex:0 0 auto;border-radius:12px;background:#fff0f1;color:#b91f2b;font-weight:800;font-size:17px}
+.crm-lead-name{display:grid;gap:3px;min-width:0}
+.crm-lead-name>strong{color:#283244;font-size:15px;overflow-wrap:anywhere}
+.crm-lead-name>span{color:#536176;font-size:12px;overflow-wrap:anywhere}
+.crm-lead-name>small{color:#818b99;font-size:11px}
+.crm-lead-property{display:flex;align-items:flex-start;gap:7px;color:#58677a;font-size:12px;line-height:1.6;min-width:0}
+.crm-lead-property svg{flex:0 0 auto;margin-top:3px}
+.crm-lead-property span{overflow-wrap:anywhere}
+.crm-lead-side{display:grid;justify-items:end;gap:7px}
+.crm-lead-side>small{font-size:11px;color:#566476}
+.crm-status{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;border-radius:999px;padding:5px 11px;white-space:nowrap;background:#f1f3f6;color:#4d5a6e}
+.crm-status-nuevo{background:#fff3df;color:#94600b}
+.crm-status-contactado{background:#edf4ff;color:#1d539c}
+.crm-status-visita{background:#e9f5ff;color:#16739c}
+.crm-status-negociacion{background:#faf0ff;color:#7b3099}
+.crm-status-cerrado{background:#e5f7ed;color:#137445}
+.crm-status-descartado{background:#f0f0f2;color:#657081}
+.crm-lead-actions{display:flex;justify-content:flex-end;gap:8px;align-items:center;flex-wrap:wrap}
+.crm-whatsapp-link{display:inline-flex;align-items:center;gap:6px;background:#e6f8ee;border:1px solid #b8ebd0;color:#077d47;padding:9px 11px;border-radius:9px;font-size:12px;font-weight:800;min-height:40px}
+.crm-lead-actions .btn{min-height:40px;padding:9px 11px;font-size:12px}
+.crm-detail-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}
+.crm-detail-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(240px,1fr);align-items:start;gap:18px}
+.crm-detail-primary{display:grid;gap:18px;min-width:0}
+.crm-detail-grid .admin-panel h2{font-size:19px;display:flex;align-items:center;gap:9px;margin:0 0 16px}
+.crm-contact-data{display:grid;gap:12px;margin-bottom:18px}
+.crm-contact-data>span{display:flex;align-items:center;gap:11px;font-size:13px;color:#364459;overflow-wrap:anywhere}
+.crm-contact-data>span>svg{color:#b91e2a;flex-shrink:0}
+.crm-original-message{background:#f7f8fb;border:1px solid #e8ebef;padding:15px;border-radius:10px;margin-top:16px}
+.crm-original-message>strong{font-size:12px;color:#40506a}
+.crm-original-message>p{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#3e4b60;margin:6px 0 0}
+.crm-contact-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.crm-whatsapp-btn{background:#108c54;color:#fff}
+.crm-followup-panel>p{font-size:13px;color:#647186;line-height:1.5}
+.crm-followup-form,.crm-note-form{display:grid;gap:14px}
+.crm-followup-form label,.crm-note-form label{display:grid;gap:6px;color:#4a586d;font-size:13px;font-weight:700}
+.crm-followup-form select,.crm-followup-form input,.crm-note-form textarea{width:100%;border:1px solid #d8dfe8;border-radius:9px;background:#fff;color:#26364b;padding:11px;min-height:44px}
+.crm-note-form textarea{min-height:104px;resize:vertical;line-height:1.5}
+.crm-followup-panel .inline-link{margin-top:22px}
+.crm-note-list{margin-top:22px;display:grid;gap:11px}
+.crm-note{border:1px solid #e8ebef;border-radius:10px;background:#fbfcfd;padding:13px 15px}
+.crm-note>div{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.crm-note strong{font-size:12px;color:#243248}
+.crm-note time{font-size:11px;color:#718096}
+.crm-note p{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#40516a}
+@media(max-width:1050px){.crm-lead-card{grid-template-columns:minmax(160px,1fr) minmax(160px,1fr)}.crm-lead-property{grid-column:1;grid-row:2}.crm-lead-side{grid-column:2;grid-row:1 / span 2}.crm-detail-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.crm-overview{gap:8px}.crm-overview>div{padding:12px}.crm-overview>div>strong{font-size:24px}.crm-overview>div>span{font-size:11px;line-height:1.35;padding-right:6px}.crm-overview>div>svg{position:static;margin-top:3px;width:16px;height:16px}.crm-filters{grid-template-columns:1fr;padding:13px}.crm-lead-card{grid-template-columns:1fr;gap:12px;padding:15px}.crm-lead-main{grid-column:auto;grid-row:auto}.crm-lead-property{grid-column:auto;grid-row:auto}.crm-lead-side{grid-column:auto;grid-row:auto;justify-items:start;border-top:1px solid #edf0f4;padding-top:10px}.crm-lead-actions{justify-content:flex-start;width:100%}.crm-lead-actions>*{flex:1;justify-content:center;min-width:0}.crm-contact-actions>*{width:100%;justify-content:center}.crm-detail-grid .admin-panel{padding:17px}.crm-note>div{align-items:flex-start;flex-direction:column;gap:0}}

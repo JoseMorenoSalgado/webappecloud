@@ -1,0 +1,49 @@
+import {NextRequest} from "next/server";
+import {requireAdmin} from "@/lib/auth";
+import {prisma} from "@/lib/prisma";
+import {crmTablesReady} from "@/lib/crm-schema";
+import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
+
+export const runtime="nodejs";
+const back=(code:string)=>propertyRedirect("/admin/leads/nuevo?error="+code);
+export async function POST(req:NextRequest){
+ const admin=await requireAdmin();
+ if(!["admin","editor"].includes(admin.role))return back("permisos");
+ if(!validMutationOrigin(req))return back("origen");
+ const len=Number(req.headers.get("content-length")||0);
+ if(!Number.isSafeInteger(len)||len>12000)return back("datos");
+ if(!await crmTablesReady())return propertyRedirect("/admin/leads?error=inactivo");
+ let form:FormData;
+ try{form=await req.formData();}catch{return back("datos");}
+ function field(name:string,limit:number){
+  const v=form.get(name);
+  if(v===null)return "";
+  if(typeof v!=="string"||v.length>limit+30)throw new Error("datos");
+  return v.trim().slice(0,limit);
+ }
+ try{
+  const name=field("name",120);
+  const phone=field("phone",30);
+  const email=field("email",180).toLowerCase();
+  const message=field("message",2000);
+  const source=field("source",20);
+  const propertyId=field("propertyId",80);
+  if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone))return back("datos");
+  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return back("correo");
+  if(!["whatsapp","telefono","manual"].includes(source))return back("datos");
+  if(form.get("consent")!=="on")return back("consentimiento");
+  if(propertyId){
+   const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId},select:{id:true}});
+   if(!property)return back("propiedad");
+  }
+  const lead=await prisma.lead.create({data:{
+   tenantId:admin.tenantId,propertyId:propertyId||null,name,phone,email:email||null,
+   message:message||null,source,consent:true
+  }});
+  return propertyRedirect("/admin/leads/"+encodeURIComponent(lead.id)+"?created=1");
+ }catch(error){
+  if(error instanceof Error&&error.message==="datos")return back("datos");
+  console.error("[crm] lead creation",error instanceof Error?error.name:"unknown");
+  return back("servidor");
+ }
+}
