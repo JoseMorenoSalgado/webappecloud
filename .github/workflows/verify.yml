@@ -109,6 +109,8 @@ jobs:
         run: node scripts/check-crm.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
+      - name: Verificar reportes comerciales y exportación segura CSV
+        run: node scripts/check-reports.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail

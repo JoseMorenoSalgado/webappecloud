@@ -284,3 +284,56 @@
 .crm-note p{margin:7px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:#40516a}
 @media(max-width:1050px){.crm-lead-card{grid-template-columns:minmax(160px,1fr) minmax(160px,1fr)}.crm-lead-property{grid-column:1;grid-row:2}.crm-lead-side{grid-column:2;grid-row:1 / span 2}.crm-detail-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.crm-overview{gap:8px}.crm-overview>div{padding:12px}.crm-overview>div>strong{font-size:24px}.crm-overview>div>span{font-size:11px;line-height:1.35;padding-right:6px}.crm-overview>div>svg{position:static;margin-top:3px;width:16px;height:16px}.crm-filters{grid-template-columns:1fr;padding:13px}.crm-lead-card{grid-template-columns:1fr;gap:12px;padding:15px}.crm-lead-main{grid-column:auto;grid-row:auto}.crm-lead-property{grid-column:auto;grid-row:auto}.crm-lead-side{grid-column:auto;grid-row:auto;justify-items:start;border-top:1px solid #edf0f4;padding-top:10px}.crm-lead-actions{justify-content:flex-start;width:100%}.crm-lead-actions>*{flex:1;justify-content:center;min-width:0}.crm-contact-actions>*{width:100%;justify-content:center}.crm-detail-grid .admin-panel{padding:17px}.crm-note>div{align-items:flex-start;flex-direction:column;gap:0}}
+
+
+/* Reportes comerciales para NEXUS / inmobiliarias multicliente */
+.reports-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin:3px 0 21px}
+.reports-toolbar>span{font-size:12px;color:#718096}
+.reports-periods{display:flex;gap:5px;background:#fff;border:1px solid #e0e5eb;border-radius:10px;padding:5px}
+.reports-periods a{padding:8px 14px;font-size:13px;font-weight:750;color:#526075;border-radius:7px}
+.reports-periods a.selected{background:#b91f2d;color:white}
+.reports-periods a:focus-visible{outline:3px solid #d02431;outline-offset:2px}
+.report-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-bottom:17px}
+.report-kpi{background:white;border:1px solid #e3e7ee;border-radius:13px;padding:19px;min-width:0;box-shadow:0 5px 17px #15253d08}
+.report-kpi-heading{display:flex;justify-content:space-between;gap:9px;align-items:flex-start;color:#566478;font-size:13px;line-height:1.4}
+.report-kpi-heading svg{color:#c52130;flex-shrink:0}
+.report-kpi>strong{font-size:29px;font-weight:850;display:block;color:#1d293b;margin:8px 0 2px;line-height:1.2}
+.report-kpi>small{color:#718094;font-size:11px;line-height:1.45;display:block}
+.report-ratios{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:0 0 18px}
+.report-ratios>div{display:grid;align-content:start;gap:5px;border:1px solid #e2e6ee;border-radius:12px;padding:17px;background:#f8fafc}
+.report-ratios span{font-size:12px;color:#52627a;font-weight:750}
+.report-ratios strong{font-size:23px;color:#b7212f;line-height:1.3}
+.report-ratios small{font-size:11px;color:#68788e;line-height:1.5}
+.report-setup-info{display:flex;align-items:center;gap:15px;border:1px solid #e8d3ac;background:#fffaf1;border-radius:12px;padding:16px;margin-bottom:18px;color:#8c5a10}
+.report-setup-info>svg{flex:0 0 auto}
+.report-setup-info>div{flex:1;min-width:0}
+.report-setup-info strong{font-size:13px}
+.report-setup-info p{margin:4px 0 0;color:#785e39;font-size:12px}
+.reports-panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-bottom:18px}
+.report-breakdown h2{font-size:19px;margin:0 0 6px}
+.report-breakdown>p{font-size:12px;color:#697589;margin:0 0 20px}
+.report-breakdown>small{display:block;color:#697589;font-size:11px;margin-top:19px}
+.report-bars{display:grid;gap:15px}
+.report-bar-row{display:grid;gap:5px}
+.report-bar-row>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.report-bar-row span{font-size:12px;color:#40516b}
+.report-bar-row strong{font-size:12px;color:#24354a}
+.report-bar-track{height:9px;background:#edf1f5;border-radius:20px;overflow:hidden}
+.report-bar-track>span{display:block;height:100%;border-radius:20px;background:#cb2836;min-width:0}
+.reports-panels .report-breakdown:nth-child(2) .report-bar-track>span{background:#536e96}
+.report-property-panel{min-width:0}
+.report-property-panel .heading-row{align-items:start}
+.report-property-panel .heading-row h2{font-size:19px;margin:0 0 6px}
+.report-property-panel .heading-row p{font-size:12px;color:#69778a;margin:0 0 18px}
+.report-table-scroll{overflow-x:auto;max-width:100%}
+.report-table{border-collapse:collapse;width:100%;min-width:690px;font-size:12px}
+.report-table th{text-align:left;background:#f7f9fb;color:#536074;font-weight:800;border-bottom:1px solid #e4eaf0;padding:12px 9px;white-space:nowrap}
+.report-table th:not(:first-child),.report-table td:not(:first-child){text-align:right}
+.report-table td{border-bottom:1px solid #edf0f4;padding:12px 9px;color:#38465c;vertical-align:top}
+.report-table tr:last-child td{border-bottom:0}
+.report-table td:first-child a{display:grid;gap:2px}
+.report-table td:first-child strong{color:#b4202e;font-size:12px}
+.report-table td:first-child span{display:block;color:#5a687d;font-size:11px;overflow-wrap:anywhere;max-width:245px}
+.reports-disclaimer{font-size:12px;color:#6a788c;line-height:1.7;margin:17px 0}
+@media(max-width:950px){.report-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.report-ratios{grid-template-columns:repeat(2,minmax(0,1fr))}.reports-panels{grid-template-columns:1fr}}
+@media(max-width:600px){.report-kpis{gap:9px}.report-kpi{padding:13px}.report-kpi>strong{font-size:25px}.report-kpi-heading{font-size:11px}.report-kpi-heading svg{width:17px;height:17px}.report-ratios{grid-template-columns:1fr;gap:9px}.report-ratios>div{padding:13px}.report-setup-info{align-items:flex-start;flex-wrap:wrap}.report-setup-info .btn{width:100%}.reports-periods{width:100%;justify-content:space-around}.reports-periods a{flex:1;text-align:center}.reports-toolbar>span{font-size:11px}.report-property-panel .heading-row{display:grid;gap:10px}}
