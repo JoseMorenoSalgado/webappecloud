@@ -1036,3 +1036,45 @@
  .public-site .property-gallery-photo{transition:none!important;transform:none!important}
  .public-site .property-gallery-zoom-label{display:none}
 }
+
+
+/* Refinamiento visual de inmuebles: proporciones consistentes y lectura compacta. */
+.public-site .property-detail-page{max-width:1320px;padding-top:23px;padding-bottom:55px}
+.public-site .property-detail-breadcrumb{margin-bottom:14px}
+.public-site .property-detail-header{margin-bottom:18px;align-items:center}
+.public-site .property-detail-layout{grid-template-columns:minmax(0,1.7fr) minmax(305px,.8fr);gap:20px}
+.public-site .property-detail-main{gap:15px}
+.public-site .property-detail-section{padding:21px 23px}
+.public-site .property-detail-section-heading{margin-bottom:13px}
+.public-site .property-detail-sidebar{top:14px}
+.public-site .property-gallery-stage{height:clamp(310px,34vw,450px);background:#eef1f4}
+.public-site .property-gallery-backdrop{opacity:.16;filter:blur(35px)}
+.public-site .property-gallery-photo{width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;image-rendering:auto}
+.public-site .property-gallery-bottom{min-height:48px}
+.public-site .property-gallery-thumbs{padding:9px 12px}
+.public-site .property-gallery-thumbs button{width:84px;height:60px}
+.public-site .property-gallery-photo-zoom{transform:scale(1.12)}
+.public-site .property-photo{background:#edf0f3;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.public-site .property-photo img{object-fit:contain;width:100%;height:100%;transition:transform .25s ease}
+.public-site .property-card:hover .property-photo img{transform:scale(1.025)}
+.public-site .property-admin-photo{background:#eef1f4}
+.public-site .property-admin-photo img{object-fit:contain}
+@media(max-width:1060px){
+ .public-site .property-detail-layout{grid-template-columns:minmax(0,1.5fr) minmax(280px,.85fr);gap:15px}
+ .public-site .property-gallery-stage{height:clamp(280px,40vw,410px)}
+}
+@media(max-width:820px){
+ .public-site .property-detail-layout{grid-template-columns:minmax(0,1fr)}
+ .public-site .property-gallery-stage{height:clamp(290px,60vw,460px)}
+}
+@media(max-width:600px){
+ .public-site .property-detail-page{padding-top:16px;padding-bottom:44px}
+ .public-site .property-detail-header{margin-bottom:14px;align-items:flex-start}
+ .public-site .property-detail-main{gap:12px}
+ .public-site .property-detail-section{padding:17px 16px}
+ .public-site .property-gallery-stage{height:clamp(245px,74vw,355px)}
+ .public-site .property-gallery-thumbs button{width:75px;height:55px}
+}
+@media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){
+ .public-site .property-card:hover .property-photo img{transform:none}
+}
