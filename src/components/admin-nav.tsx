@@ -6,13 +6,13 @@ import {LayoutDashboard,Building2,UsersRound,Settings,Tags,UserRound,CalendarDay
 const available=[
  {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
  {href:"/admin/propiedades",label:"Propiedades",Icon:Building2},
- {href:"/admin/leads",label:"Solicitudes / Leads",Icon:UsersRound}
+ {href:"/admin/leads",label:"Solicitudes / Leads",Icon:UsersRound},
+ {href:"/admin/reportes",label:"Reportes",Icon:ChartNoAxesCombined}
 ];
 const upcoming=[
  {label:"Categorías",Icon:Tags},
  {label:"Clientes y agentes",Icon:UserRound},
  {label:"Calendario",Icon:CalendarDays},
- {label:"Reportes avanzados",Icon:ChartNoAxesCombined},
  {label:"Configuración",Icon:Settings}
 ];
 
