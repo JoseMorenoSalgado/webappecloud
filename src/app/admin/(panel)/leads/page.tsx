@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus} from "lucide-react";
 import {Prisma} from "@prisma/client";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {CRM_STATUSES,crmStatusLabel,isCrmStatus,whatsappLeadUrl} from "@/lib/crm-status";
@@ -10,7 +10,7 @@ export const dynamic="force-dynamic";
 type Search={q?:string;status?:string;page?:string;activated?:string;error?:string};
 const date=(x:Date)=>x.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function AdminLeads({searchParams}:{searchParams:Promise<Search>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor","agente"]);
  const params=await searchParams;
  const ready=await crmTablesReady();
  const q=(params.q||"").trim().slice(0,80);
