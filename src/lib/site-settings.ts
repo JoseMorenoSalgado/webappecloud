@@ -87,6 +87,9 @@ export function validateBrandContact(form:FormData){
  if(phone&&!/^\+?[0-9\s()-]{8,35}$/.test(phone))throw new SiteSettingsError("Escribe un número telefónico válido.");
  if(phone&&(digits.length<8||digits.length>15))throw new SiteSettingsError("El número de WhatsApp debe incluir un indicativo internacional.");
  if(!/^#[0-9a-fA-F]{6}$/.test(color))throw new SiteSettingsError("Color corporativo inválido.");
+ const channels=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16)/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+ const luminance=0.2126*channels[0]+0.7152*channels[1]+0.0722*channels[2];
+ if(luminance>0.18)throw new SiteSettingsError("Selecciona un color más oscuro para mantener contraste con texto blanco.");
  // An eight-digit number is an ordinary local Nicaragua number for the first client.
  const normalized=digits.length===8?"505"+digits:digits;
  return {tagline,contactEmail:email||null,whatsapp:normalized||null,primaryColor:color.toUpperCase()};
