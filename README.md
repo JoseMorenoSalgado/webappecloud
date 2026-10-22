@@ -17,7 +17,7 @@ Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQ
 
 ### Instalador inicial
 
-Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL previamente creada, un `INSTALLER_TOKEN` seguro y volumen persistente. Consulta [Instalación web](docs/INSTALACION-WEB.md).
+Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, la institución, el correo institucional y el administrador, sin editar manualmente el código. Necesita una base SQL vacía previamente creada, un volumen persistente y `INSTALLER_AUTO_SETUP=true` habilitado temporalmente en un entorno restringido; la sesión de configuración se genera automáticamente sin introducir claves en el navegador. Consulta [Instalación web](docs/INSTALACION-WEB.md).
 
 ### Aún pendiente
 
@@ -61,4 +61,4 @@ Referencias de diseño: [docs/UX-BRIEF.md](docs/UX-BRIEF.md).
 
 ## Identificar el despliegue real
 
-`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-access-recovery-r2`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.
+`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-auto-setup-r3`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.

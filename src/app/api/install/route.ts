@@ -1,28 +1,23 @@
 import {NextRequest,NextResponse} from "next/server";
-import {timingSafeEqual} from "node:crypto";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {join} from "node:path";
 import {prismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {prismaFor} from "@/lib/prisma";
 import {hashPassword} from "@/lib/auth";
-import {installerAvailable,installerToken,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
+import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
+import {automaticInstallerEnabled,validInstallerSession,clearInstallerSession,INSTALLER_SESSION_COOKIE} from "@/lib/installer-session";
 import {normalizeSiteHost} from "@/lib/preview";
 import {mkdirSync,accessSync,constants} from "node:fs";
 
 export const runtime="nodejs";
 const execute=promisify(execFile);
 type Form={
- setupToken:string;dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
 };
 const response=(error:string,status=400)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
 const safe=(input:unknown,max=128)=>String(input??"").trim().slice(0,max);
-function isValidToken(input:string){
- const key=installerToken();
- if(key.length<24||!input||input.length!==key.length)return false;
- return timingSafeEqual(Buffer.from(input),Buffer.from(key));
-}
 function validate(input:Form){
  const dbType=safe(input.dbType,20)||"mariadb";
  if(!["mysql","mariadb","postgresql"].includes(dbType))throw Error("Selecciona MySQL, MariaDB o PostgreSQL.");
@@ -60,7 +55,7 @@ export async function POST(req:NextRequest){
  if(Number(req.headers.get("content-length")||"0")>15000)return response("Solicitud demasiado grande.",413);
  let input:Form;
  try{input=await req.json() as Form;}catch{return response("Solicitud inválida.");}
- if(!isValidToken(String(input.setupToken||"")))return response("Código de instalación incorrecto.",403);
+ if(!automaticInstallerEnabled()||!validInstallerSession(req.cookies.get(INSTALLER_SESSION_COOKIE)?.value))return response("La sesión de instalación no está autorizada o ha expirado. Vuelve a abrir /instalar.",403);
  let data:ReturnType<typeof validate>;
  try{data=validate(input);}catch(e){return response(e instanceof Error?e.message:"Datos incompletos.");}
  const domain=normalizeSiteHost(host);
@@ -100,6 +95,9 @@ export async function POST(req:NextRequest){
   finally{await db.$disconnect();}
   try{saveInstallation(data.url);}
   catch{return response("La base fue preparada, pero no pudo guardarse la configuración. Revisa el volumen persistente antes de continuar.",500);}
-  return NextResponse.json({ok:true,redirectTo:"/admin/acceso?installed=1"},{headers:{"Cache-Control":"no-store"}});
+  clearInstallerSession();
+  const result=NextResponse.json({ok:true,redirectTo:"/admin/acceso?installed=1"},{headers:{"Cache-Control":"no-store"}});
+  result.cookies.delete(INSTALLER_SESSION_COOKIE);
+  return result;
  }finally{release?.();}
 }

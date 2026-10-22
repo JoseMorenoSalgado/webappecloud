@@ -3,11 +3,11 @@ import {useState,type FormEvent} from "react";
 import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
 
 type Values={
- setupToken:string;dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
+ dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
  institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
 };
 const defaults:Values={
- setupToken:"",dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
+ dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
  institution:"Nexus Real Estate",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:""
 };
 export default function InstallerForm({domain}:{domain:string}){
@@ -23,7 +23,7 @@ export default function InstallerForm({domain}:{domain:string}){
    const r=await fetch("/api/install",{method:"POST",headers:{"Content-Type":"application/json"},cache:"no-store",body:JSON.stringify(values)});
    const json=await r.json();
    if(!r.ok)throw Error(json.error||"Error durante la instalación");
-   setComplete(true);setValues(v=>({...v,dbPassword:"",adminPassword:"",setupToken:""}));
+   setComplete(true);setValues(v=>({...v,dbPassword:"",adminPassword:""}));
   }catch(e){setError(e instanceof Error?e.message:"No fue posible completar la instalación.");}
   finally{setBusy(false);}
  }
@@ -55,8 +55,7 @@ export default function InstallerForm({domain}:{domain:string}){
     {input("dbName","Nombre de la base de datos")}
     {input("dbUser","Usuario de la base de datos")}
     {input("dbPassword","Contraseña de la base de datos",{type:"password",autoComplete:"new-password"})}
-    {input("setupToken","Clave de instalación",{type:"password",minLength:24,hint:"Puedes obtenerla mediante cat /app/.runtime/installer-token en la terminal privada de Dockploy. No la compartas."})}
-    <p className="wizard-warning"><ShieldCheck size={18}/> El usuario SQL necesita permisos para crear tablas en una base vacía. No reutilices la base de datos de Edvorya.</p>
+    <p className="wizard-warning"><ShieldCheck size={18}/> Tu sesión inicial se autorizó automáticamente en este navegador. El usuario SQL necesita permisos para crear tablas en una base vacía. No reutilices la base de datos de Edvorya.</p>
     <button className="btn btn-red" type="submit">Continuar <ArrowRight size={16}/></button>
   </section>:<section>
     <h2>Información de la institución</h2>
