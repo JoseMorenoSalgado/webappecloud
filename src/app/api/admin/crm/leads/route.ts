@@ -2,6 +2,7 @@ import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
+import {managesAllLeads} from "@/lib/agent-scope";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 
 export const runtime="nodejs";
@@ -32,8 +33,9 @@ export async function POST(req:NextRequest){
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return back("correo");
   if(!["whatsapp","telefono","manual"].includes(source))return back("datos");
   if(form.get("consent")!=="on")return back("consentimiento");
+  if(!managesAllLeads(admin)&&!propertyId)return back("propiedad");
   if(propertyId){
-   const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId},select:{id:true}});
+   const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true}});
    if(!property)return back("propiedad");
   }
   const lead=await prisma.lead.create({data:{
