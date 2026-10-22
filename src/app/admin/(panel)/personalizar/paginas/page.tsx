@@ -7,7 +7,7 @@ type Query={saved?:string;error?:string;estado?:string;buscar?:string};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
  const [pages,menu]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteMenu(admin.tenantId)]);
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
  const results=pages.filter(p=>(status==="todas"||(status==="publicadas"?p.published:!p.published))&&
