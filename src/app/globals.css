@@ -187,3 +187,19 @@
 @media(max-width:1150px){.property-admin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.property-filters{grid-template-columns:2fr 1fr 1fr}.property-filters .btn{grid-column:1/-1}}
 @media(max-width:720px){.property-summary{gap:8px}.property-summary>div{padding:12px;flex-direction:column;gap:1px}.property-summary strong{font-size:24px}.property-summary span{font-size:11px;line-height:1.3}.property-admin-grid{grid-template-columns:1fr;gap:13px}.property-filters{grid-template-columns:1fr 1fr;padding:13px}.property-filters label:first-child{grid-column:1/-1}.property-filters .btn{grid-column:1/-1}.property-admin-content h2{min-height:0}.property-upload-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.property-editor-actions>.btn{width:100%}.property-photo-panel{padding:16px}.property-form-section{gap:10px}}
 @media(max-width:370px){.property-filters{grid-template-columns:1fr}.property-filters label:first-child{grid-column:auto}}
+
+
+/* Galería pública de inmuebles */
+.public-gallery{display:grid;gap:12px;margin-bottom:18px}
+.public-gallery-main{height:clamp(270px,49vw,510px);background:#f2f4f6;border-radius:14px;overflow:hidden;position:relative}
+.public-gallery-main>img{display:block;width:100%;height:100%;object-fit:cover}
+.public-gallery-controls{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:10px;background:#172534c9;color:white;border-radius:12px;padding:7px}
+.public-gallery-controls button{width:38px;height:38px;display:grid;place-items:center;border:0;border-radius:9px;background:#fff;color:#273243}
+.public-gallery-controls>span{font-size:13px;font-weight:750;min-width:48px;text-align:center}
+.public-gallery-thumbs{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.public-gallery-thumbs button{flex:0 0 110px;height:75px;padding:0;border:2px solid transparent;border-radius:8px;overflow:hidden;background:#f0f2f4;scroll-snap-align:start}
+.public-gallery-thumbs button.selected{border-color:#c91c29}
+.public-gallery-thumbs img{height:100%;width:100%;object-fit:cover}
+.public-gallery-thumbs button:focus-visible{outline:3px solid #c91c29;outline-offset:2px}
+.detail-image-empty{display:grid;place-items:center;align-content:center;gap:12px;color:#8593a3}
+@media(max-width:720px){.public-gallery-main{height:265px}.public-gallery-thumbs button{flex-basis:86px;height:64px}.public-gallery-controls{right:8px;bottom:8px}}
