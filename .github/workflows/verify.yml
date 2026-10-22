@@ -115,6 +115,8 @@ jobs:
         run: node scripts/check-site-customization.mjs
       - name: Verificar diseño público y páginas independientes
         run: node scripts/check-public-pages.mjs
+      - name: Verificar galería con imagen completa y sin ampliación artificial
+        run: node scripts/check-property-gallery.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
         run: node scripts/check-site-cms.mjs
       - name: Validar editores independientes y administrador compacto
