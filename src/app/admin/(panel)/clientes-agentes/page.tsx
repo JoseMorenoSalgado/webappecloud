@@ -6,7 +6,7 @@ import Link from "next/link";
 export const dynamic="force-dynamic";
 const messages:Record<string,string>={creado:"Usuario creado correctamente.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
 export default async function Users({searchParams}:{searchParams:Promise<{status?:string}>}){
- const admin=await requireAdmin();if(admin.role!=="admin")redirect("/admin");
+ const admin=await requireAdmin();if(!admin.roles.includes("admin"))redirect("/admin");
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}});
  const clientCount=await prisma.lead.count({where:{tenantId:admin.tenantId}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
