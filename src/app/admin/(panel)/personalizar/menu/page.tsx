@@ -17,7 +17,7 @@ export default async function MenuSettings({searchParams}:{searchParams:Promise<
   {q.error&&<p role="alert" className="admin-error">No se pudo actualizar el menú. Comprueba los nombres, permisos y páginas publicadas.</p>}
   <section className="admin-panel site-menu-panel"><div className="site-section-heading"><ListTree size={22}/>
    <div><h2>Editar navegación</h2><p>Solo puedes añadir páginas publicadas. Quitar una del menú no la elimina ni la convierte en borrador.</p></div></div>
-   {["admin","editor"].includes(admin.role)?
+   {admin.roles.some(r=>["admin","editor"].includes(r))?
     <SiteMenuEditor pages={pages} current={menu}/>:
     <p>No tienes permiso para editar el menú.</p>}
   </section>
