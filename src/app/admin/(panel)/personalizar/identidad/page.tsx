@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {ArrowLeft,ExternalLink,ImageIcon,Palette,Save} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {hasSiteAsset} from "@/lib/site-assets";
 import {SiteAssetManager} from "@/components/site-asset-manager";
 export const dynamic="force-dynamic";
 export default async function SiteIdentity({searchParams}:{searchParams:Promise<{saved?:string;error?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const [tenant,hasHero,hasLogo,q]=await Promise.all([
   prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,primaryColor:true}}),
   hasSiteAsset(admin.tenantId,"hero"),hasSiteAsset(admin.tenantId,"logo"),searchParams
