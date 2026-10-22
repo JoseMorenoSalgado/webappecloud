@@ -4,6 +4,7 @@ import {parseProperty,PropertyFormError} from "@/lib/property-form";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 import {unlink} from "node:fs/promises";
 import {mediaFilePath} from "@/lib/property-media";
+import {customPdfPath} from "@/lib/property-document";
 export const runtime="nodejs";
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
@@ -23,9 +24,12 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   if(intent==="delete"){
    if(!admin.canDelete||form.get("confirmation")!==property.refCode)return propertyRedirect(propertyErrorPath("confirmacion",id));
    await prisma.property.delete({where:{id:property.id}});
-   await Promise.all(property.photos.filter(p=>p.url==="/api/media/"+p.id).map(async p=>{
-    try{await unlink(mediaFilePath(admin.tenantId,p.id));}catch{/* Stale files can be swept by storage maintenance */ }
-   }));
+   await Promise.all([
+    ...property.photos.filter(p=>p.url==="/api/media/"+p.id).map(async p=>{
+     try{await unlink(mediaFilePath(admin.tenantId,p.id));}catch{/* Stale files can be swept by storage maintenance */ }
+    }),
+    (async()=>{try{await unlink(customPdfPath(admin.tenantId,property.id));}catch{/* Already removed or queued for cleanup */}})()
+   ]);
    return propertyRedirect("/admin/propiedades?deleted=1");
   }
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));

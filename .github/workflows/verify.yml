@@ -101,6 +101,8 @@ jobs:
           NODE_ENV: production
       - name: Probar inicio de sesión real y dashboard
         run: node scripts/check-admin-access.mjs
+      - name: Validar documentos PDF personalizados de propiedades
+        run: node scripts/check-custom-pdf.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
