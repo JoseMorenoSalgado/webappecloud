@@ -31,9 +31,10 @@ export async function POST(req:NextRequest){
   const target=await prisma.adminUser.findFirst({where:{id,tenantId:admin.tenantId}});
   if(!target)return redirect(req,"datos");
   if(target.id===admin.userId)return redirect(req,"propia");
-  if(parseRoles(target.role).includes("admin")){
-   const admins=await prisma.adminUser.count({where:{tenantId:admin.tenantId,active:true}});
-   if(admins<=1)return redirect(req,"ultimo");
+  const losingAdmin=parseRoles(target.role).includes("admin")&&(intent==="toggle"?target.active:!form.getAll("roles").includes("admin"));
+  if(losingAdmin&&target.active){
+   const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{role:true}});
+   if(users.filter(u=>parseRoles(u.role).includes("admin")).length<=1)return redirect(req,"ultimo");
   }
   if(intent==="role"){
    const roles=form.getAll("roles").map(String);
