@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import {execFileSync} from "node:child_process";
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
 assert.equal(new URL(origin).hostname,"localhost","Do not test production hosts.");
 const pages=[
@@ -67,7 +68,8 @@ assert.ok(service.includes(values.servicesHeading)&&service.includes(values.serv
 assert.ok(home.includes(values.heroHeading)&&home.includes(values.heroButton),"Editable hero not applied");
 assert.ok(contact.includes(values.contactHeading)&&contact.includes(values.contactDescription),"Contact intro not applied");
 for(const route of ["/nosotros","/servicios","/contacto"]){
- const noTenant=await fetch(origin+route,{headers:{Host:"unknown-tenant.invalid"},redirect:"manual"});
- assert.equal(noTenant.status,404,"Unregistered host unexpectedly served "+route);
+ const code=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}",
+  "-H","Host: unknown-tenant.invalid",origin+route],{encoding:"utf8"}).trim();
+ assert.equal(code,"404","Unregistered host unexpectedly served "+route);
 }
 console.log("Public experience: all five routes, navigation, shared footer, editable page content, unknown-tenant isolation passed.");
