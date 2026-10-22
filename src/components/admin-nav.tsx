@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useRef,useState} from "react";
+import {useEffect,useState} from "react";
 import {usePathname} from "next/navigation";
-import {LayoutDashboard,Building2,UsersRound,Settings,Tags,UserRound,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck} from "lucide-react";
+import {LayoutDashboard,Building2,UsersRound,Settings,Tags,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck,UserRound,X} from "lucide-react";
 
 const available=[
  {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
@@ -11,32 +11,40 @@ const available=[
  {href:"/admin/reportes",label:"Reportes",Icon:ChartNoAxesCombined},
  {href:"/admin/personalizar",label:"Personalizar",Icon:Settings}
 ];
-const upcoming=[
- {label:"Categorías",Icon:Tags},
- {label:"Calendario",Icon:CalendarDays},
-];
-
-export function AdminNav({role="admin",roles=[role]}:{role?:string;roles?:string[]}){
+export function AdminNav({role="admin",roles=[role],userId}:{role?:string;roles?:string[];userId?:string}){
  const pathname=usePathname();
- const mobileRef=useRef<HTMLDivElement>(null);
  const [mobileOpen,setMobileOpen]=useState(false);
- useEffect(()=>{const close=()=>{setMobileOpen(false);};close();const onPointer=(event:PointerEvent)=>{if(mobileRef.current&&!mobileRef.current.contains(event.target as Node))close();};const onKey=(event:KeyboardEvent)=>{if(event.key==="Escape")close();};document.addEventListener("pointerdown",onPointer);document.addEventListener("keydown",onKey);return ()=>{document.removeEventListener("pointerdown",onPointer);document.removeEventListener("keydown",onKey);};},[pathname]);
- const closeMobile=()=>setMobileOpen(false);
+ useEffect(()=>{setMobileOpen(false);},[pathname]);
+ useEffect(()=>{
+  if(!mobileOpen)return;
+  const closeOnEscape=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobileOpen(false);};
+  document.addEventListener("keydown",closeOnEscape);
+  return ()=>document.removeEventListener("keydown",closeOnEscape);
+ },[mobileOpen]);
  const has=(r:string)=>roles.includes(r);
- const visible=available.filter(x=>has("admin")||(has("editor"))||(has("agente")&&["/admin","/admin/leads"].includes(x.href))||(has("lector")&&x.href==="/admin"));
- const items=()=> <>
+ const visible=available.filter(x=>has("admin")||has("editor")||(has("agente")&&["/admin","/admin/leads"].includes(x.href))||(has("lector")&&x.href==="/admin"));
+ const items=(close:()=>void)=><>
   {visible.map(x=>{
    const selected=x.href==="/admin"?pathname===x.href:pathname===x.href||pathname.startsWith(x.href+"/");
-   return <Link href={x.href} onClick={closeMobile} key={x.href} aria-current={selected?"page":undefined} className={selected?"active":undefined}><x.Icon size={18} aria-hidden="true"/>{x.label}</Link>;
+   return <Link href={x.href} onClick={close} key={x.href} aria-current={selected?"page":undefined} className={selected?"active":undefined}><x.Icon size={18} aria-hidden="true"/>{x.label}</Link>;
   })}
-  {has("admin")&&<Link href="/admin/clientes-agentes" onClick={closeMobile} className={pathname.startsWith("/admin/clientes-agentes")?"active":undefined}><ShieldCheck size={18}/>Clientes y agentes</Link>}
-  {role==="admin"&&upcoming.map(x=><span key={x.label} title="Disponible próximamente" aria-disabled="true"><x.Icon size={18} aria-hidden="true"/>{x.label}</span>)}
+  {has("admin")&&<Link href="/admin/clientes-agentes" onClick={close} className={pathname.startsWith("/admin/clientes-agentes")?"active":undefined}><ShieldCheck size={18}/>Clientes y agentes</Link>}
+  {has("agente")&&userId&&<Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId)} onClick={close} className={pathname==="/admin/clientes-agentes/agentes/"+userId?"active":undefined}><UserRound size={18}/>Mi perfil comercial</Link>}
+  {has("admin")&&<><span aria-disabled="true" title="Próximamente"><Tags size={18}/>Categorías</span><span aria-disabled="true" title="Próximamente"><CalendarDays size={18}/>Calendario</span></>}
  </>;
  return <>
-  <nav className="admin-nav admin-nav-desktop" aria-label="Menú de administración">{items()}</nav>
-  <details ref={mobileRef} className="admin-nav-mobile">
-   <summary><Menu size={20} aria-hidden="true"/> <span>Menú</span><ChevronDown size={16} className="mobile-nav-chevron" aria-hidden="true"/></summary>
-   <nav className="admin-nav" aria-label="Menú de administración móvil">{items()}</nav>
-  </details>
+  <nav className="admin-nav admin-nav-desktop" aria-label="Menú de administración">{items(()=>{})}</nav>
+  <div className="admin-nav-mobile">
+   <button type="button" className="admin-mobile-trigger" onClick={()=>setMobileOpen(v=>!v)} aria-expanded={mobileOpen} aria-controls="admin-mobile-drawer">
+    <Menu size={20}/> Menú <ChevronDown size={16}/>
+   </button>
+   {mobileOpen&&<>
+    <button type="button" className="admin-mobile-overlay" onClick={()=>setMobileOpen(false)} aria-label="Cerrar navegación"/>
+    <aside id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
+     <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" onClick={()=>setMobileOpen(false)} aria-label="Cerrar menú"><X size={20}/></button></div>
+     <nav className="admin-nav" aria-label="Menú de administración móvil">{items(()=>setMobileOpen(false))}</nav>
+    </aside>
+   </>}
+  </div>
  </>;
 }
