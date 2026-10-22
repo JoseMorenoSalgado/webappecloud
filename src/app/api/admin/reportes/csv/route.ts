@@ -12,7 +12,7 @@ function csvCell(value:string|number|boolean){
 function line(values:Array<string|number|boolean>){return values.map(csvCell).join(",");}
 export async function GET(req:NextRequest){
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return new Response("No autorizado",{status:403});
+ if(!admin.roles.some(r=>["admin","editor"].includes(r)))return new Response("No autorizado",{status:403});
  const days=resolveReportPeriod(new URL(req.url).searchParams.get("periodo")||undefined);
  const report=await generateReport(admin.tenantId,days);
  const lines=[
