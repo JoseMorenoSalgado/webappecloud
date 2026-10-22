@@ -8,7 +8,7 @@ export const runtime="nodejs";
 function fail(code:string){return propertyRedirect("/admin/personalizar/paginas/nueva?error="+code);}
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return fail("permisos");
+ if(!admin.roles.some(r=>["admin","editor"].includes(r)))return fail("permisos");
  if(!validMutationOrigin(req))return fail("origen");
  const len=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(len)||len<1||len>21000)return fail("datos");
