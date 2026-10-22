@@ -11,7 +11,7 @@ const html=await response.text();
 for(const marker of [
  "property-detail-layout","property-detail-header","property-detail-main","property-detail-sidebar",
  "property-contact-card","property-gallery-viewport","property-gallery-stage",
- "property-gallery-expand","property-gallery-thumbs","property-detail-stats",
+ "property-gallery-expand","property-detail-stats",
  "property-detail-documents","Descargar ficha automática","NX-102",
  "Consultar por WhatsApp"
 ]){
