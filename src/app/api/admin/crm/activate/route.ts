@@ -5,7 +5,7 @@ import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request
 export const runtime="nodejs";
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
- if(admin.role!=="admin")return propertyRedirect("/admin/leads?error=permisos");
+ if(!admin.roles.includes("admin"))return propertyRedirect("/admin/leads?error=permisos");
  if(!validMutationOrigin(req))return propertyRedirect("/admin/leads?error=origen");
  try{
   await activateCrm();
