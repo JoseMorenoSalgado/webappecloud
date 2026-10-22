@@ -24,7 +24,7 @@ export default async function SiteEditor({searchParams}:{searchParams:Promise<St
   hasSiteAsset(admin.tenantId,"hero"),hasSiteAsset(admin.tenantId,"logo"),
   searchParams
  ]);
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  return <>
   <div className="admin-heading">
    <div><Link href="/admin/personalizar" className="inline-link">← Personalizar</Link><h1>Editar contenido e identidad</h1><p>Edita la portada, las imágenes y los datos de contacto sin modificar código.</p></div>
