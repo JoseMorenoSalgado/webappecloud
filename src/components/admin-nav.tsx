@@ -12,7 +12,6 @@ const available=[
 ];
 const upcoming=[
  {label:"Categorías",Icon:Tags},
- {label:"Clientes y agentes",Icon:UserRound},
  {label:"Calendario",Icon:CalendarDays},
 ];
 
@@ -24,7 +23,7 @@ export function AdminNav({role="admin"}:{role?:string}){
    const selected=x.href==="/admin"?pathname===x.href:pathname===x.href||pathname.startsWith(x.href+"/");
    return <Link href={x.href} key={x.href} aria-current={selected?"page":undefined} className={selected?"active":undefined}><x.Icon size={18} aria-hidden="true"/>{x.label}</Link>;
   })}
-  {role==="admin"&&<Link href="/admin/usuarios" className={pathname.startsWith("/admin/usuarios")?"active":undefined}><ShieldCheck size={18}/>Usuarios y roles</Link>}
+  {role==="admin"&&<Link href="/admin/clientes-agentes" className={pathname.startsWith("/admin/clientes-agentes")?"active":undefined}><ShieldCheck size={18}/>Clientes y agentes</Link>}
   {role==="admin"&&upcoming.map(x=><span key={x.label} title="Disponible próximamente" aria-disabled="true"><x.Icon size={18} aria-hidden="true"/>{x.label}</span>)}
  </>;
  return <>
