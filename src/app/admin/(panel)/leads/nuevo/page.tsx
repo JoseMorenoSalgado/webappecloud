@@ -18,7 +18,7 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
  const admin=await requireRole(["admin","editor","agente"]);
  if(!await crmTablesReady())redirect("/admin/leads");
  const props=await prisma.property.findMany({where:{tenantId:admin.tenantId},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const q=await searchParams;
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link></div>
