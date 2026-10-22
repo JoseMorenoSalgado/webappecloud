@@ -1,5 +1,5 @@
 type Data={
- refCode:string;title:string;city:string;neighborhood:string;type:string;operation:string;
+ refCode:string;title:string;city:string;neighborhood:string|null;type:string;operation:string;
  price:number;bedrooms:number|null; bathrooms:number|null;areaM2:number|null;
  description:string;featured:boolean;published:boolean;
 };
