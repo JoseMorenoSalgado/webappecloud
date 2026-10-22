@@ -8,7 +8,7 @@ export const runtime="nodejs";
 const back=(code:string)=>propertyRedirect("/admin/leads/nuevo?error="+code);
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return back("permisos");
+ if(!["admin","editor","agente"].includes(admin.role))return back("permisos");
  if(!validMutationOrigin(req))return back("origen");
  const len=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(len)||len>12000)return back("datos");
