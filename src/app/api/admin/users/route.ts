@@ -25,6 +25,19 @@ export async function POST(req:NextRequest){
   catch{return redirect(req,"duplicado");}
   return redirect(req,"creado");
  }
+ if(intent==="profile"){
+  const id=String(form.get("id")||"");
+  const name=String(form.get("name")||"").trim();
+  const email=String(form.get("email")||"").trim().toLowerCase();
+  if(!id||id.length>100||name.length<2||name.length>120||email.length>180||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return redirect(req,"datos");
+  const target=await prisma.adminUser.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true}});
+  if(!target)return redirect(req,"datos");
+  try{
+   await prisma.adminUser.update({where:{id:target.id},data:{name,email}});
+   await prisma.adminSession.deleteMany({where:{userId:target.id}});
+   return redirect(req,"perfil");
+  }catch{return redirect(req,"duplicado");}
+ }
  if(intent==="role"||intent==="toggle"){
   const id=String(form.get("id")||"");
   if(!id||id.length>100)return redirect(req,"datos");
