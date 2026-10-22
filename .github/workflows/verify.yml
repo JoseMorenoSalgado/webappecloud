@@ -67,7 +67,8 @@ jobs:
         run: npm run db:seed
       - name: Simular MariaDB existente antes de activar CRM
         run: |
-          printf 'DROP TABLE IF EXISTS \`LeadNote\`; DROP TABLE IF EXISTS \`LeadCrm\`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+          printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+          printf 'DROP TABLE IF EXISTS `LeadCrm`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
