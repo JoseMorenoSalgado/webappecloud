@@ -1128,3 +1128,18 @@
 @media(hover:none),(pointer:coarse),(prefers-reduced-motion:reduce){
  .public-site .property-grid .property-card:hover .property-photo>img{transform:none}
 }
+
+/* Gestión de usuarios y roles */
+.user-management{display:grid;gap:18px}
+.user-management .admin-panel{min-width:0}
+.user-create-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:end}
+.user-create-form label{display:grid;gap:6px;font-size:12px;font-weight:750;color:#43536a}
+.user-create-form input,.user-create-form select,.user-actions select{width:100%;min-width:0;min-height:42px;border:1px solid #dce3eb;border-radius:8px;padding:9px 11px;background:white;color:#26364c}
+.user-create-form button{justify-self:start}
+.user-table-wrap{overflow-x:auto;max-width:100%}
+.user-email{font-size:12px;color:#738196;overflow-wrap:anywhere}
+.user-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.user-actions form{display:flex;align-items:center;gap:7px}
+.user-actions select{max-width:175px}
+.user-actions button{min-height:39px;padding:8px 10px;background:#f7f9fb;border:1px solid #dce3eb;border-radius:8px;color:#33455b;font-weight:750;font-size:12px}
+@media(max-width:700px){.user-create-form{grid-template-columns:1fr}.user-actions form{flex-wrap:wrap}}
