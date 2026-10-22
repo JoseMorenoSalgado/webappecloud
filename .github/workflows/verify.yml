@@ -115,6 +115,8 @@ jobs:
         run: node scripts/check-site-customization.mjs
       - name: Verificar diseño público y páginas independientes
         run: node scripts/check-public-pages.mjs
+      - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
+        run: node scripts/check-site-cms.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail

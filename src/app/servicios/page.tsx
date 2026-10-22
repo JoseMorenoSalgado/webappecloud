@@ -2,6 +2,7 @@ import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Servicios",description:"Conoce nuestros servicios de compra, venta, alquiler y orientación inmobiliaria en Nicaragua."};
@@ -10,6 +11,7 @@ const steps=[{n:"01",title:"Cuéntanos qué necesitas",text:"Indícanos el tipo 
  {n:"03",title:"Hablemos de los siguientes pasos",text:"Solicita información y comunícate con nuestro equipo para evaluar las alternativas."}];
 export default async function Services(){
  const {tenant,settings,demo}=await getPublicContext();
+ await assertPagePublished(tenant.id,demo,"servicios");
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">
    <section className="nexus-inner-hero nexus-services-hero"><div className="container">

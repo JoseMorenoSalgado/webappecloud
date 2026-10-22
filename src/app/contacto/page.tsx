@@ -2,12 +2,14 @@ import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowLeft,ArrowUpRight,Mail,MapPin,MessageCircle,Clock3,ShieldCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {ContactForm} from "@/components/contact-form";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Contacto",description:"Contacta con nuestra inmobiliaria para consultar propiedades disponibles y recibir atención personalizada."};
 export default async function Contact(){
  const {tenant,settings,demo}=await getPublicContext();
+ await assertPagePublished(tenant.id,demo,"contacto");
  const wa=tenant.whatsapp?"https://wa.me/"+tenant.whatsapp+"?text="+encodeURIComponent("Hola, deseo información sobre sus propiedades disponibles."):null;
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">

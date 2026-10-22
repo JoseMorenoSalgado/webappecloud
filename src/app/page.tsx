@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {ArrowRight,ArrowUpRight,Building2,KeyRound,MapPin,Search,ShieldCheck,Sparkles,CheckCircle2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {getPageDefinitions} from "@/lib/site-pages";
 import {PropertyCard} from "@/components/property-card";
 import {PublicFrame} from "@/components/public-frame";
 import {ContactForm} from "@/components/contact-form";
@@ -13,6 +14,9 @@ const services=[
 ];
 export default async function Home(){
  const {tenant,properties,demo,settings,heroImage}=await getPublicContext();
+ const published=demo?new Set(["home","propiedades","nosotros","servicios","contacto"]):
+  new Set((await getPageDefinitions(tenant.id)).filter(p=>p.published).map(p=>p.id));
+ const visible=(page:string)=>published.has(page);
  const chosen=settings.featuredIds.length?
   properties.filter(p=>settings.featuredIds.includes(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):
   properties;
@@ -26,8 +30,8 @@ export default async function Home(){
       <h1>{settings.heroHeading} <em>{settings.heroHighlight}</em></h1>
       <p className="nexus-hero-lead">{settings.heroDescription}</p>
       <div className="nexus-hero-actions">
-       <Link href="/propiedades" className="btn nexus-hero-primary">{settings.heroButton}<ArrowUpRight size={18}/></Link>
-       <Link href="/nosotros" className="nexus-hero-secondary">Conócenos <ArrowRight size={17}/></Link>
+       {visible("propiedades")&&<Link href="/propiedades" className="btn nexus-hero-primary">{settings.heroButton}<ArrowUpRight size={18}/></Link>}
+       {visible("nosotros")&&<Link href="/nosotros" className="nexus-hero-secondary">Conócenos <ArrowRight size={17}/></Link>}
       </div>
      </div>
      <div className="nexus-hero-side" aria-label="Orientación inmobiliaria">
@@ -39,7 +43,7 @@ export default async function Home(){
     <div className="nexus-hero-bottom"><div className="container"><span>01 / EXPERIENCIAS INMOBILIARIAS</span><span>NICARAGUA <MapPin size={14}/></span></div></div>
    </section>
 
-   <section className="nexus-search-wrap" aria-label="Buscador de inmuebles">
+   {visible("propiedades")&&<section className="nexus-search-wrap" aria-label="Buscador de inmuebles">
     <div className="container">
      <div className="nexus-search-header"><strong>Encuentra tu próxima propiedad</strong><span>Busca entre las opciones disponibles</span></div>
      <form method="get" action="/propiedades" className="nexus-search-form">
@@ -49,9 +53,9 @@ export default async function Home(){
       <button className="btn btn-red" type="submit"><Search size={19}/> Buscar inmuebles</button>
      </form>
     </div>
-   </section>
+   </section>}
 
-   <section className="nexus-section nexus-featured" aria-labelledby="featured-title">
+   {visible("propiedades")&&<section className="nexus-section nexus-featured" aria-labelledby="featured-title">
     <div className="container">
      <div className="nexus-section-heading">
       <div><span className="nexus-section-kicker">{settings.sectionEyebrow}</span>
@@ -62,11 +66,11 @@ export default async function Home(){
      </div>
      {demo&&<p className="demo-note">Propiedades de demostración: los precios y características son ilustrativos.</p>}
      {displayed.length?<div className="property-grid nexus-featured-grid">{displayed.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:
-      <div className="nexus-empty-listing"><Building2 size={32}/><h3>Próximamente, nuevas oportunidades</h3><p>Estamos preparando nuestro catálogo inmobiliario.</p><Link href="/contacto" className="nexus-text-link">Cuéntanos qué buscas <ArrowUpRight size={16}/></Link></div>}
+      <div className="nexus-empty-listing"><Building2 size={32}/><h3>Próximamente, nuevas oportunidades</h3><p>Estamos preparando nuestro catálogo inmobiliario.</p>{visible("contacto")&&<Link href="/contacto" className="nexus-text-link">Cuéntanos qué buscas <ArrowUpRight size={16}/></Link>}</div>}
     </div>
-   </section>
+   </section>}
 
-   <section className="nexus-section nexus-services-preview">
+   {visible("servicios")&&<section className="nexus-section nexus-services-preview">
     <div className="container">
      <div className="nexus-section-heading nexus-services-heading"><div><span className="nexus-section-kicker">A TU LADO EN CADA PASO</span>
       <h2>Más que propiedades, <em>soluciones.</em></h2>
@@ -78,9 +82,9 @@ export default async function Home(){
       <h3>{title}</h3><p>{desc}</p><span className="nexus-service-more">Conocer más <ArrowUpRight size={18}/></span>
      </Link>)}</div>
     </div>
-   </section>
+   </section>}
 
-   <section className="nexus-section nexus-story">
+   {visible("nosotros")&&<section className="nexus-section nexus-story">
     <div className="container nexus-story-layout">
      <div className="nexus-story-panel">
       <span className="nexus-section-kicker">CONOCE NUESTRA ESENCIA</span>
@@ -94,9 +98,9 @@ export default async function Home(){
       <div><span><ShieldCheck size={21}/></span><div><strong>Te acompañamos</strong><p>Respondemos tus dudas y facilitamos la comunicación durante el proceso.</p></div></div>
      </div>
     </div>
-   </section>
+   </section>}
 
-   <section className="nexus-section nexus-contact-home">
+   {visible("contacto")&&<section className="nexus-section nexus-contact-home">
     <div className="container nexus-contact-home-layout">
      <div><span className="nexus-section-kicker nexus-kicker-light">HABLEMOS DE TU PRÓXIMO PASO</span>
       <h2>{settings.contactHeading} <em>{settings.contactHighlight}</em></h2>
@@ -107,7 +111,7 @@ export default async function Home(){
       {demo?<p className="preview-form-note">El formulario se habilitará cuando el sitio tenga una instalación activa.</p>:<ContactForm/>}
      </div>
     </div>
-   </section>
+   </section>}
   </main>
  </PublicFrame>;
 }

@@ -638,3 +638,66 @@
 .public-site .nexus-catalog-count{font-size:13px;color:#64748b;font-weight:750;white-space:nowrap}
 @media(max-width:900px){.public-site .nexus-catalog-filter-card .nexus-search-form{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.public-site .nexus-catalog-filter-card{padding:17px;margin-bottom:38px}.public-site .nexus-catalog-filter-card .nexus-search-form{grid-template-columns:1fr}.public-site .nexus-catalog-results{align-items:start;flex-direction:column;gap:10px}}
+
+
+/* WordPress-like site customization / page & menu manager */
+.site-customizer-intro{display:flex;justify-content:space-between;align-items:center;gap:25px;padding:26px 28px;margin-bottom:19px;background:linear-gradient(125deg,#fff,#f9fafc)}
+.site-customizer-intro>div:first-child{max-width:610px}
+.site-customizer-kicker{font-size:10px;color:#bb2131;letter-spacing:.18em;font-weight:850}
+.site-customizer-intro h2{font-size:25px;letter-spacing:-.04em;margin:9px 0 7px;color:#27364b}
+.site-customizer-intro p{font-size:13px;color:#66768b;line-height:1.7;margin:0}
+.site-customizer-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;min-width:240px}
+.site-customizer-stats>div{display:grid;gap:3px;text-align:center}
+.site-customizer-stats strong{font-size:24px;color:#a91f2c}
+.site-customizer-stats span{font-size:11px;color:#738096}
+.site-customizer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.site-customizer-card{display:grid;grid-template-columns:48px minmax(0,1fr) 20px;align-items:start;gap:14px;background:#fff;border:1px solid #e3e8ef;border-radius:13px;padding:21px;box-shadow:0 5px 18px #172d4110;transition:transform .2s,border-color .2s}
+.site-customizer-card:hover{transform:translateY(-2px);border-color:#d6aab0}
+.site-customizer-card>span{width:44px;height:44px;display:grid;place-items:center;color:#b82230;background:#fff0f2;border-radius:11px}
+.site-customizer-card strong{font-size:16px;color:#25354b}
+.site-customizer-card p{font-size:12px;color:#6b7a90;line-height:1.7;margin:8px 0 0}
+.site-customizer-arrow{color:#bc2835}
+.site-pages-list{display:grid;gap:0}
+.site-page-row{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:17px 0;border-bottom:1px solid #e9edf2}
+.site-page-row:last-child{border-bottom:none}
+.site-page-row>div:first-child{display:grid;gap:5px;min-width:0}
+.site-page-row strong{font-size:15px;color:#263448}
+.site-page-row span{font-size:12px;color:#738299;overflow-wrap:anywhere}
+.site-page-row small{display:inline-block;width:max-content;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px}
+.site-page-published{color:#147447;background:#e8f7ef}
+.site-page-draft{color:#85602c;background:#fff1dc}
+.site-page-row-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.site-page-row-actions .btn{font-size:12px;min-height:39px;padding:8px 12px}
+.site-page-toggle{border:1px solid #ebd7d9;color:#a1242e;background:#fff}
+.site-visit-link{width:36px;height:36px;display:grid;place-items:center;color:#4c5b71;border:1px solid #e5e9ef;border-radius:8px}
+.site-page-editor{display:grid;gap:18px;max-width:850px;padding:26px}
+.site-page-editor>label:not(.site-page-check){display:grid;gap:8px;color:#46566b;font-size:13px;font-weight:800}
+.site-page-editor input:not([type=checkbox]),.site-page-editor textarea{width:100%;border-radius:9px;border:1px solid #dbe2ec;padding:12px;background:#fff;color:#25354c;min-height:44px;font-size:14px;line-height:1.6}
+.site-page-editor textarea{resize:vertical}
+.site-page-check{display:flex;gap:9px;align-items:center;font-size:13px;color:#35465c;font-weight:750}
+.site-page-check input{width:18px;height:18px;accent-color:#b92232}
+.site-page-form-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.site-menu-panel{max-width:1000px}
+.site-menu-editor{display:grid;gap:19px}
+.site-menu-list{display:grid;gap:10px}
+.site-menu-edit-row{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:13px;align-items:center;border:1px solid #e4e9ef;border-radius:11px;background:#fafbfc;padding:13px}
+.site-menu-edit-row>svg{color:#9aa4b3}
+.site-menu-edit-field{display:grid;gap:4px;min-width:0}
+.site-menu-edit-field label{font-size:11px;font-weight:750;color:#526276}
+.site-menu-edit-field input{width:100%;min-height:39px;border:1px solid #dae1e9;border-radius:8px;padding:9px 11px;color:#263449}
+.site-menu-edit-field small{font-size:11px;color:#8390a0}
+.site-menu-controls{display:flex;gap:4px}
+.site-menu-controls button{width:36px;height:36px;display:grid;place-items:center;border:1px solid #dde3ec;border-radius:8px;background:#fff;color:#35475c;cursor:pointer}
+.site-menu-controls button:disabled{opacity:.3;cursor:default}
+.site-menu-controls button:hover:not(:disabled){color:#af2030;border-color:#b5283750}
+.site-menu-available{display:grid;gap:10px;border-top:1px solid #e5e9ef;padding-top:17px}
+.site-menu-available h3{font-size:15px;color:#334258;margin:0}
+.site-menu-available>div{display:flex;gap:8px;flex-wrap:wrap}
+.site-menu-add{border:1px solid #e0e6ed;border-radius:8px;padding:10px 13px;background:#fff;font-size:12px;color:#41516a;font-weight:800;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.site-menu-editor>.btn{justify-self:start}
+.site-custom-public-content{max-width:890px}
+.site-custom-public-content>p{font-size:16px;color:#46556a;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.95;margin:0 0 23px}
+.site-custom-public-content>.nexus-text-link{margin-top:15px}
+.site-editor-form [id],.site-editor-images[id]{scroll-margin-top:30px}
+@media(max-width:850px){.site-customizer-intro{align-items:start;flex-direction:column}.site-customizer-stats{width:100%}}
+@media(max-width:700px){.site-customizer-grid{grid-template-columns:1fr}.site-page-row{align-items:flex-start;flex-direction:column}.site-page-row-actions{width:100%}.site-menu-edit-row{grid-template-columns:1fr}.site-menu-edit-row>svg{display:none}.site-menu-controls{justify-content:flex-start}.site-page-editor{padding:17px}.site-customizer-intro{padding:19px}.site-customizer-stats{min-width:0}.site-menu-edit-field input{width:100%}}

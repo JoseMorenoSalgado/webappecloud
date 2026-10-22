@@ -1,26 +1,25 @@
 import Link from "next/link";
 import {ArrowUpRight,Mail,MapPin,MessageCircle} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
-export function SiteFooter({tenant}:{tenant:PublicTenant}){
+import {type SiteMenuItem} from "@/lib/site-pages";
+export function SiteFooter({tenant,links}:{tenant:PublicTenant;links:SiteMenuItem[]}){
  return <footer className="nexus-footer">
   <div className="container nexus-footer-top">
    <div className="nexus-footer-intro">
     <span className="nexus-footer-mark">{tenant.name}</span>
     <h2>Encuentra el lugar donde comienza tu siguiente historia.</h2>
     <p>{tenant.tagline||"Te acompañamos en la búsqueda de tu próxima propiedad."}</p>
-    <Link href="/contacto" className="nexus-footer-action">Hablemos de tu proyecto <ArrowUpRight size={18}/></Link>
+    {links.some(x=>x.id==="contacto")&&<Link href="/contacto" className="nexus-footer-action">Hablemos de tu proyecto <ArrowUpRight size={18}/></Link>}
    </div>
    <div className="nexus-footer-links">
     <div><h3>Explorar</h3>
-     <Link href="/">Inicio</Link><Link href="/propiedades">Propiedades</Link>
-     <Link href="/servicios">Servicios</Link><Link href="/nosotros">Nosotros</Link>
-     <Link href="/contacto">Contacto</Link>
+     {links.map(link=><Link key={link.id} href={link.href}>{link.label}</Link>)}
     </div>
     <div><h3>Contacto</h3>
      <span><MapPin size={16}/> Nicaragua</span>
      {tenant.contactEmail&&<a href={"mailto:"+tenant.contactEmail}><Mail size={16}/>{tenant.contactEmail}</a>}
      {tenant.whatsapp&&<a href={"https://wa.me/"+tenant.whatsapp} rel="noopener noreferrer" target="_blank"><MessageCircle size={16}/> Escribir por WhatsApp</a>}
-     {!tenant.whatsapp&&!tenant.contactEmail&&<Link href="/contacto">Enviar una consulta</Link>}
+     {!tenant.whatsapp&&!tenant.contactEmail&&links.some(x=>x.id==="contacto")&&<Link href="/contacto">Enviar una consulta</Link>}
     </div>
    </div>
   </div>

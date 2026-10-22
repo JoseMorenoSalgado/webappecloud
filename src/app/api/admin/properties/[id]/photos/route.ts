@@ -31,7 +31,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   const converter=sharp(input,{limitInputPixels:40_000_000,failOn:"error"});
   const meta=await converter.metadata();
   if(!["jpeg","png","webp"].includes(meta.format||""))return json("Formato de imagen no reconocido.",415);
-  output=await converter.rotate().resize({width:1920,height:1920,fit:"inside",withoutEnlargement:true}).webp({quality:82,effort:4}).toBuffer();
+  output=await converter.rotate().resize({width:2560,height:2560,fit:"inside",withoutEnlargement:true,kernel:"lanczos3"}).webp({quality:93,effort:6,smartSubsample:true}).toBuffer();
  }catch{return json("La imagen está dañada o supera las dimensiones permitidas.",422);}
  const photoId=randomUUID();
  const path=mediaFilePath(admin.tenantId,photoId);

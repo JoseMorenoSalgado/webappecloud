@@ -3,13 +3,7 @@ import Link from "next/link";
 import {usePathname} from "next/navigation";
 import {type PublicTenant} from "@/lib/demo";
 import {Building2,Menu,ArrowUpRight} from "lucide-react";
-const links=[
- {href:"/",label:"Inicio"},
- {href:"/propiedades",label:"Propiedades"},
- {href:"/nosotros",label:"Nosotros"},
- {href:"/servicios",label:"Servicios"},
- {href:"/contacto",label:"Contacto"}
-];
+import {type SiteMenuItem} from "@/lib/site-pages";
 export function Brand({tenant}:{tenant:PublicTenant}){
  const isNexus=tenant.name.toLowerCase()==="nexus real estate";
  return <Link className="brand nexus-brand" href="/" aria-label={"Inicio · "+tenant.name}>
@@ -17,7 +11,7 @@ export function Brand({tenant}:{tenant:PublicTenant}){
   <span><strong>{isNexus?"NEXUS":tenant.name}</strong><small>{isNexus?"REAL ESTATE":tenant.tagline||"INMOBILIARIA"}</small></span>
  </Link>;
 }
-export function SiteNav({tenant}:{tenant:PublicTenant}){
+export function SiteNav({tenant,links}:{tenant:PublicTenant;links:SiteMenuItem[]}){
  const path=usePathname();
  const items=()=>links.map(link=>{
   const selected=link.href==="/"?path==="/":path===link.href||path.startsWith(link.href+"/");
@@ -27,7 +21,7 @@ export function SiteNav({tenant}:{tenant:PublicTenant}){
   <div className="container nav-inner">
    <Brand tenant={tenant}/>
    <nav className="nexus-nav-links" aria-label="Navegación principal">{items()}</nav>
-   <Link href="/contacto" className="btn btn-red nexus-header-cta">Hablemos <ArrowUpRight size={16}/></Link>
+   {links.some(x=>x.id==="contacto")&&<Link href="/contacto" className="btn btn-red nexus-header-cta">Hablemos <ArrowUpRight size={16}/></Link>}
    <details className="mobile-menu nexus-mobile-menu">
     <summary aria-label="Abrir menú de navegación"><Menu size={24}/></summary>
     <nav aria-label="Navegación móvil">{items()}</nav>
