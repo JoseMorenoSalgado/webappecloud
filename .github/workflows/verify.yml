@@ -123,7 +123,7 @@ jobs:
           curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/ -o /tmp/nexus-preview-home.html
           grep -qi 'Vista previa de NEXUS' /tmp/nexus-preview-home.html
           curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/propiedades -o /tmp/nexus-preview-catalog.html
-          grep -qi 'Catálogo de propiedades' /tmp/nexus-preview-catalog.html
+          grep -qi 'Filtrar propiedades' /tmp/nexus-preview-catalog.html
           curl -fsS -H 'Host: inmo.elearningcloud.org' http://localhost:3001/api/propiedades/casa-zona-ejecutiva/pdf -o /tmp/nexus-demo.pdf
           head -c 5 /tmp/nexus-demo.pdf | grep -q '%PDF-'
           test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: example.com' http://localhost:3001/)" = "307"
