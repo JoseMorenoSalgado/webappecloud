@@ -17,6 +17,7 @@ export async function POST(req:NextRequest){
  try{form=await req.formData();}catch{return back("datos");}
  function field(name:string,limit:number){
   const v=form.get(name);
+  if(v===null)return "";
   if(typeof v!=="string"||v.length>limit+30)throw new Error("datos");
   return v.trim().slice(0,limit);
  }
