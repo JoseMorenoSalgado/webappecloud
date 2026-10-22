@@ -44,3 +44,9 @@ export async function destroySession(){
  if(raw)await prisma.adminSession.deleteMany({where:{tokenHash:tokenHash(raw)}});
  jar.delete(cookieName);
 }
+
+export async function requireRole(roles:string[]){
+ const user=await requireAdmin();
+ if(!roles.includes(user.role))redirect("/admin");
+ return user;
+}
