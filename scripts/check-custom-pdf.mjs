@@ -1,6 +1,7 @@
 // Full custom-PDF flow against CI's isolated localhost tenant and database.
 import assert from "node:assert/strict";
 import {PDFDocument,PDFName} from "pdf-lib";
+import {execFileSync} from "node:child_process";
 
 const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
 assert.equal(new URL(origin).hostname,"localhost","Tests must not run against public sites.");
@@ -58,7 +59,11 @@ const publish=new FormData();publish.set("intent","publish");
 const published=await fetch(origin+"/api/admin/properties/"+id,{method:"POST",body:publish,headers:authHeaders,redirect:"manual"});
 assert.equal(published.status,303);
 assert.equal((await fetch(publicDoc)).status,200,"Published personalized PDF should be downloadable.");
-assert.equal((await fetch(publicDoc,{headers:{Host:"other-tenant.test"}})).status,404,"Foreign domains must not access the PDF.");
+const foreignStatus=execFileSync("curl",[
+ "-sS","-o","/dev/null","-w","%{http_code}","-H","Host: other-tenant.test",
+ "-H","X-Forwarded-Host: other-tenant.test",publicDoc
+],{encoding:"utf8"}).trim();
+assert.equal(foreignStatus,"404","Foreign domains must not access the PDF.");
 const auto=await fetch(origin+"/api/propiedades/casa-con-pdf-corporativo-ci-nx-pdf-ci/pdf");
 assert.equal(auto.status,200,"Automatic PDF must stay available.");
 
