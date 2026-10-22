@@ -65,6 +65,9 @@ jobs:
         run: npx prisma db push
       - name: Crear datos de prueba
         run: npm run db:seed
+      - name: Simular MariaDB existente antes de activar CRM
+        run: |
+          printf 'DROP TABLE IF EXISTS \`LeadNote\`; DROP TABLE IF EXISTS \`LeadCrm\`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
@@ -101,6 +104,8 @@ jobs:
           NODE_ENV: production
       - name: Probar inicio de sesión real y dashboard
         run: node scripts/check-admin-access.mjs
+      - name: Probar CRM y actualización segura de MariaDB existente
+        run: node scripts/check-crm.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
@@ -185,6 +190,12 @@ jobs:
           test -s "$RECOVERY_PG_TMP/installation.json"
       - name: Probar inicio de sesión real PostgreSQL
         run: node scripts/check-admin-access.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar CRM sobre instalación nueva PostgreSQL
+        run: node scripts/check-crm.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
