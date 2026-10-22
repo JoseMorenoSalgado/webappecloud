@@ -121,17 +121,17 @@ jobs:
           set -euo pipefail
           printf "CREATE DATABASE IF NOT EXISTS webappecloud_install_ci; GRANT ALL PRIVILEGES ON webappecloud_install_ci.* TO 'ciuser'@'%%';" | sed 's/%%/%/g' | npx prisma db execute --url "mysql://root:ci_root_only@127.0.0.1:3306/webappecloud_ci" --stdin
           INSTALL_TMP="$(mktemp -d)"
-          env -u DATABASE_URL -u INSTALLER_TOKEN APP_CONFIG_DIR="$INSTALL_TMP" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
+          env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_TMP" SITE_PREVIEW_MODE=false PORT=3002 NODE_ENV=production npm run start > /tmp/webappecloud-installer.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3002/api/live >/dev/null; do sleep 2; done'
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/)" = "307"
-          curl -fsS http://localhost:3002/instalar -o /tmp/nexus-wizard.html
+          curl -fsSL -c /tmp/mysql-install-cookies.txt -b /tmp/mysql-install-cookies.txt http://localhost:3002/instalar -o /tmp/nexus-wizard.html
           grep -qi "instalación inicial" /tmp/nexus-wizard.html
-          test -s "$INSTALL_TMP/installer-token"
-          # Generate the request locally, without printing the secret into workflow logs.
-          node -e 'const fs=require("node:fs");const key=fs.readFileSync(process.argv[1],"utf8").trim();if(key.length!==64)process.exit(1);const data={setupToken:key,dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});' "$INSTALL_TMP/installer-token"
-          curl -fsS -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
+          test -s "$INSTALL_TMP/installer-session.json"
+          # No setup key is copied or displayed in the browser.
+          node -e 'const fs=require("node:fs");const data={dbType:"mariadb",dbHost:"127.0.0.1",dbPort:"3306",dbName:"webappecloud_install_ci",dbUser:"ciuser",dbPassword:"ci_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus@example.com",adminName:"Administrador Nexus",adminEmail:"admin-nexus@example.com",adminPassword:"long-safe-password-for-test-1234"};fs.writeFileSync("/tmp/webappecloud-install-request.json",JSON.stringify(data),{mode:0o600});'
+          curl -fsS -b /tmp/mysql-install-cookies.txt -H 'Origin: http://localhost:3002' -H 'Content-Type: application/json' -X POST http://localhost:3002/api/install \
             --data-binary @/tmp/webappecloud-install-request.json | grep -q '"ok":true'
-          test ! -e "$INSTALL_TMP/installer-token"
+          test ! -e "$INSTALL_TMP/installer-session.json"
           curl -fsS http://localhost:3002/api/health | grep -q '"status":"ok"'
           curl -fsS http://localhost:3002/ -o /tmp/nexus-after-install.html
           grep -qi 'NEXUS' /tmp/nexus-after-install.html
@@ -143,13 +143,13 @@ jobs:
         run: |
           set -euo pipefail
           INSTALL_PG_TMP="$(mktemp -d)"
-          env -u DATABASE_URL -u INSTALLER_TOKEN APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
+          env -u DATABASE_URL -u INSTALLER_TOKEN INSTALLER_AUTO_SETUP=true APP_CONFIG_DIR="$INSTALL_PG_TMP" SITE_PREVIEW_MODE=false PORT=3003 NODE_ENV=production npm run start > /tmp/webappecloud-postgres.log 2>&1 &
           timeout 90 bash -c 'until curl -fsS http://localhost:3003/api/live >/dev/null; do sleep 2; done'
-          curl -fsS http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
+          curl -fsSL -c /tmp/pg-install-cookies.txt -b /tmp/pg-install-cookies.txt http://localhost:3003/instalar -o /tmp/nexus-postgres-installer.html
           grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
-          test -s "$INSTALL_PG_TMP/installer-token"
-          node -e 'const fs=require("fs");const key=fs.readFileSync(process.argv[1],"utf8").trim();const body={setupToken:key,dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});' "$INSTALL_PG_TMP/installer-token"
-          curl -fsS -X POST http://localhost:3003/api/install \
+          test -s "$INSTALL_PG_TMP/installer-session.json"
+          node -e 'const fs=require("fs");const body={dbType:"postgresql",dbHost:"127.0.0.1",dbPort:"5432",dbName:"webappecloud_pg_ci",dbUser:"pgci",dbPassword:"pg_password_only",institution:"Nexus Real Estate",institutionEmail:"nexus-pg@example.com",adminName:"Administrador Postgres",adminEmail:"admin-postgres@example.com",adminPassword:"long-postgres-test-password-2026"};fs.writeFileSync("/tmp/webappecloud-pg-request.json",JSON.stringify(body),{mode:0o600});'
+          curl -fsS -b /tmp/pg-install-cookies.txt -X POST http://localhost:3003/api/install \
             -H 'Origin: http://localhost:3003' \
             -H 'Content-Type: application/json' \
             --data-binary @/tmp/webappecloud-pg-request.json | grep -q '"ok":true'
@@ -157,7 +157,7 @@ jobs:
           curl -fsS http://localhost:3003/ -o /tmp/nexus-postgres-home.html
           grep -qi 'NEXUS' /tmp/nexus-postgres-home.html
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3003/instalar)" = "307"
-          test ! -e "$INSTALL_PG_TMP/installer-token"
+          test ! -e "$INSTALL_PG_TMP/installer-session.json"
         env:
           NODE_ENV: production
       - name: Recuperar conexión existente en ambos motores

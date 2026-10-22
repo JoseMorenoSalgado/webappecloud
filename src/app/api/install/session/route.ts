@@ -17,7 +17,7 @@ export function GET(req: NextRequest){
  res.headers.set("Cache-Control", "no-store");
  res.cookies.set(INSTALLER_SESSION_COOKIE, token, {
   httpOnly:true,
-  secure:req.nextUrl.protocol === "https:" || req.headers.get("x-forwarded-proto") === "https",
+  secure:req.nextUrl.protocol === "https:" || (process.env.NODE_ENV === "production" && !["localhost","127.0.0.1"].includes(req.nextUrl.hostname)),
   sameSite:"strict", path:"/", maxAge:INSTALLER_SESSION_SECONDS
  });
  return res;
