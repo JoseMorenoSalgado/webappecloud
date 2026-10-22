@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import {ExternalLink,Save,Trash2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {parseRoles} from "@/lib/roles";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 import {PropertyPhotoUploader} from "@/components/property-photo-uploader";
 import {PropertyDocumentManager} from "@/components/property-document-manager";
@@ -24,6 +25,8 @@ export default async function EditProperty({params,searchParams}:{params:Promise
  if(!property)notFound();
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const hasDocument=await hasCustomPdf(admin.tenantId,property.id);
+ const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
+ const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  return <>
   <div className="admin-heading"><div><h1>Editar propiedad</h1><p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p></div><Link href="/admin/propiedades" className="inline-link">← Propiedades</Link></div>
   {q.created&&<p className="property-success" role="status">Propiedad creada correctamente. Ahora puedes añadir fotografías.</p>}
@@ -31,7 +34,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   {canEdit&&<form action={"/api/admin/properties/"+encodeURIComponent(id)} method="post" className="admin-form property-editor">
    <input type="hidden" name="intent" value="save"/>
-   <AdminPropertyFields property={{...property,price:Number(property.price)}}/>
+   <AdminPropertyFields property={{...property,price:Number(property.price)}} agents={agents}/>
    <div className="property-editor-actions">
     <button type="submit" className="btn btn-red"><Save size={17}/> Guardar cambios</button>
     {property.published&&<Link className="btn wizard-back" href={"/propiedades/"+encodeURIComponent(property.slug)} target="_blank">Ver publicada <ExternalLink size={15}/></Link>}
