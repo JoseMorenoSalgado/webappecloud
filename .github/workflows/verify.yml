@@ -119,6 +119,8 @@ jobs:
         run: node scripts/check-site-cms.mjs
       - name: Validar editores independientes y administrador compacto
         run: node scripts/check-independent-pages.mjs
+      - name: Comprobar vistas previas y experiencia CMS mejorada
+        run: node scripts/check-cms-ux.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
