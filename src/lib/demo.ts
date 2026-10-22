@@ -13,7 +13,7 @@ export const demoProperties:PublicProperty[]=[
 export function formatPrice(p:PublicProperty){return "US$ "+new Intl.NumberFormat("en-US",{maximumFractionDigits:0}).format(p.price)+(p.operation==="alquiler"?"/mes":"");}
 export function contactUrl(t:PublicTenant,p?:PublicProperty){
  const phone=t.whatsapp.replace(/\D/g,"");
- if(!phone)return "/#contacto";
+ if(!phone)return "/contacto";
  const msg=p?`Hola, estoy interesado en la propiedad Ref: ${p.refCode} en ${p.neighborhood}, ${p.city}. Quisiera recibir más información.`:`Hola, deseo información sobre las propiedades disponibles de ${t.name}.`;
  return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
