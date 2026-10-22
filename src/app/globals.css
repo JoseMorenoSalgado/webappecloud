@@ -1152,3 +1152,28 @@
 .user-role-inline{max-width:370px}
 .user-actions form{align-items:flex-end}
 @media(max-width:700px){.user-role-options{gap:6px}.user-role-options label{white-space:normal}.user-role-inline{max-width:100%}}
+
+/* Header branding: preserve complete logo in public site and dashboard on every viewport. */
+.admin-sidebar .brand,.public-site .nexus-brand{min-width:0;align-items:center}
+.admin-sidebar .brand-icon,.public-site .nexus-brand .brand-icon{
+ box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+ width:62px;height:62px;min-width:62px;overflow:visible;background:transparent;border:0;border-radius:0;
+}
+.admin-sidebar .brand-icon img,.public-site .nexus-brand .brand-icon img{
+ display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;object-position:center;
+}
+.public-site .nexus-brand>span:last-child,.admin-sidebar .brand>span:last-child{min-width:0}
+.public-site .nexus-brand strong,.admin-sidebar .brand strong{overflow:visible;white-space:normal;overflow-wrap:anywhere}
+@media(max-width:720px){
+ .admin-sidebar .brand-icon,.public-site .nexus-brand .brand-icon{
+  width:48px;height:52px;min-width:48px;flex-basis:48px;
+ }
+ .admin-sidebar .brand-icon img,.public-site .nexus-brand .brand-icon img{
+  width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;
+ }
+ .admin-sidebar .brand strong{font-size:18px;max-width:none;white-space:normal;line-height:1.05}
+ .public-site .nexus-brand strong{font-size:clamp(17px,4.9vw,23px)}
+ .admin-sidebar{isolation:isolate}
+ .admin-nav-mobile[open]{z-index:80}
+ .admin-nav-mobile .admin-nav{box-shadow:0 20px 55px rgba(16,30,45,.22)}
+}
