@@ -11,10 +11,9 @@ export const dynamic="force-dynamic";
 const cookieName="webappecloud_session";
 const sessionSeconds=7*24*60*60;
 
-function go(req:NextRequest,path:string){
- const response=NextResponse.redirect(new URL(path,req.url),303);
- response.headers.set("Cache-Control","no-store");
- return response;
+function go(_req:NextRequest,path:string){
+ // Relative redirects preserve the public host and HTTPS behind Dokploy's reverse proxy.
+ return new NextResponse(null,{status:303,headers:{"Location":path,"Cache-Control":"no-store"}});
 }
 function fail(req:NextRequest,code:string){return go(req,"/admin/acceso?error="+encodeURIComponent(code));}
 function sameOrigin(req:NextRequest){
