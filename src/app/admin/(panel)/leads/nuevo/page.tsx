@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {ArrowLeft,UserPlus} from "lucide-react";
 import {redirect} from "next/navigation";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {prisma} from "@/lib/prisma";
 export const dynamic="force-dynamic";
@@ -15,7 +15,7 @@ const errors:Record<string,string>={
  servidor:"No se pudo registrar el prospecto. Inténtalo nuevamente."
 };
 export default async function CreateLead({searchParams}:{searchParams:Promise<{error?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor","agente"]);
  if(!await crmTablesReady())redirect("/admin/leads");
  const props=await prisma.property.findMany({where:{tenantId:admin.tenantId},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
  const canEdit=["admin","editor"].includes(admin.role);
