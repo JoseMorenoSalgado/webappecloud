@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {Plus} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
@@ -11,11 +11,11 @@ const errors:Record<string,string>={
  servidor:"No fue posible guardar la propiedad. Comprueba los registros del servidor."
 };
 export default async function NewProperty({searchParams}:{searchParams:Promise<{error?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const {error}=await searchParams;
  return <>
   <div className="admin-heading"><div><h1>Nueva propiedad</h1><p>Completa los datos y luego añade las fotografías desde tu móvil o computadora.</p></div><Link href="/admin/propiedades" className="inline-link">← Volver a propiedades</Link></div>
-  {admin.role!=="admin"&&admin.role!=="editor"?<p className="panel-notice">Tu cuenta no tiene permiso para crear propiedades.</p>:
+  {!admin.roles.some(r=>["admin","editor"].includes(r))?<p className="panel-notice">Tu cuenta no tiene permiso para crear propiedades.</p>:
   <form className="admin-form property-editor" method="post" action="/api/admin/properties">
    {error&&<div className="admin-error" role="alert">{errors[error]||errors.servidor}</div>}
    <AdminPropertyFields/>
