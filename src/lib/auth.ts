@@ -5,6 +5,7 @@ import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {normalizeSiteHost} from "@/lib/preview";
+import {parseRoles,primaryRole} from "@/lib/roles";
 const cookieName="webappecloud_session";
 const sessionHours=24*7;
 export function hashPassword(password:string){
@@ -28,7 +29,7 @@ export async function currentAdmin(){
  const hostname=normalizeSiteHost((await headers()).get("host")||"");
  const assigned=await prisma.domain.findFirst({where:{tenantId:session.user.tenantId,hostname},select:{id:true}});
  if(!assigned)return null;
- return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:session.user.role};
+ return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:primaryRole(parseRoles(session.user.role)),roles:parseRoles(session.user.role)};
 }
 export async function requireAdmin(){
  const user=await currentAdmin();if(!user)redirect("/admin/acceso");
@@ -47,6 +48,6 @@ export async function destroySession(){
 
 export async function requireRole(roles:string[]){
  const user=await requireAdmin();
- if(!roles.includes(user.role))redirect("/admin");
+ if(!user.roles.some(role=>roles.includes(role)))redirect("/admin");
  return user;
 }
