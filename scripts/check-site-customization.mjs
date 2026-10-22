@@ -14,7 +14,7 @@ assert.ok(cookie,"Cannot authenticate the test administrator.");
 const auth={Cookie:cookie,Origin:origin};
 const edit=await fetch(origin+"/admin/personalizar",{headers:{Cookie:cookie}});
 assert.equal(edit.status,200);
-assert.match(await edit.text(),/Personalizar sitio web/);
+assert.match(await edit.text(),/Nueva página/);
 const unknown=await fetch(origin+"/admin/personalizar",{redirect:"manual"});
 assert.ok([303,307,308].includes(unknown.status),"Anonymous user may not access the editor.");
 
