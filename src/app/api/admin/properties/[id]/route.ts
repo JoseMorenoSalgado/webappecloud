@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {validateAssignedAgent} from "@/lib/property-agent";
 import {parseProperty,PropertyFormError} from "@/lib/property-form";
 import {propertyRedirect,validMutationOrigin,propertyEditor,propertyErrorPath} from "@/lib/admin-property-request";
 import {unlink} from "node:fs/promises";
@@ -34,9 +35,11 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   }
   if(intent!=="save")return propertyRedirect(propertyErrorPath("datos",id));
   const data=parseProperty(form);
-  await prisma.property.update({where:{id:property.id},data});
+  const assignedAgentId=await validateAssignedAgent(admin.tenantId,form.get("assignedAgentId"));
+  await prisma.property.update({where:{id:property.id},data:{...data,assignedAgentId}});
   return propertyRedirect("/admin/propiedades/"+encodeURIComponent(id)+"/editar?saved=1");
  }catch(error){
+  if(error instanceof Error&&error.message==="AGENT_INVALID")return propertyRedirect(propertyErrorPath("datos",id));
   if(error instanceof PropertyFormError)return propertyRedirect(propertyErrorPath(error.code,id));
   if(error&&typeof error==="object"&&"code" in error&&error.code==="P2002")return propertyRedirect(propertyErrorPath("duplicado",id));
   console.error("[properties] change failed",error instanceof Error?error.name:"unknown");
