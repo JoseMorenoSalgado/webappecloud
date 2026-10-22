@@ -1143,3 +1143,12 @@
 .user-actions select{max-width:175px}
 .user-actions button{min-height:39px;padding:8px 10px;background:#f7f9fb;border:1px solid #dce3eb;border-radius:8px;color:#33455b;font-weight:750;font-size:12px}
 @media(max-width:700px){.user-create-form{grid-template-columns:1fr}.user-actions form{flex-wrap:wrap}}
+
+/* Multiple roles in Clients and agents */
+.user-role-options{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:12px;border:1px solid #dce3eb;border-radius:9px;min-width:0}
+.user-role-options legend{padding:0 5px;font-size:12px;font-weight:750;color:#43536a}
+.user-role-options label{display:inline-flex;align-items:center;gap:6px;padding:7px 9px;border:1px solid #e5e9ef;border-radius:7px;font-size:12px;font-weight:650;color:#45566a;white-space:nowrap}
+.user-role-options input[type=checkbox]{width:16px;height:16px;min-height:0;accent-color:#b52838}
+.user-role-inline{max-width:370px}
+.user-actions form{align-items:flex-end}
+@media(max-width:700px){.user-role-options{gap:6px}.user-role-options label{white-space:normal}.user-role-inline{max-width:100%}}
