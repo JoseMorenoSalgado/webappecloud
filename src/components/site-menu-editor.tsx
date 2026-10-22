@@ -1,16 +1,22 @@
 "use client";
 import {useState} from "react";
-import {ArrowDown,ArrowUp,GripVertical,Plus,Minus} from "lucide-react";
+import {ArrowDown,ArrowUp,GripVertical,Plus,Minus,RotateCcw,Eye} from "lucide-react";
 import {type PageDefinition,type SiteMenuItem} from "@/lib/site-pages";
 type Item={id:string;label:string};
 export function SiteMenuEditor({pages,current}:{pages:PageDefinition[];current:SiteMenuItem[]}){
  const available=pages.filter(x=>x.published);
  const [items,setItems]=useState<Item[]>(current.map(x=>({id:x.id,label:x.label})));
  const addable=available.filter(p=>!items.some(x=>x.id===p.id));
+ const initial=current.map(x=>({id:x.id,label:x.label}));
+ const changed=JSON.stringify(items)!==JSON.stringify(initial);
  const move=(i:number,delta:number)=>{const j=i+delta;if(j<0||j>=items.length)return;
   const list=[...items];[list[i],list[j]]=[list[j],list[i]];setItems(list);
  };
  return <form className="site-menu-editor" action="/api/admin/site-menu" method="post">
+  <div className="cms-menu-preview" aria-label="Vista previa del menú">
+   <span><Eye size={16}/> Así se verá el menú</span>
+   <div>{items.length?items.map(x=><span key={x.id}>{x.label}</span>):<em>El menú no contiene enlaces.</em>}</div>
+  </div>
   <input type="hidden" name="items" value={JSON.stringify(items)}/>
   <div className="site-menu-list">
    {items.map((item,i)=><div className="site-menu-edit-row" key={item.id}>
@@ -31,6 +37,10 @@ export function SiteMenuEditor({pages,current}:{pages:PageDefinition[];current:S
    <div>{addable.length?addable.map(p=><button className="site-menu-add" type="button" key={p.id}
     onClick={()=>setItems([...items,{id:p.id,label:p.title}])}><Plus size={16}/>{p.title}</button>):<p className="property-help">Todas las páginas publicadas ya están en el menú.</p>}</div>
   </div>
-  <button className="btn btn-red" type="submit">Guardar menú principal</button>
+  <div className="cms-menu-save-actions">
+   <button className="btn btn-red" type="submit">Guardar menú principal</button>
+   <button className="btn wizard-back" type="button" disabled={!changed} onClick={()=>setItems(initial)}><RotateCcw size={16}/> Deshacer cambios</button>
+   {changed&&<span className="cms-unsaved" role="status">Tienes cambios sin guardar</span>}
+  </div>
  </form>;
 }
