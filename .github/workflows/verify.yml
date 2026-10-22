@@ -150,6 +150,12 @@ jobs:
           echo "CI PG: page retrieved; contains PostgreSQL? $(grep -q 'PostgreSQL' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
           echo "CI PG: contains installer form? $(grep -q 'install-form' /tmp/nexus-postgres-installer.html && echo yes || echo no)"
           echo "CI PG: claim file present? $(test -s "$INSTALL_PG_TMP/installer-session.json" && echo yes || echo no)"
+          echo "CI PG: cookie file present? $(test -s /tmp/pg-install-cookies.txt && echo yes || echo no)"
+          echo "CI PG: cookie field present? $(grep -q wec_setup_session /tmp/pg-install-cookies.txt && echo yes || echo no)"
+          echo "CI PG: claim and cookie match? $(node -e 'const fs=require("fs"),crypto=require("crypto");try{const lines=fs.readFileSync("/tmp/pg-install-cookies.txt","utf8").split("\\n");const cookie=lines.find(x=>x.includes("wec_setup_session"));const token=cookie?.split("\\t").at(-1);const hash=crypto.createHash("sha256").update(token||"").digest("hex");const claim=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));process.stdout.write(claim.tokenHash===hash?"yes":"no")}catch{process.stdout.write("unreadable")}' "$INSTALL_PG_TMP/installer-session.json")"
+          for marker in "Otra sesión" "almacenamiento" "Instalador protegido" "No se pudo" "Configuración inicial" "CONFIGURACIÓN INICIAL"; do
+            if grep -qi "$marker" /tmp/nexus-postgres-installer.html; then echo "CI PG: page marker: $marker"; fi
+          done
           grep -qi 'PostgreSQL' /tmp/nexus-postgres-installer.html
           test -s "$INSTALL_PG_TMP/installer-session.json"
           echo "CI PG: installer authorized; proceeding to install"
