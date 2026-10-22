@@ -39,7 +39,7 @@ const list=await fetch(origin+"/admin/leads",{headers:{Cookie:cookie}});
 assert.equal(list.status,200);
 const html=await list.text();
 assert.match(html,/Contacto Seguimiento CI/,"New contact absent in dashboard.");
-const result=html.match(/href="\/admin\/leads\/([a-z0-9]+)"/);
+const result=html.match(/href="\/admin\/leads\/([a-z0-9]{20,40})"/);
 assert.ok(result,"Cannot locate link to a CRM lead.");
 const leadId=result[1];
 const form=new FormData();
@@ -80,4 +80,22 @@ assert.ok(["307","308","303","404"].includes(outsider),"Foreign tenant host unex
 const anonymous=await fetch(origin+"/admin/leads/"+leadId,{redirect:"manual"});
 assert.ok([303,307,308].includes(anonymous.status),"Anonymous prospect access should be blocked.");
 
-console.log("CRM: non-destructive activation, capture, follow-up, notes, filtering, CSRF and domain isolation passed.");
+// Record a WhatsApp contact manually. Clicking wa.me alone cannot reveal conversations.
+const manual=new FormData();
+manual.set("name","Contacto WhatsApp CI");
+manual.set("phone","87654321");
+manual.set("email","whatsapp@example.test");
+manual.set("source","whatsapp");
+manual.set("message","Consulta de WhatsApp registrada con consentimiento.");
+manual.set("consent","on");
+const manuallyCreated=await fetch(origin+"/api/admin/crm/leads",{method:"POST",headers:auth,body:manual,redirect:"manual"});
+assert.equal(manuallyCreated.status,303);
+assert.match(manuallyCreated.headers.get("location")||"",/\/admin\/leads\/[a-z0-9]+\?created=1/);
+const withoutConsent=new FormData();
+withoutConsent.set("name","Contacto sin permiso");
+withoutConsent.set("phone","87654321");
+withoutConsent.set("source","whatsapp");
+const refused=await fetch(origin+"/api/admin/crm/leads",{method:"POST",headers:auth,body:withoutConsent,redirect:"manual"});
+assert.equal(refused.status,303);
+assert.match(refused.headers.get("location")||"",/error=consentimiento/);
+console.log("CRM: activation, capture, manual WhatsApp intake, follow-up, notes, filters, consent and domain isolation passed.");
