@@ -11,7 +11,7 @@ export default async function SiteIdentity({searchParams}:{searchParams:Promise<
   prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,primaryColor:true}}),
   hasSiteAsset(admin.tenantId,"hero"),hasSiteAsset(admin.tenantId,"logo"),searchParams
  ]);
- const canEdit=["admin","editor"].includes(admin.role);
+ const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  return <>
   <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Personalizar</Link>
    <h1>Identidad visual</h1><p>Logotipo, imagen principal, lema y color institucional de tu inmobiliaria.</p></div>
