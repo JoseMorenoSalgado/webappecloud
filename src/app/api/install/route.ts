@@ -29,7 +29,8 @@ function validate(input:Form){
  const adminName=safe(input.adminName,120),adminEmail=safe(input.adminEmail,180).toLowerCase();
  const adminPassword=String(input.adminPassword||"");
  if(!/^[a-z0-9][a-z0-9.-]*$/.test(dbHost)||dbHost.length>250||!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto de base de datos inválido.");
- if(!/^[a-zA-Z0-9_]{1,64}$/.test(dbName)||!/^[a-zA-Z0-9_@.-]{1,80}$/.test(dbUser)||!dbPassword||dbPassword.length>256)throw Error("Revisa el nombre, usuario y contraseña de la base de datos.");
+ if(!/^[a-zA-Z0-9_-]{1,64}$/.test(dbName))throw Error("Nombre de base de datos inválido. Se admiten letras, números, guiones (-) y guiones bajos (_).");
+ if(!/^[a-zA-Z0-9_@.-]{1,80}$/.test(dbUser)||!dbPassword||dbPassword.length>256)throw Error("Revisa el usuario y contraseña de la base de datos.");
  if(institution.length<3||adminName.length<2||adminPassword.length<14||adminPassword.length>256)throw Error("Introduce la institución, administrador y una contraseña de al menos 14 caracteres.");
  if(!/^\S+@\S+\.\S+$/.test(institutionEmail)||!/^\S+@\S+\.\S+$/.test(adminEmail))throw Error("Los correos electrónicos no son válidos.");
  const engine:DatabaseEngine=dbType==="postgresql"?"postgresql":"mysql";
