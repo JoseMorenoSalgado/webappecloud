@@ -1,26 +1,34 @@
-// Integration check against an isolated CI server only; does not log credentials/cookies.
+// Authentication integration test on isolated localhost databases.
 import assert from 'node:assert/strict';
 const origin=process.env.TEST_ORIGIN||'http://localhost:3000';
 assert.equal(new URL(origin).hostname,'localhost','Only an isolated localhost test server is allowed');
 const page=await fetch(origin+'/admin/acceso');
 assert.equal(page.status,200);
 const html=await page.text();
-const action=html.match(/name="(\$ACTION_ID_[^"]+)"/);
-assert.ok(action,'Server action missing from the login form');
+assert.match(html,/action="\/api\/admin\/session"/,'Stable HTML login form missing');
 const form=new FormData();
-form.set(action[1],'');
 form.set('email',process.env.ADMIN_EMAIL);
 form.set('password',process.env.ADMIN_PASSWORD);
-const login=await fetch(origin+'/admin/acceso',{method:'POST',headers:{Origin:origin},body:form,redirect:'manual'});
+const login=await fetch(origin+'/api/admin/session',{
+ method:'POST',headers:{Origin:origin},body:form,redirect:'manual'
+});
 assert.equal(login.status,303);
-assert.equal(login.headers.get('location'),'/admin');
+assert.equal(new URL(login.headers.get('location'),origin).pathname,'/api/admin/session');
 const cookie=login.headers.getSetCookie().find(c=>c.startsWith('webappecloud_session='));
 assert.ok(cookie,'Session cookie missing');
 assert.match(cookie,/httponly/i);
+assert.match(cookie,/samesite=lax/i);
 assert.match(cookie,/secure/i);
-const authenticated=await fetch(origin+'/admin',{headers:{Cookie:cookie.split(';')[0]},redirect:'manual'});
+const cookieHeader=cookie.split(';')[0];
+const check=await fetch(origin+'/api/admin/session',{headers:{Cookie:cookieHeader},redirect:'manual'});
+assert.equal(check.status,303);
+assert.equal(new URL(check.headers.get('location'),origin).pathname,'/admin');
+const authenticated=await fetch(origin+'/admin',{headers:{Cookie:cookieHeader},redirect:'manual'});
 assert.equal(authenticated.status,200,'Dashboard must load after sign-in');
 const anonymous=await fetch(origin+'/admin',{redirect:'manual'});
 assert.equal(anonymous.status,307);
-assert.equal(anonymous.headers.get('location'),'/admin/acceso');
-console.log('Public login form, session creation, authenticated dashboard and anonymous protection passed.');
+assert.equal(new URL(anonymous.headers.get('location'),origin).pathname,'/admin/acceso');
+const noCookie=await fetch(origin+'/api/admin/session',{redirect:'manual'});
+assert.equal(noCookie.status,303);
+assert.equal(new URL(noCookie.headers.get('location'),origin).searchParams.get('error'),'sesion');
+console.log('Stable login form, session issuance, verification and protected dashboard passed.');
