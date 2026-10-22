@@ -24,7 +24,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  if(!(file instanceof File))return json("Selecciona una fotografía.",400);
  if(file.size<100||file.size>MAX_IMAGE_BYTES)return json("La fotografía debe tener entre 100 bytes y 8 MB.",413);
  if(!["image/jpeg","image/png","image/webp"].includes(file.type))return json("Solo JPG, PNG y WebP.",415);
- // Count and position are reserved inside the same transaction to prevent over-quota writes.
+ // Every upload rechecks the quota in a serializable DB transaction.
  let output:Buffer;
  try{
   const input=Buffer.from(await file.arrayBuffer());
@@ -44,12 +44,13 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
    const photoCount=await tx.photo.count({where:{propertyId:id}});
    if(photoCount>=MAX_PHOTOS)throw Error("LIMIT");
    await tx.photo.create({data:{id:photoId,propertyId:id,url:"/api/media/"+photoId,alt:property.title,sortOrder:photoCount}});
-  });
+  },{isolationLevel:"Serializable",timeout:15000,maxWait:10000});
   return NextResponse.json({ok:true,id:photoId,url:"/api/media/"+photoId},{status:201,headers:{"Cache-Control":"no-store"}});
  }catch(error){
   try{await unlink(path);}catch{}
   if(error instanceof Error&&error.message==="LIMIT")return json("Máximo de 15 fotografías por inmueble.",409);
   if(error instanceof Error&&error.message==="MISSING")return json("Inmueble no encontrado.",404);
+  if(error&&typeof error==="object"&&"code" in error&&error.code==="P2034")return json("Otra fotografía se está procesando. Inténtalo nuevamente.",409);
   console.error("[property-media] upload",error instanceof Error?error.name:"unknown");
   return json("No se pudo guardar la fotografía.",500);
  }
