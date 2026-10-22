@@ -9,7 +9,7 @@ const builtins=["propiedades","nosotros","servicios","contacto"];
 export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const admin=await requireAdmin();
  const {slug}=await params;
- if(!["admin","editor"].includes(admin.role))return propertyRedirect("/admin/personalizar/paginas?error=permisos");
+ if(!admin.roles.some(r=>["admin","editor"].includes(r)))return propertyRedirect("/admin/personalizar/paginas?error=permisos");
  if(!validMutationOrigin(req))return propertyRedirect("/admin/personalizar/paginas?error=origen");
  const size=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(size)||size<1||size>22000)return propertyRedirect("/admin/personalizar/paginas?error=datos");
