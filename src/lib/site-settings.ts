@@ -46,6 +46,7 @@ export function parseSiteSettings(input:FormData):SiteSettings{
  const result={...DEFAULT_SITE_SETTINGS,featuredIds:[] as string[]};
  for(const key of Object.keys(constraints) as Array<keyof typeof constraints>){
   const value=input.get(key);
+  if(value===null&&["aboutMission","aboutVision","servicesHeading","servicesDescription","servicesSale","servicesRent","servicesAdvice"].includes(key))continue;
   if(typeof value!=="string"||value.length>constraints[key]+50)throw new SiteSettingsError("Revisa las longitudes de los textos.");
   const cleaned=value.trim().replace(/[\u0000-\u001F\u007F]/g," ");
   if(cleaned.length<2||cleaned.length>constraints[key])throw new SiteSettingsError("Los textos no deben quedar vacíos ni superar el límite.");
