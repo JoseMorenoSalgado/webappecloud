@@ -54,6 +54,8 @@ jobs:
           node-version: '22'
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
+      - name: Probar recuperación no destructiva
+        run: npm run test:recovery
       - name: Validar esquema Prisma
         run: |
           npx prisma validate --schema prisma/schema.prisma
@@ -97,6 +99,8 @@ jobs:
           echo 'Smoke tests exitosos'
         env:
           NODE_ENV: production
+      - name: Probar inicio de sesión real y dashboard
+        run: node scripts/check-admin-access.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
@@ -156,6 +160,21 @@ jobs:
           test ! -e "$INSTALL_PG_TMP/installer-token"
         env:
           NODE_ENV: production
+      - name: Recuperar conexión existente en ambos motores
+        run: |
+          set -euo pipefail
+          RECOVERY_MYSQL_TMP="$(mktemp -d)"
+          APP_CONFIG_DIR="$RECOVERY_MYSQL_TMP" RECOVERY_HOST=localhost npm run installation:restore
+          test -s "$RECOVERY_MYSQL_TMP/installation.json"
+          RECOVERY_PG_TMP="$(mktemp -d)"
+          DATABASE_URL=postgresql://pgci:pg_password_only@127.0.0.1:5432/webappecloud_pg_ci APP_CONFIG_DIR="$RECOVERY_PG_TMP" RECOVERY_HOST=localhost npm run installation:restore
+          test -s "$RECOVERY_PG_TMP/installation.json"
+      - name: Probar inicio de sesión real PostgreSQL
+        run: node scripts/check-admin-access.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Mostrar logs si falla
         if: failure()
         run: |

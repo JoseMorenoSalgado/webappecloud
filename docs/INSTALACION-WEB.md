@@ -45,7 +45,7 @@ La instalación se bloquea tras guardarse la configuración. **No se debe elimin
 
 ## Diagnóstico de versión de Dockploy (evitar cachés y contenedores obsoletos)
 
-Abrir `https://inmo.elearningcloud.org/api/live` y comparar el campo `release` con `2026-10-21-multidb-installer-r1`.
+Abrir `https://inmo.elearningcloud.org/api/live` y comparar el campo `release` con `2026-10-21-access-recovery-r2`.
 Si no aparece esta versión, Dockploy **no está ejecutando la imagen actual de main**.
 El dominio debe apuntar al contenedor correcto (puerto interno 3000); en Dockploy usar Deploy/Rebuild y comprobar el commit de main en los logs. No basta con seleccionar la rama ni con Reload.
 
@@ -58,3 +58,14 @@ Crea una base PostgreSQL **vacía e independiente** en un contenedor propio, por
 La imagen `docker-compose.yml` incluida crea **MariaDB como ejemplo por defecto**. Si deseas PostgreSQL, crea ese servicio desde Dockploy y no utilices el contenedor MariaDB de muestra. La configuración de ambas tecnologías no se mezcla; se elige el motor al instalar.
 
 Prisma utiliza `prisma/schema.prisma` para MySQL/MariaDB y `prisma/schema.postgres.prisma` para PostgreSQL. No se puede cambiar simplemente el protocolo de DATABASE_URL después de instalar sin migrar físicamente los datos.
+
+## Recuperar un sitio que vuelve a `/instalar`
+
+Si `/` redirige a `/instalar`, la aplicación no encuentra la conexión SQL. Esto no significa que se hayan borrado los datos. Si `/api/live` tampoco muestra `release`, el despliegue es anterior al diagnóstico de versiones: actualizar desde `main` y comprobar que el dominio llegue al contenedor correcto.
+
+1. Verifica el volumen persistente `/app/.runtime` en la aplicación **Dockerfile** de Dokploy. El volumen declarado en Compose no se aplica a una aplicación Dockerfile. Si existe un volumen anterior, vuelve a montarlo sin eliminarlo.
+2. Si falta `installation.json` pero la base ya contiene la instalación, configura `DATABASE_URL` con la conexión original y `RECOVERY_HOST` con el dominio original en el entorno privado del contenedor. No publiques esos valores ni los pases como argumentos del comando.
+3. Ejecuta dentro del contenedor actualizado `npm run installation:restore`. Verifica dominio, institución activa, administrador y tablas antes de guardar la conexión. No crea tablas, no cambia usuarios, no reinicia contraseñas y rechaza sobrescribir la configuración existente.
+4. Comprueba `/api/health`, la portada y `/admin/acceso` con el administrador original. Si falla la verificación, revisa la conexión y el dominio original; no reinstales sobre la base existente.
+
+Si es una instalación nueva sin datos, completa `/instalar` con una base vacía. El formulario de acceso redirige al asistente mientras no existe configuración SQL.

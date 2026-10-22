@@ -1,7 +1,10 @@
 import Link from "next/link";
+import {redirect} from "next/navigation";
+import {hasDatabaseConfig} from "@/lib/server-config";
 import {signIn} from "../actions";
 export const dynamic="force-dynamic";
 export default async function Access({searchParams}:{searchParams:Promise<{error?:string}>}){
+ if(!hasDatabaseConfig())redirect("/instalar");
  const q=await searchParams;return <main className="login-page"><form action={signIn} className="login-card">
   <div className="brand"><span className="brand-icon"><img src="/brand/nexus-icon.webp" alt=""/></span><span><strong>NEXUS</strong><small>REAL ESTATE</small></span></div>
   <h1>Acceso administrativo</h1><p>Ingresa tus credenciales para gestionar tu sitio web.</p>

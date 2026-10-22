@@ -14,7 +14,7 @@ export function storedInstallation():StoredInstallation|null{
  return data;
 }
 export function databaseUrl():string|undefined{
- return storedInstallation()?.databaseUrl||process.env.DATABASE_URL||undefined;
+ return storedInstallation()?.databaseUrl||process.env.DATABASE_URL?.trim()||undefined;
 }
 export function hasDatabaseConfig(){return Boolean(databaseUrl());}
 /**

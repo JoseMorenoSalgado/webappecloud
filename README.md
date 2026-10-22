@@ -61,4 +61,4 @@ Referencias de diseño: [docs/UX-BRIEF.md](docs/UX-BRIEF.md).
 
 ## Identificar el despliegue real
 
-`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-multidb-installer-r1`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.
+`GET /api/live` expone el campo no sensible `release` para saber si Dockploy realmente ejecuta la última imagen. La versión esperada es `2026-10-21-access-recovery-r2`. Si muestra otro valor, comprobar rama, commit, Clean Cache, Rebuild y asignación del dominio. Más detalles en `docs/INSTALACION-WEB.md`.
