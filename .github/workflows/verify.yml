@@ -113,6 +113,8 @@ jobs:
         run: node scripts/check-reports.mjs
       - name: Probar personalización pública, imágenes y separación multicliente
         run: node scripts/check-site-customization.mjs
+      - name: Verificar diseño público y páginas independientes
+        run: node scripts/check-public-pages.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
