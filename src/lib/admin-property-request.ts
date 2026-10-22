@@ -1,6 +1,7 @@
 import "server-only";
 import {NextRequest,NextResponse} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {canEditProperties,canManageUsers} from "@/lib/roles";
 export function propertyRedirect(path:string){
  return new NextResponse(null,{status:303,headers:{"Location":path,"Cache-Control":"no-store"}});
 }
@@ -16,5 +17,5 @@ export function propertyErrorPath(code:string,id?:string){
 }
 export async function propertyEditor(){
  const admin=await requireAdmin();
- return {tenantId:admin.tenantId,canEdit:admin.role==="admin"||admin.role==="editor",canDelete:admin.role==="admin"};
+ return {tenantId:admin.tenantId,canEdit:admin.roles.some(canEditProperties),canDelete:admin.roles.some(canManageUsers)};
 }
