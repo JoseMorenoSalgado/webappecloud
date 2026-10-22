@@ -6,7 +6,7 @@ export function TrafficChart({data}:{data:MetricDay[]}){
   <AreaChart data={data} margin={{left:-24,right:8,top:7,bottom:0}}>
    <defs><linearGradient id="redfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#cf202b" stopOpacity={.17}/><stop offset="100%" stopColor="#cf202b" stopOpacity={0}/></linearGradient></defs>
    <CartesianGrid strokeDasharray="3 3" stroke="#eceff3" vertical={false}/>
-   <XAxis dataKey="day" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
+   <XAxis dataKey="day" minTickGap={22} interval="preserveStartEnd" tick={{fontSize:11}} axisLine={false} tickLine={false}/>
    <YAxis allowDecimals={false} tick={{fontSize:11}} axisLine={false} tickLine={false}/>
    <Tooltip/><Legend iconType="circle" wrapperStyle={{fontSize:12}}/>
    <Area name="Visitas" dataKey="visitas" type="monotone" stroke="#cf202b" fill="url(#redfill)" strokeWidth={2.4}/>
