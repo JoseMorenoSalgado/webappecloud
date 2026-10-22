@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ArrowLeft,ExternalLink,Save,Building2} from "lucide-react";
-import {requireAdmin} from "@/lib/auth";
+import {requireRole} from "@/lib/auth";
 import {getCustomPage,textBlocks} from "@/lib/site-pages";
 import {getSiteSettings} from "@/lib/site-settings";
 import {prisma} from "@/lib/prisma";
@@ -52,7 +52,7 @@ const sections:Record<Builtin,{title:string;description:string;path:string;field
 const isBuiltin=(s:string):s is Builtin=>Object.prototype.hasOwnProperty.call(sections,s);
 const canEditRole=(r:string)=>r==="admin"||r==="editor";
 export default async function EditSitePage({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{saved?:string;created?:string;error?:string}>}){
- const admin=await requireAdmin();
+ const admin=await requireRole(["admin","editor"]);
  const {slug}=await params,q=await searchParams;
  const canEdit=canEditRole(admin.role);
  if(isBuiltin(slug)){
