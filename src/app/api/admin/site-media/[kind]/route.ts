@@ -11,7 +11,7 @@ export const runtime="nodejs";
 function error(message:string,status:number){return NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});}
 export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string}>}){
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return error("No autorizado.",403);
+ if(!admin.roles.some(r=>["admin","editor"].includes(r)))return error("No autorizado.",403);
  if(!validMutationOrigin(req))return error("Origen no autorizado.",403);
  const {kind}=await params;
  if(!isSiteAssetKind(kind))return error("Tipo de imagen inválido.",404);
@@ -51,7 +51,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string
 }
 export async function DELETE(req:NextRequest,{params}:{params:Promise<{kind:string}>}){
  const admin=await requireAdmin();
- if(!["admin","editor"].includes(admin.role))return error("No autorizado.",403);
+ if(!admin.roles.some(r=>["admin","editor"].includes(r)))return error("No autorizado.",403);
  if(!validMutationOrigin(req))return error("Origen no autorizado.",403);
  const {kind}=await params;
  if(!isSiteAssetKind(kind))return error("Imagen no encontrada.",404);
