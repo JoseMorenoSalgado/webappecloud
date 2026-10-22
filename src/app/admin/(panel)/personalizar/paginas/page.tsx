@@ -1,36 +1,67 @@
 import Link from "next/link";
-import {ArrowLeft,ArrowUpRight,FileText,Plus} from "lucide-react";
+import {ArrowUpRight,FileText,ListTree,Palette,Plus,Search,ExternalLink} from "lucide-react";
 import {requireAdmin} from "@/lib/auth";
-import {getPageDefinitions} from "@/lib/site-pages";
+import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
-const anchor:Record<string,string>={home:"inicio",nosotros:"nosotros",servicios:"servicios",contacto:"contacto",propiedades:"propiedades"};
-export default async function PagesAdmin({searchParams}:{searchParams:Promise<{saved?:string;error?:string}>}){
+type Query={saved?:string;error?:string;estado?:string;buscar?:string};
+export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
- const pages=await getPageDefinitions(admin.tenantId);
+ const [pages,menu]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteMenu(admin.tenantId)]);
  const canEdit=["admin","editor"].includes(admin.role);
+ const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
+ const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
+ const results=pages.filter(p=>(status==="todas"||(status==="publicadas"?p.published:!p.published))&&
+  (!search||[p.title,p.href,p.summary].join(" ").toLocaleLowerCase("es").includes(search)));
+ const published=pages.filter(p=>p.published).length;
+ const tabs=[{id:"todas",label:"Todas",total:pages.length},{id:"publicadas",label:"Publicadas",total:published},{id:"borradores",label:"Borradores",total:pages.length-published}];
  return <>
-  <div className="admin-heading"><div><Link href="/admin/personalizar" className="inline-link"><ArrowLeft size={16}/> Personalizar</Link>
-   <h1>Páginas del sitio</h1><p>Administra el contenido y la publicación de las páginas, como en un gestor de contenidos.</p></div>
-   {canEdit&&<Link href="/admin/personalizar/paginas/nueva" className="btn btn-red"><Plus size={17}/> Nueva página</Link>}</div>
-  {q.saved&&<p className="property-success" role="status">Estado de publicación actualizado.</p>}
-  {q.error&&<p className="admin-error" role="alert">No se pudo completar la actualización.</p>}
-  <section className="admin-panel site-pages-panel"><div className="site-section-heading"><FileText size={21}/><div>
-   <h2>Todas las páginas</h2><p>Las páginas publicadas tienen una URL accesible. Las que estén en borrador no aparecen en el sitio.</p></div></div>
-   <div className="site-pages-list">{pages.map(page=><article className="site-page-row" key={page.id}>
-    <div><strong>{page.title}</strong><span>{page.href}</span>
-     <small className={page.published?"site-page-published":"site-page-draft"}>{page.published?"Publicada":"Borrador"}</small></div>
-    <div className="site-page-row-actions">
-     <Link href={page.builtIn?"/admin/personalizar/contenido#"+(anchor[page.slug]||"inicio"):
-      "/admin/personalizar/paginas/"+page.slug} className="btn wizard-back">Editar</Link>
-     {page.published&&<Link href={page.href} target="_blank" className="site-visit-link" aria-label={"Abrir "+page.title}><ArrowUpRight size={18}/></Link>}
-     {canEdit&&page.id!=="home"&&<form method="post" action={"/api/admin/site-pages/"+encodeURIComponent(page.slug)}>
-      <input type="hidden" name="intent" value="status"/>
-      {!page.published&&<input type="hidden" name="published" value="on"/>}
-      <button className="btn site-page-toggle" type="submit">{page.published?"Pasar a borrador":"Publicar"}</button>
-     </form>}
-    </div>
-   </article>)}</div>
+  <div className="admin-heading cms-heading"><div><h1>Páginas</h1>
+   <p>Gestiona las páginas de tu sitio web: edita el contenido, publica o guarda borradores.</p></div>
+   {canEdit&&<Link href="/admin/personalizar/paginas/nueva" className="btn btn-red"><Plus size={17}/> Nueva página</Link>}
+  </div>
+  <nav aria-label="Herramientas de personalización" className="cms-toolbar">
+   <Link href="/admin/personalizar/paginas" className="cms-toolbar-current"><FileText size={17}/> Páginas</Link>
+   <Link href="/admin/personalizar/menu"><ListTree size={17}/> Menú principal</Link>
+   <Link href="/admin/personalizar/identidad"><Palette size={17}/> Identidad visual</Link>
+   <Link href="/" target="_blank" className="cms-toolbar-visit">Ver sitio <ExternalLink size={16}/></Link>
+  </nav>
+  {q.saved&&<p className="property-success" role="status">Estado de publicación actualizado correctamente.</p>}
+  {q.error&&<p className="admin-error" role="alert">No se pudieron actualizar los datos. Comprueba los permisos.</p>}
+  <section className="admin-panel cms-list-panel">
+   <div className="cms-list-controls">
+    <div className="cms-status-tabs">{tabs.map(t=><Link href={"/admin/personalizar/paginas?estado="+t.id} key={t.id}
+      aria-current={status===t.id?"page":undefined}>{t.label} <span>{t.total}</span></Link>)}</div>
+    <form action="/admin/personalizar/paginas" method="get" className="cms-search">
+     <input type="hidden" name="estado" value={status}/>
+     <label><Search size={16}/><input aria-label="Buscar páginas" name="buscar" defaultValue={q.buscar||""} placeholder="Buscar páginas" maxLength={90}/></label>
+     <button type="submit" className="btn wizard-back">Buscar</button>
+    </form>
+   </div>
+   <div className="cms-table-wrap">
+    <table className="cms-page-table">
+     <thead><tr><th>Página</th><th>Estado</th><th>Dirección</th><th>Acciones</th></tr></thead>
+     <tbody>{results.map(p=><tr key={p.id}>
+      <td className="cms-page-name"><Link href={"/admin/personalizar/paginas/"+p.slug}>{p.title}</Link>
+       <small>{p.builtIn?"Página del sitio":"Página personalizada"}</small></td>
+      <td><span className={"cms-status "+(p.published?"cms-status-live":"cms-status-draft")}>{p.published?"Publicada":"Borrador"}</span></td>
+      <td><code>{p.href}</code></td>
+      <td><div className="cms-row-actions">
+       <Link href={"/admin/personalizar/paginas/"+p.slug}>Editar</Link>
+       {p.published&&<Link href={p.href} target="_blank" aria-label={"Ver "+p.title}>Ver <ArrowUpRight size={14}/></Link>}
+       {canEdit&&p.id!=="home"&&<form method="post" action={"/api/admin/site-pages/"+encodeURIComponent(p.slug)}>
+        <input type="hidden" name="intent" value="status"/>
+        {!p.published&&<input type="hidden" name="published" value="on"/>}
+        <button type="submit">{p.published?"Borrador":"Publicar"}</button>
+       </form>}
+      </div></td>
+     </tr>)}</tbody>
+    </table>
+    {!results.length&&<div className="cms-no-results"><strong>No se encontraron páginas.</strong>
+     <p>Modifica la búsqueda o crea una página nueva.</p></div>}
+   </div>
+   <div className="cms-list-footer"><span>{results.length} páginas mostradas · {menu.length} enlaces en el menú</span>
+    {canEdit&&<Link href="/admin/personalizar/paginas/nueva"><Plus size={14}/> Añadir nueva página</Link>}</div>
   </section>
-  <p className="property-help">La página de Inicio no se puede despublicar. Las páginas propias pueden editarse desde aquí; el contenido de Nosotros, Servicios y Contacto se modifica en el editor de contenido.</p>
+  <p className="property-help">La portada siempre está publicada. Cada página se edita individualmente; el menú y la identidad visual se gestionan por separado.</p>
  </>;
 }
