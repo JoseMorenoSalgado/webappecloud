@@ -5,7 +5,8 @@ import {type Prisma} from "@prisma/client";
 export type SiteSettings={
  heroEyebrow:string;heroHeading:string;heroHighlight:string;heroDescription:string;heroButton:string;
  sectionEyebrow:string;sectionHeading:string;sectionHighlight:string;sectionDescription:string;
- aboutTitle:string;aboutDescription:string;
+ aboutTitle:string;aboutDescription:string;aboutMission:string;aboutVision:string;
+ servicesHeading:string;servicesDescription:string;servicesSale:string;servicesRent:string;servicesAdvice:string;
  contactHeading:string;contactHighlight:string;contactDescription:string;
  featuredIds:string[];
 };
@@ -21,6 +22,13 @@ export const DEFAULT_SITE_SETTINGS:SiteSettings={
  sectionDescription:"Encuentra casas, apartamentos y oportunidades de inversión.",
  aboutTitle:"Asesoría personalizada",
  aboutDescription:"Te acompañamos para encontrar una propiedad que se ajuste a tus objetivos.",
+ aboutMission:"Facilitar decisiones inmobiliarias con información clara, atención cercana y acompañamiento durante cada etapa de compra, venta o alquiler.",
+ aboutVision:"Ser una inmobiliaria reconocida por escuchar a las personas, presentar opciones adecuadas y construir relaciones de confianza a largo plazo.",
+ servicesHeading:"Soluciones inmobiliarias para cada etapa.",
+ servicesDescription:"Explora las opciones y recibe orientación para encontrar, ofrecer o alquilar una propiedad.",
+ servicesSale:"Te ayudamos a explorar viviendas y oportunidades de inversión, con información detallada y atención personalizada.",
+ servicesRent:"Encuentra alternativas para alquilar según tu presupuesto, ubicación y necesidades.",
+ servicesAdvice:"Cuéntanos qué necesitas y te orientaremos sobre opciones y características de las propiedades disponibles.",
  contactHeading:"Hablemos de tu",
  contactHighlight:"próxima propiedad.",
  contactDescription:"Déjanos tus datos y cuéntanos qué necesitas. Nos pondremos en contacto contigo.",
@@ -29,7 +37,8 @@ export const DEFAULT_SITE_SETTINGS:SiteSettings={
 const constraints:{[K in Exclude<keyof SiteSettings,"featuredIds">]:number}={
  heroEyebrow:90,heroHeading:95,heroHighlight:90,heroDescription:480,heroButton:45,
  sectionEyebrow:90,sectionHeading:95,sectionHighlight:90,sectionDescription:320,
- aboutTitle:100,aboutDescription:360,
+ aboutTitle:100,aboutDescription:360,aboutMission:400,aboutVision:400,
+ servicesHeading:110,servicesDescription:380,servicesSale:400,servicesRent:400,servicesAdvice:400,
  contactHeading:100,contactHighlight:100,contactDescription:360
 };
 export class SiteSettingsError extends Error{}
