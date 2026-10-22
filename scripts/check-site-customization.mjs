@@ -76,7 +76,7 @@ assert.match(await (await fetch(origin+"/")).text(),/Casa personalizada de prueb
 const img=await sharp({create:{width:640,height:360,channels:3,background:"#a2a2a2"}}).png().toBuffer();
 for(const kind of ["hero","logo"]){
  const invalid=new FormData();
- invalid.append("image",new Blob([Buffer.from("%PDF-1.4")],{type:"application/pdf"}),"malicious.pdf");
+ invalid.append("image",new Blob([Buffer.alloc(140,65)],{type:"application/pdf"}),"malicious.pdf");
  const denied=await fetch(origin+"/api/admin/site-media/"+kind,{method:"POST",headers:auth,body:invalid});
  assert.equal(denied.status,415);
  const upload=new FormData();
