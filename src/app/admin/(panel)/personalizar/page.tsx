@@ -75,6 +75,8 @@ export default async function SiteEditor({searchParams}:{searchParams:Promise<St
     <div className="site-form-fields">
      <label>Título de presentación<input name="aboutTitle" maxLength={100} defaultValue={settings.aboutTitle} required/></label>
      <label>Descripción de presentación<textarea name="aboutDescription" maxLength={360} defaultValue={settings.aboutDescription} required/></label>
+     <label>Nuestra misión<textarea name="aboutMission" maxLength={400} defaultValue={settings.aboutMission} required/></label>
+     <label>Nuestra visión<textarea name="aboutVision" maxLength={400} defaultValue={settings.aboutVision} required/></label>
      <div className="admin-form-grid">
       <label>Título de contacto<input name="contactHeading" maxLength={100} defaultValue={settings.contactHeading} required/></label>
       <label>Frase destacada de contacto<input name="contactHighlight" maxLength={100} defaultValue={settings.contactHighlight} required/></label>
@@ -88,6 +90,16 @@ export default async function SiteEditor({searchParams}:{searchParams:Promise<St
       <label>Lema institucional<input name="tagline" maxLength={110} defaultValue={tenant.tagline||""}/></label>
       <label>Color principal<input name="primaryColor" type="color" defaultValue={tenant.primaryColor||"#CB2027"}/></label>
      </div>
+    </div>
+   </section>
+   <section className="admin-panel">
+    <div className="site-section-heading"><Building2 size={21}/><div><h2>Página de servicios</h2><p>Mensajes que aparecerán en la nueva sección independiente «Servicios».</p></div></div>
+    <div className="site-form-fields">
+     <label>Título de servicios<input name="servicesHeading" maxLength={110} defaultValue={settings.servicesHeading} required/></label>
+     <label>Introducción<textarea name="servicesDescription" maxLength={380} defaultValue={settings.servicesDescription} required/></label>
+     <label>Servicio de compra y venta<textarea name="servicesSale" maxLength={400} defaultValue={settings.servicesSale} required/></label>
+     <label>Servicio de alquiler<textarea name="servicesRent" maxLength={400} defaultValue={settings.servicesRent} required/></label>
+     <label>Asesoría inmobiliaria<textarea name="servicesAdvice" maxLength={400} defaultValue={settings.servicesAdvice} required/></label>
     </div>
    </section>
    <div className="site-save-bar"><p>Los textos y datos de contacto se publican al guardar. Las fotografías se guardan al subirlas.</p>
