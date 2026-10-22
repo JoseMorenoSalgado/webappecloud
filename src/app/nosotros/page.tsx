@@ -2,11 +2,13 @@ import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowRight,ArrowUpRight,HeartHandshake,ShieldCheck,Compass,CheckCircle2,MessageCircle} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Nosotros",description:"Conoce nuestra filosofía, misión y forma de acompañarte en tus decisiones inmobiliarias."};
 export default async function About(){
  const {tenant,demo,settings,properties}=await getPublicContext();
+ await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">

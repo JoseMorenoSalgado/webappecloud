@@ -46,6 +46,6 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
   </div>
   {error&&<p role="alert" className="admin-error">{error}</p>}
   {notice&&<p role="status" className="property-success">{notice}</p>}
-  <p className="property-help">{kind==="hero"?"Recomendado: foto horizontal de 1920 × 1080 px.":"Recomendado: logo PNG con fondo transparente."} Máximo 8 MB. Se convierte a WebP y se eliminan metadatos.</p>
+  <p className="property-help">{kind==="hero"?"Recomendado: foto horizontal de 1920 × 1080 px.":"Recomendado: logo PNG con fondo transparente."} Máximo 8 MB. WebP de alta calidad: banner hasta 2560 px y logotipo sin pérdida de detalle. Se eliminan metadatos.</p>
  </div>;
 }

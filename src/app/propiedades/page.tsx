@@ -2,6 +2,7 @@ import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,Search,SlidersHorizontal,Building2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
@@ -11,6 +12,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const raw=await searchParams;
  const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90)};
  const {tenant,properties,demo}=await getPublicContext();
+ await assertPagePublished(tenant.id,demo,"propiedades");
  const matching=properties.filter(p=>
   (!f.operacion||p.operation===f.operacion)&&
   (!f.tipo||p.type.toLowerCase()===f.tipo.toLowerCase())&&

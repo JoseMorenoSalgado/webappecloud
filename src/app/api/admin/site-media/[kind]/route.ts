@@ -28,10 +28,15 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{kind:string
   const pipeline=sharp(data,{limitInputPixels:40_000_000,failOn:"error"});
   const metadata=await pipeline.metadata();
   if(!["jpeg","png","webp"].includes(metadata.format||""))return error("Contenido de imagen no válido.",415);
-  output=await pipeline.rotate().resize({
-   width:kind==="hero"?2000:720,height:kind==="hero"?1200:720,
-   fit:"inside",withoutEnlargement:true
-  }).webp({quality:kind==="hero"?85:92,effort:4}).toBuffer();
+  // Keep a detailed master: hero up to 2560px; logos stay sharp with lossless WebP.
+  // Sharp strips EXIF/metadata after auto-rotation to avoid personal data exposure.
+  const pixels=pipeline.rotate().resize({
+   width:kind==="hero"?2560:960,height:kind==="hero"?1600:960,
+   fit:"inside",withoutEnlargement:true,kernel:"lanczos3"
+  });
+  output=await pixels.webp(kind==="logo"
+   ?{lossless:true,effort:6}
+   :{quality:94,effort:6,smartSubsample:true}).toBuffer();
  }catch{return error("Imagen dañada o dimensiones demasiado grandes.",422);}
  const target=siteAssetPath(admin.tenantId,kind),temp=target+"."+randomUUID()+".tmp";
  try{

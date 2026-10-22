@@ -27,7 +27,7 @@ const login=await fetch(origin+"/api/admin/session",{method:"POST",headers:{Orig
 assert.equal(login.status,303,"Cannot login as test administrator");
 const cookie=login.headers.getSetCookie().find(s=>s.startsWith("webappecloud_session="))?.split(";")[0];
 assert.ok(cookie);
-const editor=await fetch(origin+"/admin/personalizar",{headers:{Cookie:cookie}});
+const editor=await fetch(origin+"/admin/personalizar/contenido",{headers:{Cookie:cookie}});
 assert.equal(editor.status,200);
 const adminHtml=await editor.text();
 for(const field of ["aboutMission","aboutVision","servicesHeading","servicesDescription","servicesSale","servicesRent","servicesAdvice"]){
