@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import {usePathname} from "next/navigation";
-import {LayoutDashboard,Building2,UsersRound,Settings,Tags,UserRound,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown} from "lucide-react";
+import {LayoutDashboard,Building2,UsersRound,Settings,Tags,UserRound,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck} from "lucide-react";
 
 const available=[
  {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
@@ -16,14 +16,16 @@ const upcoming=[
  {label:"Calendario",Icon:CalendarDays},
 ];
 
-export function AdminNav(){
+export function AdminNav({role="admin"}:{role?:string}){
  const pathname=usePathname();
+ const visible=available.filter(x=>role==="admin"|| (role==="editor"&&x.href!=="/admin/reportes")||(role==="agente"&&["/admin","/admin/leads"].includes(x.href))||(role==="lector"&&x.href==="/admin"));
  const items=()=> <>
-  {available.map(x=>{
+  {visible.map(x=>{
    const selected=x.href==="/admin"?pathname===x.href:pathname===x.href||pathname.startsWith(x.href+"/");
    return <Link href={x.href} key={x.href} aria-current={selected?"page":undefined} className={selected?"active":undefined}><x.Icon size={18} aria-hidden="true"/>{x.label}</Link>;
   })}
-  {upcoming.map(x=><span key={x.label} title="Disponible próximamente" aria-disabled="true"><x.Icon size={18} aria-hidden="true"/>{x.label}</span>)}
+  {role==="admin"&&<Link href="/admin/usuarios" className={pathname.startsWith("/admin/usuarios")?"active":undefined}><ShieldCheck size={18}/>Usuarios y roles</Link>}
+  {role==="admin"&&upcoming.map(x=><span key={x.label} title="Disponible próximamente" aria-disabled="true"><x.Icon size={18} aria-hidden="true"/>{x.label}</span>)}
  </>;
  return <>
   <nav className="admin-nav admin-nav-desktop" aria-label="Menú de administración">{items()}</nav>
