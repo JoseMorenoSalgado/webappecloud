@@ -1,7 +1,10 @@
 import Link from "next/link";
-import {ArrowUpRight,BarChart3,CalendarClock,Download,Eye,House,MessageCircle,Users,CheckCircle2} from "lucide-react";
+import {ArrowUpRight,BarChart3,CalendarClock,Download,Eye,House,MessageCircle,Users,CheckCircle2,HandCoins} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {generateReport,resolveReportPeriod} from "@/lib/real-estate-reports";
+import {prisma} from "@/lib/prisma";
+import {closingTableReady} from "@/lib/closing-schema";
+import {closingMoney} from "@/lib/closing-utils";
 export const dynamic="force-dynamic";
 const number=(value:number)=>new Intl.NumberFormat("es-NI").format(value);
 function Metric({label,value,hint,Icon}:{label:string;value:string;hint:string;Icon:typeof Eye}){
@@ -13,6 +16,13 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
  const {periodo}=await searchParams;
  const days=resolveReportPeriod(periodo);
  const report=await generateReport(admin.tenantId,days);
+ const closingsReady=await closingTableReady();
+ const from=new Date();from.setUTCHours(0,0,0,0);from.setUTCDate(from.getUTCDate()-(days-1));
+ const realClosings=closingsReady?await prisma.commercialClosing.groupBy({by:["kind"],
+  where:{tenantId:admin.tenantId,status:"confirmado",closedAt:{gte:from,lte:new Date()}},
+  _count:{_all:true},_sum:{amount:true,commissionAmount:true}}):[];
+ const realAmount=realClosings.reduce((v,c)=>v+Number(c._sum.amount||0),0);
+ const realCommission=realClosings.reduce((v,c)=>v+Number(c._sum.commissionAmount||0),0);
  const maxStage=Math.max(1,...report.statuses.map(s=>s.count));
  const maxSource=Math.max(1,...report.sources.map(s=>s.count));
  return <>
@@ -37,6 +47,15 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
    <Metric label="Contactos registrados" value={number(report.otherLeads)} hint="WhatsApp, teléfono o atención directa" Icon={BarChart3}/>
    <Metric label="Cierres registrados" value={report.crmActive?number(report.closed):"—"} hint={report.crmActive?"Estado actual de consultas del período":"Activa CRM para registrar cierres"} Icon={CheckCircle2}/>
   </div>
+  <section className="admin-panel report-real-closings">
+   <div className="heading-row"><div><h2>Ventas y alquileres registrados</h2><p>Operaciones declaradas en el módulo de cierres; excluye anulaciones y estados del CRM.</p></div><Link href="/admin/cierres" className="inline-link">Ver operaciones <ArrowUpRight size={15}/></Link></div>
+   {closingsReady?<div className="closing-metrics">
+    <div><House size={19}/><span>Ventas</span><strong>{number(realClosings.find(c=>c.kind==="venta")?._count._all||0)}</strong></div>
+    <div><CheckCircle2 size={19}/><span>Alquileres</span><strong>{number(realClosings.find(c=>c.kind==="alquiler")?._count._all||0)}</strong></div>
+    <div><BarChart3 size={19}/><span>Importe USD</span><strong>{closingMoney(realAmount)}</strong></div>
+    <div><HandCoins size={19}/><span>Comisiones USD</span><strong>{closingMoney(realCommission)}</strong></div>
+   </div>:<p className="property-help">El registro de operaciones reales aún no está activado. <Link href="/admin/cierres">Activar cierres →</Link></p>}
+  </section>
   <div className="report-ratios">
    <div><span>Consultas web / vistas de inmuebles</span>
     <strong>{report.formRatio===null?"—":report.formRatio.toLocaleString("es-NI")+"%"}</strong>
