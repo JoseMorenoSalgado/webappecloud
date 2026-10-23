@@ -19,6 +19,7 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
   <div className="admin-heading">
    <div><h1>Reportes comerciales</h1><p>Consultas, interés por inmueble y seguimiento de prospectos.</p></div>
    <div className="agent-report-header-links"><Link className="btn wizard-back" href={"/admin/reportes/agentes?periodo="+days}>Rendimiento por agente</Link>
+   <Link className="btn wizard-back" href="/admin/cierres">Operaciones confirmadas</Link>
    <Link className="btn wizard-back" href={"/api/admin/reportes/csv?periodo="+days}><Download size={17}/> Exportar CSV</Link></div>
   </div>
   <div className="reports-toolbar">
@@ -86,6 +87,6 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
    </table></div>:<p className="admin-empty">Todavía no hay propiedades registradas.</p>}
    {report.properties.length>15&&<p className="property-help">Se muestran los 15 primeros inmuebles. Exporta el CSV para consultar todos los registros.</p>}
   </section>
-  <p className="reports-disclaimer">Las vistas y los clics son eventos técnicos registrados en la web, no personas únicas. No se puede afirmar que un clic de WhatsApp produjo una venta. Los registros de cierre corresponden a las etapas seleccionadas manualmente en el CRM.</p>
+  <p className="reports-disclaimer">Los cierres del CRM no prueban ventas efectivas: las ventas y alquileres con importe se registran por separado en Operaciones confirmadas. Las vistas y los clics son eventos técnicos registrados en la web, no personas únicas. No se puede afirmar que un clic de WhatsApp produjo una venta. Los registros de cierre corresponden a las etapas seleccionadas manualmente en el CRM.</p>
  </>;
 }
