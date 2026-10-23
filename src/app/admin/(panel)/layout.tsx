@@ -10,7 +10,7 @@ export default async function DashboardLayout({children}:{children:React.ReactNo
  const isNexus=admin.tenantName.toLowerCase()==="nexus real estate";
  let alertCount=0;
  if(admin.roles.some(role=>["admin","editor","agente"].includes(role))){
-  try{alertCount=(await commercialNotifications(admin,{limit:1})).total;}
+  try{alertCount=(await commercialNotifications(admin,{limit:0})).total;}
   catch(error){
    console.warn("[notifications] counters unavailable",error instanceof Error?error.name:"unknown");
   }
