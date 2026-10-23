@@ -82,10 +82,10 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
     </div>
     <div className="agenda-event-controls">
      {e.status==="pendiente"?<>
-      <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="status" value="realizada"/><button type="submit" className="btn wizard-back"><CheckCircle2 size={15}/> Realizada</button></form>
-      <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="status" value="cancelada"/><button type="submit" className="btn wizard-back">Cancelar actividad</button></form>
-     </>:<form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="status" value="pendiente"/><button type="submit" className="btn wizard-back">Reabrir</button></form>}
-     <details className="agenda-reprogram"><summary>Reprogramar</summary><AgendaRescheduleForm id={e.id} startsAt={e.startsAt.toISOString()} durationMinutes={e.durationMinutes}/></details>
+      <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="realizada"/><button type="submit" className="btn wizard-back"><CheckCircle2 size={15}/> Realizada</button></form>
+      <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="cancelada"/><button type="submit" className="btn wizard-back">Cancelar actividad</button></form>
+     </>:<form method="post" action={"/api/admin/agenda/"+encodeURIComponent(e.id)}><input type="hidden" name="intent" value="status"/><input type="hidden" name="mes" value={month}/><input type="hidden" name="status" value="pendiente"/><button type="submit" className="btn wizard-back">Reabrir</button></form>}
+     <details className="agenda-reprogram"><summary>Reprogramar</summary><AgendaRescheduleForm id={e.id} startsAt={e.startsAt.toISOString()} durationMinutes={e.durationMinutes} month={month}/></details>
     </div>
    </article>)}</div>:<div className="admin-empty"><CalendarDays size={28}/><p>No hay actividades registradas con estos filtros.</p></div>}
    {events.length===300&&<p className="property-help">Se muestran las primeras 300 actividades. Acota los filtros para consultar otras fechas.</p>}
