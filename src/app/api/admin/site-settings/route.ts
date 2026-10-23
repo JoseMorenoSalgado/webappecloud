@@ -14,7 +14,8 @@ export async function POST(req:NextRequest){
  try{
   const form=await req.formData();
   const settings=parseSiteSettings(form);
-  const brand=validateBrandContact(form);
+  const company=await prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{name:true}});
+  const brand=validateBrandContact(form,{legacyLocalCode:company.name.trim().toLowerCase()==="nexus real estate"?"505":undefined});
   if(settings.featuredIds.length){
    const valid=await prisma.property.count({where:{tenantId:admin.tenantId,id:{in:settings.featuredIds},published:true}});
    if(valid!==settings.featuredIds.length)return propertyRedirect("/admin/personalizar?error=destacadas");

@@ -82,6 +82,8 @@ jobs:
         run: node scripts/check-style-modules.mjs
       - name: Separar plantilla inmobiliaria y marca multicliente
         run: node scripts/check-template-boundaries.mjs
+      - name: Verificar datos predeterminados por plantilla
+        run: node scripts/check-template-defaults.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js

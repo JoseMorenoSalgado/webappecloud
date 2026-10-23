@@ -1,6 +1,7 @@
 import "server-only";
 import {prisma} from "@/lib/prisma";
 import {type Prisma} from "@prisma/client";
+import {NEXUS_SITE_DEFAULTS} from "@/lib/templates/nexus-defaults";
 
 export type SiteSettings={
  heroEyebrow:string;heroHeading:string;heroHighlight:string;heroDescription:string;heroButton:string;
@@ -10,30 +11,7 @@ export type SiteSettings={
  contactHeading:string;contactHighlight:string;contactDescription:string;
  featuredIds:string[];
 };
-export const DEFAULT_SITE_SETTINGS:SiteSettings={
- heroEyebrow:"NEXUS REAL ESTATE · NICARAGUA",
- heroHeading:"El lugar perfecto para",
- heroHighlight:"tu próximo capítulo.",
- heroDescription:"Conectamos personas con espacios que inspiran. Descubre propiedades seleccionadas para vivir, invertir y construir tu futuro.",
- heroButton:"Explorar propiedades",
- sectionEyebrow:"NUESTRAS PROPIEDADES",
- sectionHeading:"Espacios para cada",
- sectionHighlight:"historia.",
- sectionDescription:"Encuentra casas, apartamentos y oportunidades de inversión.",
- aboutTitle:"Asesoría personalizada",
- aboutDescription:"Te acompañamos para encontrar una propiedad que se ajuste a tus objetivos.",
- aboutMission:"Facilitar decisiones inmobiliarias con información clara, atención cercana y acompañamiento durante cada etapa de compra, venta o alquiler.",
- aboutVision:"Ser una inmobiliaria reconocida por escuchar a las personas, presentar opciones adecuadas y construir relaciones de confianza a largo plazo.",
- servicesHeading:"Soluciones inmobiliarias para cada etapa.",
- servicesDescription:"Explora las opciones y recibe orientación para encontrar, ofrecer o alquilar una propiedad.",
- servicesSale:"Te ayudamos a explorar viviendas y oportunidades de inversión, con información detallada y atención personalizada.",
- servicesRent:"Encuentra alternativas para alquilar según tu presupuesto, ubicación y necesidades.",
- servicesAdvice:"Cuéntanos qué necesitas y te orientaremos sobre opciones y características de las propiedades disponibles.",
- contactHeading:"Hablemos de tu",
- contactHighlight:"próxima propiedad.",
- contactDescription:"Déjanos tus datos y cuéntanos qué necesitas. Nos pondremos en contacto contigo.",
- featuredIds:[]
-};
+export const DEFAULT_SITE_SETTINGS:SiteSettings=NEXUS_SITE_DEFAULTS;
 const constraints:{[K in Exclude<keyof SiteSettings,"featuredIds">]:number}={
  heroEyebrow:90,heroHeading:95,heroHighlight:90,heroDescription:480,heroButton:45,
  sectionEyebrow:90,sectionHeading:95,sectionHighlight:90,sectionDescription:320,
@@ -83,7 +61,7 @@ export async function saveSiteSettings(tenantId:string,settings:SiteSettings){
   update:{blocks:settings as unknown as Prisma.InputJsonValue,published:true,title:"Inicio"}
  });
 }
-export function validateBrandContact(form:FormData){
+export function validateBrandContact(form:FormData,options:{legacyLocalCode?:string}={}){
  const val=(key:string,max:number)=>{
   const v=form.get(key);
   if(typeof v!=="string"||v.length>max+25)throw new SiteSettingsError("Datos de contacto demasiado extensos.");
@@ -100,7 +78,9 @@ export function validateBrandContact(form:FormData){
  const channels=[1,3,5].map(i=>parseInt(color.slice(i,i+2),16)/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
  const luminance=0.2126*channels[0]+0.7152*channels[1]+0.0722*channels[2];
  if(luminance>0.18)throw new SiteSettingsError("Selecciona un color más oscuro para mantener contraste con texto blanco.");
- // An eight-digit number is an ordinary local Nicaragua number for the first client.
- const normalized=digits.length===8?"505"+digits:digits;
+ // The original NEXUS installation accepted eight-digit local numbers.
+ // For every other organization, require an explicit international code.
+ if(digits.length===8&&!options.legacyLocalCode)throw new SiteSettingsError("Incluye el indicativo internacional de WhatsApp.");
+ const normalized=digits.length===8&&options.legacyLocalCode?options.legacyLocalCode+digits:digits;
  return {tagline,contactEmail:email||null,whatsapp:normalized||null,primaryColor:color.toUpperCase()};
 }

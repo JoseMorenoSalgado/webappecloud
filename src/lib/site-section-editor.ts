@@ -48,13 +48,14 @@ export async function savePartialSiteSection(tenantId:string,section:Exclude<Sit
 }
 export async function savePartialBrand(tenantId:string,section:"contacto"|"identidad",form:FormData){
  const existing=await prisma.tenant.findUniqueOrThrow({where:{id:tenantId},
-  select:{tagline:true,contactEmail:true,whatsapp:true,primaryColor:true}});
+  select:{name:true,tagline:true,contactEmail:true,whatsapp:true,primaryColor:true}});
  const completed=new FormData();
  completed.set("tagline",section==="identidad"?(String(form.get("tagline")??"")):existing.tagline||"");
  completed.set("primaryColor",section==="identidad"?(String(form.get("primaryColor")??"")):existing.primaryColor);
  completed.set("contactEmail",section==="contacto"?(String(form.get("contactEmail")??"")):existing.contactEmail||"");
  completed.set("whatsapp",section==="contacto"?(String(form.get("whatsapp")??"")):existing.whatsapp||"");
- const brand=validateBrandContact(completed);
+ const legacyLocalCode=existing.name.trim().toLowerCase()==="nexus real estate"?"505":undefined;
+ const brand=validateBrandContact(completed,{legacyLocalCode});
  if(section==="identidad")await prisma.tenant.update({where:{id:tenantId},
   data:{tagline:brand.tagline,primaryColor:brand.primaryColor}});
  else await prisma.tenant.update({where:{id:tenantId},
