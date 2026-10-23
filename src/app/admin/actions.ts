@@ -35,7 +35,7 @@ export async function signOut(){
 const slugify=(s:string)=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,85);
 export async function createProperty(form:FormData){
  const admin=await requireAdmin();
- if(admin.role!=="admin"&&admin.role!=="editor")throw Error("No autorizado");
+ if(!admin.roles.some(role=>role==="admin"||role==="editor"))throw Error("No autorizado");
  const title=String(form.get("title")||"").trim().slice(0,140);
  const refCode=String(form.get("refCode")||"").trim().toUpperCase().replace(/[^A-Z0-9-]/g,"").slice(0,40);
  const city=String(form.get("city")||"").trim().slice(0,80);
