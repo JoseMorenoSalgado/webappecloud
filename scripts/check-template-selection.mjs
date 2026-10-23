@@ -37,6 +37,15 @@ const offerings=await get("/servicios");assert.equal(offerings.status,200);
 assert.match(await offerings.text(),/PROGRAMAS EDUCATIVOS/);
 const contact=await get("/contacto");assert.equal(contact.status,200);
 assert.match(await contact.text(),/Enviar consulta/);
+const submission=await fetch(origin+"/api/leads",{
+ method:"POST",headers:{Origin:origin,"Content-Type":"application/json"},
+ body:JSON.stringify({name:"Solicitante educación",phone:"88887777",email:"educacion@example.com",message:"Quiero conocer los programas",consent:"yes"})
+});
+assert.equal(submission.status,201,"Generic contact form must register inquiry");
+assert.equal((await submission.json()).ok,true);
+const inquiries=await get("/admin/leads",true);assert.equal(inquiries.status,200);
+assert.match(await inquiries.text(),/Solicitante educación/,"Inquiries must appear in tenant CRM");
+
 assert.equal((await get("/propiedades")).status,404);
 const dash=await get("/admin",true);assert.equal(dash.status,200);
 const adminHtml=await dash.text();
