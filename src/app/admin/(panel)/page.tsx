@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {PropertyCard} from "@/components/property-card";
 import {commercialSchemaState} from "@/lib/commercial-schema";
+import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
 import {TrafficChart,TypesChart,type MetricDay} from "@/components/dashboard-charts";
 import {type PublicProperty} from "@/lib/demo";
 export const dynamic="force-dynamic";
@@ -41,6 +42,7 @@ export default async function Dashboard(){
  const latest:PublicProperty[]=props.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler":"venta",price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(x=>x.url)}));
  const cards=[{label:"Propiedades",value:total,Icon:House},{label:"Nuevos leads",value:leadsCount,Icon:Users},{label:"Visitas al sitio",value:viewCount,Icon:Eye},{label:"Clics en WhatsApp",value:waCount,Icon:MessageCircle}];
  return <><div className="admin-heading"><div><h1>Panel de administración</h1><p>Resumen general de tu plataforma inmobiliaria · últimos 30 días</p></div><Link href="/admin/propiedades/nueva" className="btn btn-red">+ Nueva propiedad</Link></div>
+  <CommercialAlertsPreview user={admin}/>
   <div className="metric-grid">{cards.map(x=><div className="metric-card" key={x.label}><div className="metric-label"><span>{x.label}</span><span className="metric-icon"><x.Icon size={20}/></span></div><strong>{x.value.toLocaleString("es")}</strong><small>{x.label==="Propiedades"?"Total registradas":"Eventos registrados en 30 días"}</small></div>)}</div>
   <div className="admin-panels"><div className="admin-panel"><h2>Visitas y contactos</h2><TrafficChart data={chart}/></div><div className="admin-panel"><h2>Tipos de propiedades</h2><TypesChart data={types.map(x=>({name:x.type,value:x._count._all}))}/></div></div>
   <div className="admin-panels"><div className="admin-panel"><div className="heading-row"><h2>Propiedades recientes</h2><Link className="inline-link" href="/admin/propiedades">Ver todas <ArrowUpRight size={16}/></Link></div>{latest.length?<div className="admin-property-list">{latest.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:<p className="admin-empty">No has registrado propiedades todavía.</p>}</div>
@@ -58,6 +60,7 @@ async function AgentDashboard({user}:{user:{tenantId:string;userId:string;name:s
  ]);
  return <>
   <div className="admin-heading"><div><h1>Mi espacio comercial</h1><p>Hola, {user.name}. Gestiona las consultas vinculadas a tus inmuebles.</p></div><Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(user.userId)} className="btn wizard-back">Mi perfil</Link><Link className="btn wizard-back" href="/admin/reportes/agentes">Mi rendimiento</Link></div>
+  <CommercialAlertsPreview user={user}/>
   <div className="metric-grid">
    <div className="metric-card"><div className="metric-label">Propiedades asignadas <House size={19}/></div><strong>{totalProps}</strong><small>Inmuebles a tu cargo</small></div>
    <div className="metric-card"><div className="metric-label">Prospectos asociados <Users size={19}/></div><strong>{totalLeads}</strong><small>Consultas sobre tus propiedades</small></div>
