@@ -1,4 +1,7 @@
 import type {Metadata} from "next";
+import {headers} from "next/headers";
+import {hasDatabaseConfig} from "@/lib/server-config";
+import {tenantFromHost} from "@/lib/tenant";
 import "./globals.css";
 import "./styles/legacy/admin-shell.css";
 import "./styles/legacy/real-estate-admin.css";
@@ -13,5 +16,18 @@ import "./home-tidy.css";
 import "./inventory-tidy.css";
 import "./editor-tidy.css";
 import "./cms-tidy.css";
-export const metadata:Metadata={title:{default:"Nexus Real Estate | Pensando en tu futuro",template:"%s | Nexus Real Estate"},description:"Propiedades en venta y alquiler. Descubre tu futuro con Nexus Real Estate."};
+
+/** Metadata is always resolved by the current site host, never from NEXUS constants. */
+export async function generateMetadata():Promise<Metadata>{
+ const fallback:Metadata={title:{default:"WebAppECloud",template:"%s | WebAppECloud"},description:"Sitio web administrado con WebAppECloud."};
+ if(!hasDatabaseConfig())return fallback;
+ const host=(await headers()).get("host")||"";
+ const match=await tenantFromHost(host);
+ if(!match)return fallback;
+ const name=match.tenant.name;
+ return {
+  title:{default:name+(match.tenant.tagline?" | "+match.tenant.tagline:""),template:"%s | "+name},
+  description:match.tenant.tagline||"Sitio oficial de "+name+"."
+ };
+}
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="es"><body>{children}</body></html>;}
