@@ -29,7 +29,7 @@ export async function renderCommercialPdf(input:CommercialPdfInput):Promise<Uint
  const bold=await pdf.embedFont(StandardFonts.HelveticaBold);
  const sum=input.columns.reduce((a,c)=>a+c.width,0);
  if(Math.abs(sum-contentWidth)>1)throw Error("PDF_COLUMNS_WIDTH_MISMATCH");
- let page:PDFPage,y:number,pageNumber=0;
+ let page!:PDFPage,y!:number,pageNumber=0;
  const newPage=()=>{
   page=pdf.addPage(A4);pageNumber++;
   page.drawRectangle({x:0,y:A4[1]-12,width:A4[0],height:12,color:red});
