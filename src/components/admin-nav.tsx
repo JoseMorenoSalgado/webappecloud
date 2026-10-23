@@ -29,6 +29,7 @@ export function AdminNav({role="admin",roles=[role],userId}:{role?:string;roles?
    return <Link href={x.href} onClick={close} key={x.href} aria-current={selected?"page":undefined} className={selected?"active":undefined}><x.Icon size={18} aria-hidden="true"/>{x.label}</Link>;
   })}
   {has("admin")&&<Link href="/admin/clientes-agentes" onClick={close} className={pathname.startsWith("/admin/clientes-agentes")?"active":undefined}><ShieldCheck size={18}/>Clientes y agentes</Link>}
+  {has("agente")&&!has("admin")&&!has("editor")&&<Link href="/admin/reportes/agentes" onClick={close} className={pathname.startsWith("/admin/reportes/agentes")?"active":undefined}><ChartNoAxesCombined size={18}/>Mi rendimiento</Link>}
   {has("agente")&&userId&&<Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId)} onClick={close} className={pathname==="/admin/clientes-agentes/agentes/"+userId?"active":undefined}><UserRound size={18}/>Mi perfil comercial</Link>}
   {has("admin")&&<><span aria-disabled="true" title="Próximamente"><Tags size={18}/>Categorías</span><span aria-disabled="true" title="Próximamente"><CalendarDays size={18}/>Calendario</span></>}
  </>;
