@@ -10,11 +10,15 @@ import {PublicFrame} from "@/components/public-frame";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
-type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string};
+type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
  const raw=await searchParams;
  const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
- const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
+ const parsePrice=(value:unknown)=>typeof value==="string"&&/^\d{1,10}(?:\.\d{1,2})?$/.test(value)&&Number(value)<=9999999999?Number(value):undefined;
+ const rawMin=parsePrice(raw.precioMin),rawMax=parsePrice(raw.precioMax);
+ const precioMin=rawMin!==undefined&&rawMax!==undefined&&rawMin>rawMax?undefined:rawMin;
+ const precioMax=rawMin!==undefined&&rawMax!==undefined&&rawMin>rawMax?undefined:rawMax;
+ const f={precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
@@ -22,6 +26,8 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();
  const normalizedType=f.tipo.toLocaleLowerCase();
  const demoMatching=demoProperties.filter(p=>
+  (precioMin===undefined||p.price>=precioMin)&&
+  (precioMax===undefined||p.price<=precioMax)&&
   (!f.operacion||p.operation===f.operacion)&&
   (!f.tipo||p.type.toLowerCase()===normalizedType)&&
   (!f.ubicacion||`${p.city} ${p.neighborhood}`.toLowerCase().includes(normalizedLocation))
@@ -30,7 +36,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const demoPage=Math.min(requestedPage,demoTotalPages);
  const result=demo?{properties:demoMatching.slice((demoPage-1)*CATALOG_PAGE_SIZE,demoPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:demoPage,totalPages:demoTotalPages}:await getCatalogPage(tenant.id,f,requestedPage);
  const matching=result.properties;
- const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v)),pagina:String(page)}).toString();
+ const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v!==undefined&&v!=="").map(([k,v])=>[k,String(v)])),pagina:String(page)}).toString();
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido">
   <section className="nexus-inner-hero nexus-catalog-hero"><div className="container">
    <span className="nexus-section-kicker nexus-kicker-light">CATÁLOGO INMOBILIARIO</span>
@@ -46,6 +52,8 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
      <label>Operación<select name="operacion" defaultValue={f.operacion}><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></label>
      <label>Tipo de propiedad<select name="tipo" defaultValue={f.tipo}><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
      <label>Ciudad o zona<input name="ubicacion" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
+     <label>Precio mínimo<input type="number" name="precioMin" min="0" max="9999999999" step="0.01" defaultValue={precioMin??""} placeholder="Desde"/></label>
+     <label>Precio máximo<input type="number" name="precioMax" min="0" max="9999999999" step="0.01" defaultValue={precioMax??""} placeholder="Hasta"/></label>
      <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
      <button className="btn btn-red" type="submit"><Search size={17}/> Aplicar filtros</button>
     </div>
