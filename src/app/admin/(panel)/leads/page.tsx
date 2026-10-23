@@ -2,6 +2,7 @@ import Link from "next/link";
 import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus,X} from "lucide-react";
 import {Prisma} from "@prisma/client";
 import {requireRole} from "@/lib/auth";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
@@ -13,13 +14,14 @@ type Search={q?:string;status?:string;agent?:string;page?:string;activated?:stri
 const date=(x:Date)=>x.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function AdminLeads({searchParams}:{searchParams:Promise<Search>}){
  const admin=await requireRole(["admin","editor","agente"]);
+ const realEstate=(await getSiteTemplate(admin.tenantId)).key==="real-estate";
  const params=await searchParams;
  const ready=await crmTablesReady();
  const q=(params.q||"").trim().slice(0,80);
  const status=params.status&&isCrmStatus(params.status)?params.status:"";
  const page=Math.min(10000,Math.max(1,Number.parseInt(params.page||"1",10)||1));
  if(!ready)return <>
-  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Administra las consultas de tus posibles compradores y arrendatarios.</p></div></div>
+  <div className="admin-heading"><div><h1>{realEstate?"Prospectos y seguimiento":"Consultas y seguimiento"}</h1><p>{realEstate?"Administra las consultas de tus posibles compradores y arrendatarios.":"Gestiona las solicitudes de información recibidas en tu sitio."}</p></div></div>
   <section className="admin-panel crm-activation">
    <ClipboardList size={35} color="#b81e29"/>
    <h2>Activar seguimiento comercial</h2>
@@ -54,17 +56,17 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  const hasFilters=Boolean(q||status||agentFilter);
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
-  <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
+  <div className="admin-heading"><div><h1>{realEstate?"Prospectos y seguimiento":"Consultas y seguimiento"}</h1><p>{realEstate?"Organiza las consultas inmobiliarias, programa contactos y registra gestiones.":"Organiza las solicitudes de visitantes, programa respuestas y registra gestiones."}</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/>{realEstate?"Registrar prospecto":"Nueva consulta"}</Link>}</div>
   {params.activated&&<p className="property-success" role="status">CRM activado correctamente. Los contactos anteriores se conservaron.</p>}
   {params.error&&<p className="admin-error" role="alert">No se pudo completar la operación. Comprueba los permisos del usuario.</p>}
-  {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente tus prospectos asignados, aunque una propiedad cambie de responsable.</p>}
+  {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente las consultas que tienes asignadas.</p>}
   <div className="crm-overview crm-overview-compact">
    <div><span>Total de consultas</span><strong>{allCount}</strong><Users size={20}/></div>
-   <div><span>Nuevos prospectos</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
+   <div><span>{realEstate?"Nuevos prospectos":"Nuevas consultas"}</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
    <div><span>En seguimiento</span><strong>{(counts.get("contactado")||0)+(counts.get("visita")||0)+(counts.get("negociacion")||0)}</strong><CalendarClock size={20}/></div>
   </div>
   <form className={"crm-filters crm-filters-compact"+(managesAllLeads(admin)?" crm-filters-with-agents":"")} method="get" action="/admin/leads">
-   <label><span>Buscar contacto</span><div className="property-search"><Search size={17}/><input name="q" placeholder="Nombre, teléfono, correo o referencia" defaultValue={q} maxLength={80}/></div></label>
+   <label><span>Buscar contacto</span><div className="property-search"><Search size={17}/><input name="q" placeholder={realEstate?"Nombre, teléfono, correo o referencia":"Nombre, teléfono o correo"} defaultValue={q} maxLength={80}/></div></label>
    <label><span>Estado comercial</span><select name="status" defaultValue={status}>
     <option value="">Todos los estados</option>
     {CRM_STATUSES.map(s=><option value={s.value} key={s.value}>{s.label}</option>)}
@@ -92,7 +94,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
       </div>
      </div>
     </article>;
-   })}</div>:<div className="property-empty"><Users size={34}/><h2>{hasFilters?"No hay coincidencias":"Sin prospectos todavía"}</h2><p>{hasFilters?"Prueba con otros filtros.":"Las consultas enviadas desde tu sitio web aparecerán aquí."}</p>{hasFilters&&<Link href="/admin/leads" className="btn wizard-back">Limpiar filtros</Link>}</div>}
+   })}</div>:<div className="property-empty"><Users size={34}/><h2>{hasFilters?"No hay coincidencias":realEstate?"Sin prospectos todavía":"Sin consultas todavía"}</h2><p>{hasFilters?"Prueba con otros filtros.":"Las consultas enviadas desde tu sitio web aparecerán aquí."}</p>{hasFilters&&<Link href="/admin/leads" className="btn wizard-back">Limpiar filtros</Link>}</div>}
   {total>12&&<nav className="property-pagination" aria-label="Paginación de prospectos">
    {page>1&&<Link href={paramsFor(page-1)} className="btn wizard-back">← Anterior</Link>}
    {page*12<total&&<Link href={paramsFor(page+1)} className="btn wizard-back">Siguiente →</Link>}

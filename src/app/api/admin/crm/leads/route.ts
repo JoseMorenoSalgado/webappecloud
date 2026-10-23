@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {managesAllLeads} from "@/lib/agent-scope";
@@ -34,7 +35,8 @@ export async function POST(req:NextRequest){
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return back("correo");
   if(!["whatsapp","telefono","manual"].includes(source))return back("datos");
   if(form.get("consent")!=="on")return back("consentimiento");
-  if(!managesAllLeads(admin)&&!propertyId)return back("propiedad");
+  const realEstate=(await getSiteTemplate(admin.tenantId)).key==="real-estate";
+  if(realEstate&&!managesAllLeads(admin)&&!propertyId)return back("propiedad");
   let assignedAgentId:string|null=null;
   if(propertyId){
    const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true,tenantId:true}}}});

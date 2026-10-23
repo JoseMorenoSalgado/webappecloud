@@ -6,6 +6,7 @@ Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQ
 
 ## Funcionalidades implementadas
 
+- **Plantillas por empresa:** Inmobiliaria, Educación y Servicios; selector en Personalizar sitio → Plantilla, edición de contenido y menús por sector. [Guía](docs/PLANTILLAS-SECTORIALES.md).\n
 - Web pública NEXUS: home, buscador, catálogo por operación/tipo/ubicación y ficha individual.
 - Ficha técnica PDF generada por servidor.
 - Formulario de contactos con consentimiento; registro separado por empresa (tenant).
@@ -22,7 +23,7 @@ Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, l
 ### Aún pendiente
 
 - Logo vectorial/fotografías definitivas de NEXUS en el repositorio.
-- Editor de páginas, carga de medios y administración de plantillas/módulos para otros sectores.
+- Ampliar el editor de plantillas con vista previa sin publicar, más bloques y nuevos sectores (las plantillas Educación y Servicios ya están disponibles).
 - Gestión de categorías, agentes, CRM, edición/eliminación de propiedades, informes avanzados.
 - Rate limiting del formulario público, anti-bots, auditoría de seguridad y protección de datos (login incluye control básico de intentos).
 - Migraciones iniciales versionadas, backups, pruebas de seguridad y despliegue validado en cPanel.
