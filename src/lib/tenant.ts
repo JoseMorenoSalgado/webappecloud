@@ -9,7 +9,7 @@ import {hasSiteAsset} from "@/lib/site-assets";
 export const canonicalHost = normalizeSiteHost;
 export async function tenantFromHost(hostname:string){
  if(!hasDatabaseConfig())return null;
- const d=await prisma.domain.findUnique({where:{hostname:canonicalHost(hostname)},include:{tenant:true}});
+ const d=await prisma.domain.findUnique({where:{hostname:canonicalHost(hostname)},select:{tenantId:true,tenant:{select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}}}});
  return d?.tenant.active?d:null;
 }
 export async function getPublicContext():Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
