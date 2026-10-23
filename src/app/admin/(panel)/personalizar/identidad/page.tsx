@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 export default async function SiteIdentity({searchParams}:{searchParams:Promise<{saved?:string;error?:string}>}){
  const admin=await requireRole(["admin","editor"]);
  const [tenant,hasHero,hasLogo,q]=await Promise.all([
-  prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,primaryColor:true}}),
+  prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{tagline:true,primaryColor:true,whatsapp:true,contactEmail:true}}),
   hasSiteAsset(admin.tenantId,"hero"),hasSiteAsset(admin.tenantId,"logo"),searchParams
  ]);
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
@@ -33,6 +33,8 @@ export default async function SiteIdentity({searchParams}:{searchParams:Promise<
     <input type="hidden" name="section" value="identidad"/>
     <label>Lema institucional<input name="tagline" maxLength={110} defaultValue={tenant.tagline||""} placeholder="Pensando en tu futuro"/></label>
     <label>Color corporativo<input name="primaryColor" type="color" defaultValue={tenant.primaryColor||"#CB2027"}/></label>
+    <label>WhatsApp con indicativo internacional<input name="whatsapp" type="tel" maxLength={35} defaultValue={tenant.whatsapp||""} placeholder="Ej.: +50588887777"/></label>
+    <label>Correo de contacto<input name="contactEmail" type="email" maxLength={180} defaultValue={tenant.contactEmail||""} placeholder="contacto@organizacion.com"/></label>
     <div className="site-page-form-actions"><button className="btn btn-red" type="submit"><Save size={17}/> Guardar identidad visual</button></div>
    </form>:<p className="admin-error">No tienes permisos para modificar la identidad.</p>}
   </section>

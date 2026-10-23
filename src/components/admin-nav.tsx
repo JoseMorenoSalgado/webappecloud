@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import {signOut} from "@/app/admin/actions";
+import {type SiteTemplateKey} from "@/lib/site-template-registry";
 import {useEffect,useRef,useState} from "react";
 import {usePathname} from "next/navigation";
 import {
@@ -25,8 +26,8 @@ const secondary:Entry[]=[
 function selectedLink(pathname:string,href:string){
  return href==="/admin"?pathname===href:pathname===href||pathname.startsWith(href+"/");
 }
-export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0}:{
- role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number
+export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate"}:{
+ role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey
 }){
  const pathname=usePathname();
  const [mobileOpen,setMobileOpen]=useState(false);
@@ -62,16 +63,20 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  const has=(r:string)=>roles.includes(r);
  const manager=has("admin")||has("editor");
  const agent=has("agente");
- const main=primary.filter(x=>manager||(agent&&["/admin","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin");
- const tools=secondary.filter(x=>manager||(agent&&x.href==="/admin/notificaciones"));
+ const realEstate=templateKey==="real-estate";
+ const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
+  &&(realEstate||["/admin","/admin/leads"].includes(x.href)))
+  .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
+ const tools=secondary.filter(x=>(manager||(agent&&x.href==="/admin/notificaciones"))
+  &&(realEstate||x.href==="/admin/personalizar"));
  if(has("admin")){
-  tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
+  if(realEstate)tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
  }
- if(agent&&!manager){
+ if(realEstate&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
  }
- if(agent&&userId){
+ if(realEstate&&agent&&userId){
   tools.push({href:"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId),label:"Mi perfil comercial",Icon:UserRound});
  }
  const notifyBadge=(x:Entry)=>x.href==="/admin/notificaciones"&&notificationCount>0

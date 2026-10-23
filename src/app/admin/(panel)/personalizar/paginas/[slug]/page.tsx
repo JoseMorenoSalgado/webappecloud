@@ -1,5 +1,6 @@
 import Link from "next/link";
-import {notFound} from "next/navigation";
+import {notFound,redirect} from "next/navigation";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {ArrowLeft,ExternalLink,Save,Building2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {getCustomPage,textBlocks} from "@/lib/site-pages";
@@ -56,6 +57,11 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
  const {slug}=await params,q=await searchParams;
  const canEdit=canEditRole(admin.role);
  if(isBuiltin(slug)){
+  const template=await getSiteTemplate(admin.tenantId);
+  if(template.key!=="real-estate"){
+   if(slug==="propiedades")notFound();
+   redirect("/admin/personalizar/plantilla");
+  }
   const [settings,properties,tenant,pageDefinitions]=await Promise.all([
    getSiteSettings(admin.tenantId),
    slug==="propiedades"?prisma.property.findMany({where:{tenantId:admin.tenantId,published:true},

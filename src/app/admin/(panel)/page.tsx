@@ -7,10 +7,14 @@ import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
 import {DashboardAnalytics} from "@/components/dashboard-analytics";
 import {firstDayOfSeries,makeDailyMetrics} from "@/lib/dashboard-metrics";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {OrganizationDashboard} from "@/components/templates/organization-dashboard";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
  const admin=await requireAdmin(),tenantId=admin.tenantId;
+ const template=await getSiteTemplate(tenantId);
+ if(template.key!=="real-estate")return <OrganizationDashboard user={admin}/>;
  let compatible=false;
  try{
   const state=await commercialSchemaState();
