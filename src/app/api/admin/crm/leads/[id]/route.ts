@@ -3,6 +3,7 @@ import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {leadWhere} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 import {isCrmStatus} from "@/lib/crm-status";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 
@@ -31,6 +32,38 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  let form:FormData;
  try{form=await req.formData();}catch{return back(id,"error=datos");}
  const intent=form.get("intent");
+ if(intent==="assign"){
+  if(!admin.roles.some(r=>r==="admin"||r==="editor"))return back(id,"error=permisos");
+  const raw=form.get("assignedAgentId");
+  if(typeof raw!=="string"||raw.length>100)return back(id,"error=agente");
+  const next=raw?await prisma.adminUser.findFirst({
+   where:{id:raw,tenantId:admin.tenantId,active:true},
+   select:{id:true,name:true,role:true}
+  }):null;
+  if(raw&&(!next||!parseRoles(next.role).includes("agente")))return back(id,"error=agente");
+  try{
+   const changed=await prisma.$transaction(async tx=>{
+    const current=await tx.lead.findFirst({where:{id,tenantId:admin.tenantId},
+     select:{id:true,assignedAgentId:true,assignedAgent:{select:{name:true}}}});
+    if(!current)return false;
+    if(current.assignedAgentId===(next?.id||null))return true;
+    await tx.lead.update({where:{id},data:{assignedAgentId:next?.id||null}});
+    await tx.leadAssignmentHistory.create({data:{
+     tenantId:admin.tenantId,leadId:id,
+     fromAgentId:current.assignedAgentId,
+     fromAgentName:current.assignedAgent?.name||null,
+     toAgentId:next?.id||null,toAgentName:next?.name||null,
+     changedByName:admin.name.slice(0,120)
+    }});
+    return true;
+   },{isolationLevel:"Serializable"});
+   if(!changed)return propertyRedirect("/admin/leads?error=noexiste");
+   return back(id,"assigned=1");
+  }catch(error){
+   console.error("[crm] assignment failed",error instanceof Error?error.name:"unknown");
+   return back(id,"error=servidor");
+  }
+ }
  if(intent==="status"){
   const status=String(form.get("status")||"");
   if(!isCrmStatus(status))return back(id,"error=estado");
