@@ -46,7 +46,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
     const current=await tx.lead.findFirst({where:{id,tenantId:admin.tenantId},
      select:{id:true,assignedAgentId:true,assignedAgent:{select:{name:true}}}});
     if(!current)return false;
-    if(current.assignedAgentId===(next?.id||null))return true;
+    if(current.assignedAgentId===(next?.id||null))return "unchanged";
     await tx.lead.update({where:{id},data:{assignedAgentId:next?.id||null}});
     await tx.leadAssignmentHistory.create({data:{
      tenantId:admin.tenantId,leadId:id,
@@ -55,10 +55,10 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
      toAgentId:next?.id||null,toAgentName:next?.name||null,
      changedByName:admin.name.slice(0,120)
     }});
-    return true;
+    return "changed";
    },{isolationLevel:"Serializable"});
    if(!changed)return propertyRedirect("/admin/leads?error=noexiste");
-   return back(id,"assigned=1");
+   return back(id,changed==="unchanged"?"unchanged=1":"assigned=1");
   }catch(error){
    console.error("[crm] assignment failed",error instanceof Error?error.name:"unknown");
    return back(id,"error=servidor");
