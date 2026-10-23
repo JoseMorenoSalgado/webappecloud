@@ -43,8 +43,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
   <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source==="whatsapp"?"WhatsApp (registro manual)":lead.source==="telefono"?"Llamada telefónica":"Atención directa"}</p></div><Link className="btn wizard-back" href={"/admin/agenda?lead="+encodeURIComponent(id)}><CalendarPlus size={16}/> Programar actividad</Link></div>
   {(q.saved||q.noteSaved||q.created||q.assigned||q.unchanged)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.assigned?"Responsable actualizado e historial registrado.":q.unchanged?"El responsable no ha cambiado.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
-  {canRecordClosing&&<p className="crm-transaction-link"><Link className="btn wizard-back" href={"/admin/cierres?lead="+encodeURIComponent(id)}><HandCoins size={17}/> Registrar venta o alquiler</Link> <small>El cierre real se registra por separado del estado comercial.</small></p>}
-  <div className="crm-detail-grid">
+  <div className="crm-detail-grid crm-detail-simplified">
    <div className="crm-detail-primary">
     <section className="admin-panel crm-info-panel"><h2>Datos del prospecto</h2>
      <div className="crm-contact-data"><span><Phone size={17}/>{lead.phone}</span>
@@ -57,19 +56,24 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      </div>
      <p className="property-help">Abrir WhatsApp no equivale a confirmar que el cliente respondió. Registra el contacto realizado mediante el estado y una nota.</p>
     </section>
-    <section className="admin-panel crm-notes-panel"><h2><StickyNote size={19}/> Historial de notas</h2>
+    <section className="admin-panel crm-notes-panel">
+     <div className="editor-panel-heading"><StickyNote size={18} aria-hidden="true"/><h2>Registrar una gestión</h2></div>
      {canEdit&&<form method="post" action={url} className="crm-note-form"><input type="hidden" name="intent" value="note"/>
-      <label>Registrar gestión<textarea name="body" placeholder="Ej.: Llamé al cliente. Desea visitar la propiedad el viernes." minLength={3} maxLength={2000} required/></label>
+      <label>Nota de seguimiento<textarea name="body" placeholder="Ej.: Llamé al cliente. Desea visitar la propiedad el viernes." minLength={3} maxLength={2000} required/></label>
       <button className="btn btn-red" type="submit">Guardar nota</button>
      </form>}
-     <div className="crm-note-list">{lead.notes.length?lead.notes.map(n=><article className="crm-note" key={n.id}>
-      <div><strong>{n.authorName}</strong><time dateTime={n.createdAt.toISOString()}>{date(n.createdAt)}</time></div>
-      <p>{n.body}</p>
-     </article>):<p className="property-help">Todavía no hay notas de seguimiento.</p>}</div>
+     <details className="crm-secondary-disclosure crm-notes-history">
+      <summary><strong>Historial de notas ({lead.notes.length})</strong><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
+      <div className="crm-note-list">{lead.notes.length?lead.notes.map(n=><article className="crm-note" key={n.id}>
+       <div><strong>{n.authorName}</strong><time dateTime={n.createdAt.toISOString()}>{date(n.createdAt)}</time></div>
+       <p>{n.body}</p>
+      </article>):<p className="property-help">Todavía no hay notas de seguimiento.</p>}</div>
+     </details>
     </section>
    </div>
-   <aside className="admin-panel crm-followup-panel"><h2><CalendarClock size={19}/> Seguimiento</h2>
-    <p>Actualiza la etapa comercial y programa el próximo contacto.</p>
+   <aside className="admin-panel crm-followup-panel">
+    <div className="editor-panel-heading"><CalendarClock size={19} aria-hidden="true"/><h2>Próxima acción</h2></div>
+    <p className="crm-followup-intro">Actualiza el estado y define cuándo contactar nuevamente.</p>
     <p className="crm-owner-label"><strong>Responsable:</strong> {lead.assignedAgent?.name||"Sin agente asignado"}</p>
     {canEdit?<form method="post" action={url} className="crm-followup-form">
      <input type="hidden" name="intent" value="status"/>
@@ -79,25 +83,30 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      <label>Próximo contacto<input name="nextContactAt" type="date" defaultValue={lead.crm?.nextContactAt?.toISOString().slice(0,10)||""}/></label>
      <button className="btn btn-red" type="submit"><Save size={17}/> Guardar seguimiento</button>
     </form>:<div className="crm-contact-data"><strong>{crmStatusLabel(lead.crm?.status||"nuevo")}</strong>{lead.crm?.nextContactAt&&<span>Próximo contacto: {date(lead.crm.nextContactAt)}</span>}</div>}
-    {canManageProperty&&<div className="crm-agent-assignment">
-     <h3>Asignar responsable</h3>
-     <p className="property-help">Este agente conservará el prospecto aunque cambie el responsable de la propiedad.</p>
-     <form method="post" action={url}>
-      <input name="intent" type="hidden" value="assign"/>
-      <label>Agente comercial
-       <select name="assignedAgentId" defaultValue={lead.assignedAgentId||""}>
-        <option value="">Sin asignar</option>
-        {assignedUnavailable&&<option value={lead.assignedAgentId||""} disabled>Responsable anterior: {lead.assignedAgent?.name||"Cuenta no disponible"}</option>}
-        {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
-       </select>
-      </label>
-      <button className="btn wizard-back" type="submit">Guardar responsable</button>
-     </form>
-     <h3>Historial de asignaciones</h3>
-     {lead.assignmentHistory.length?<ol className="crm-assignment-history">
-      {lead.assignmentHistory.map(h=><li key={h.id}><strong>{h.fromAgentName||"Sin asignar"} → {h.toAgentName||"Sin asignar"}</strong><small>{stamped(h.createdAt)} · {h.changedByName}</small></li>)}
-     </ol>:<p className="property-help">No hay reasignaciones registradas.</p>}
-    </div>}
+    {canManageProperty&&<details className="crm-secondary-disclosure crm-agent-assignment">
+     <summary><strong>Responsable e historial</strong><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
+     <div className="crm-agent-assignment-content">
+      <p className="property-help">El agente asignado conserva el prospecto aunque cambie el responsable del inmueble.</p>
+      <form method="post" action={url}>
+       <input name="intent" type="hidden" value="assign"/>
+       <label>Agente comercial
+        <select name="assignedAgentId" defaultValue={lead.assignedAgentId||""}>
+         <option value="">Sin asignar</option>
+         {assignedUnavailable&&<option value={lead.assignedAgentId||""} disabled>Responsable anterior: {lead.assignedAgent?.name||"Cuenta no disponible"}</option>}
+         {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+        </select>
+       </label>
+       <button className="btn wizard-back" type="submit">Guardar responsable</button>
+      </form>
+      <details className="crm-secondary-disclosure crm-assignment-history-section">
+       <summary><strong>Historial de asignaciones ({lead.assignmentHistory.length})</strong><span className="editor-chevron" aria-hidden="true">⌄</span></summary>
+       {lead.assignmentHistory.length?<ol className="crm-assignment-history">
+        {lead.assignmentHistory.map(h=><li key={h.id}><strong>{h.fromAgentName||"Sin asignar"} → {h.toAgentName||"Sin asignar"}</strong><small>{stamped(h.createdAt)} · {h.changedByName}</small></li>)}
+       </ol>:<p className="property-help">No hay reasignaciones registradas.</p>}
+      </details>
+     </div>
+    </details>}
+    {canRecordClosing&&<Link className="crm-secondary-link" href={"/admin/cierres?lead="+encodeURIComponent(id)}><HandCoins size={16}/> Registrar venta o alquiler</Link>}
     {lead.property&&canManageProperty&&<Link className="inline-link" href={"/admin/propiedades/"+encodeURIComponent(lead.propertyId||"")+"/editar"}>Gestionar inmueble →</Link>}
     {lead.property?.published&&!canManageProperty&&<Link className="inline-link" target="_blank" href={"/propiedades/"+encodeURIComponent(lead.property.slug)}>Ver propiedad pública →</Link>}
    </aside>
