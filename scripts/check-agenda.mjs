@@ -79,7 +79,7 @@ assert.match(afterMove,/Pendiente/);
 const invalid=new FormData();
 invalid.set("leadId","not-in-tenant");invalid.set("type","llamada");
 invalid.set("title","Entrada incorrecta");invalid.set("startsAt",startsAt);
-invalid.set("durationMinutes","30");
+invalid.set("durationMinutes","30");invalid.set("location","");invalid.set("notes","");
 const denied=await post("/api/admin/agenda",invalid,admin);
 assert.match(denied.headers.get("location")||"",/error=prospecto/);
 
