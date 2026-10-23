@@ -101,7 +101,7 @@ export default async function Closings({searchParams}:{searchParams:Promise<{per
     <div className="closing-record-details"><span>Agente: <strong>{record.agentName}</strong></span>
      <span>Importe: <strong>{closingMoney(record.amount.toString())}</strong></span>
      <span>Comisión: <strong>{closingMoney(record.commissionAmount.toString())}</strong></span>
-     <Link href={"/admin/leads/"+encodeURIComponent(record.leadId)} className="inline-link">Ver prospecto <ArrowUpRight size={14}/></Link>
+     {all&&<Link href={"/admin/leads/"+encodeURIComponent(record.leadId)} className="inline-link">Ver prospecto <ArrowUpRight size={14}/></Link>}
     </div>
     {record.status==="anulado"&&<p className="property-help">Anulado: {record.voidReason||"Sin motivo"}{record.voidedAt?" · "+dt(record.voidedAt):""}</p>}
     {admin&&record.status==="confirmado"&&<details className="closing-void-form"><summary><Undo2 size={14}/> Anular registro</summary>
