@@ -5,7 +5,9 @@ import {ArrowLeft,ArrowRight,Eye,ImagePlus,Star,Trash2} from "lucide-react";
 
 type Photo={id:string;url:string;alt:string};
 type Resolution={width:number;height:number};
-export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;photos:Photo[]}){
+type MediaSizes={full:number|null;card:number|null;thumb:number|null};
+const formatSize=(size:number|null)=>size===null?"No disponible":size>=1048576?(size/1048576).toFixed(2)+" MB":(size/1024).toFixed(0)+" KB";
+export function PropertyPhotoUploader({propertyId,photos,sizes}:{propertyId:string;photos:Photo[];sizes:Record<string,MediaSizes>}){
  const router=useRouter(),inputRef=useRef<HTMLInputElement>(null);
  const [items,setItems]=useState(photos);
  const [dimensions,setDimensions]=useState<Record<string,Resolution>>({});
@@ -76,6 +78,7 @@ export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;pho
    <span className="property-photo-count">{items.length} de 15 fotografías</span>
   </div>
   <p className="property-photo-instructions">La primera fotografía es la portada. Arrastra las imágenes para ordenarlas, utiliza las flechas o selecciona «Hacer portada».</p>
+  <p className="property-help">Los tamaños indican espacio ocupado por las versiones WebP guardadas; no incluyen el archivo JPG/PNG original, que no se conserva. Las imágenes antiguas pueden no tener miniaturas todavía.</p>
   {lowQuality>0&&<p className="property-help" role="status">Aviso: {lowQuality} fotografía(s) tienen menos de 700 píxeles en su lado más corto. Para una presentación nítida, considera subir versiones de mayor resolución.</p>}
   {error&&<p className="admin-error" role="alert">{error}</p>}
   {success&&<p className="property-success" role="status">{success}</p>}
@@ -87,6 +90,7 @@ export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;pho
      {i===0&&<span className="property-cover-label"><Star size={12}/> Portada</span>}
     </div>
     <div className="property-photo-resolution">{dimensions[photo.id]?<span>{dimensions[photo.id].width} × {dimensions[photo.id].height} px{Math.min(dimensions[photo.id].width,dimensions[photo.id].height)<700?" · Calidad limitada para ampliación":" · Apta para visualización"}</span>:<span>Comprobando resolución…</span>}</div>
+    {sizes[photo.id]&&<div className="property-photo-resolution">Archivo WebP: {formatSize(sizes[photo.id].full)} · Tarjeta: {formatSize(sizes[photo.id].card)} · Miniatura: {formatSize(sizes[photo.id].thumb)}</div>}
     <div className="property-photo-sort-actions">
      <button type="button" title="Ver imagen completa" aria-label={"Ampliar fotografía "+(i+1)} onClick={()=>setPreview(photo)}><Eye size={16}/></button>
      <button type="button" title="Mover a la izquierda" aria-label={"Mover fotografía "+(i+1)+" a la izquierda"} onClick={()=>move(i,i-1)} disabled={busy||i===0}><ArrowLeft size={16}/></button>
