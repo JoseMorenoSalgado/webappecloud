@@ -17,6 +17,7 @@ import "./inventory-tidy.css";
 import "./editor-tidy.css";
 import "./cms-tidy.css";
 import "./template-editor.css";
+import "./organization-site.css";
 
 /** Metadata is always resolved by the current site host, never from NEXUS constants. */
 export async function generateMetadata():Promise<Metadata>{
