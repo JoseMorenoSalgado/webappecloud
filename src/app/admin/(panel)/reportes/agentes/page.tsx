@@ -5,6 +5,7 @@ import {requireRole} from "@/lib/auth";
 import {generateAgentPerformance} from "@/lib/agent-performance";
 import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 
 export const dynamic="force-dynamic";
 const number=(n:number)=>new Intl.NumberFormat("es-NI").format(n);
@@ -24,12 +25,12 @@ export default async function AgentPerformance({searchParams}:{searchParams:Prom
  const showOnly=report.agents.length===1?report.agents[0]:null;
  const filterLink=(days:number)=>"/admin/reportes/agentes?periodo="+days+(selected?"&agente="+encodeURIComponent(selected):"");
  const where=leadWhere(admin);
- const due=await prisma.leadCrm.findMany({
+ const due=report.crmActive?await prisma.leadCrm.findMany({
   where:{tenantId:admin.tenantId,status:{notIn:["cerrado","descartado"]},nextContactAt:{not:null},
    lead:{...where,...(selected?{assignedAgentId:selected}:{}),assignedAgentId:{not:null,...(selected?{equals:selected}:{})}}},
   select:{nextContactAt:true,status:true,lead:{select:{id:true,name:true,assignedAgent:{select:{name:true}}}}},
   orderBy:{nextContactAt:"asc"},take:8
- }).catch(error=>{if(!report.crmActive)return [];throw error;});
+ }):[];
  return <section className="agent-performance">
   <div className="admin-heading"><div>
    <Link className="inline-link" href={canCompare?"/admin/reportes":"/admin"}><ArrowLeft size={16}/> {canCompare?"Reportes comerciales":"Mi espacio comercial"}</Link>
@@ -46,7 +47,7 @@ export default async function AgentPerformance({searchParams}:{searchParams:Prom
     <select id="agent-report-select" name="agente" defaultValue={selected||""}>
      <option value="">Todos los agentes</option>
      {(await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},select:{id:true,name:true,role:true},orderBy:{name:"asc"}})).filter(u=>{
-      try{return (u.role==="agente"||JSON.parse(u.role).includes("agente"));}catch{return false;}
+      return parseRoles(u.role).includes("agente");
      }).map(u=><option value={u.id} key={u.id}>{u.name}</option>)}
     </select>
     <button className="btn wizard-back" type="submit">Aplicar</button>
