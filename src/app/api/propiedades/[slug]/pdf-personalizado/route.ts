@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {tenantFromHost} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {pdfDownloadResponse,readCustomPdf} from "@/lib/property-document";
 
 export const runtime="nodejs";
@@ -10,6 +11,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
  const {slug}=await params;
  const tenant=await tenantFromHost(req.headers.get("host")||"");
  if(!tenant)return new NextResponse(null,{status:404});
+ if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate")return new NextResponse(null,{status:404});
  const property=await prisma.property.findFirst({
   where:{tenantId:tenant.tenantId,slug,published:true},
   select:{id:true,refCode:true}

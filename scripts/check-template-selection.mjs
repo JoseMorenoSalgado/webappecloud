@@ -47,6 +47,8 @@ const inquiries=await get("/admin/leads",true);assert.equal(inquiries.status,200
 assert.match(await inquiries.text(),/Solicitante educación/,"Inquiries must appear in tenant CRM");
 
 assert.equal((await get("/propiedades")).status,404);
+assert.equal((await get("/api/propiedades/casa-zona-ejecutiva/pdf")).status,404,"Public property PDFs must be hidden when template changes");
+assert.equal((await get("/api/propiedades/casa-zona-ejecutiva/pdf-personalizado")).status,404,"Custom property PDFs must be hidden when template changes");
 const dash=await get("/admin",true);assert.equal(dash.status,200);
 const adminHtml=await dash.text();
 assert.match(adminHtml,/Consultas recientes/);

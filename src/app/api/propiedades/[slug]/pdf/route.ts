@@ -6,6 +6,7 @@ import {NextResponse,type NextRequest} from "next/server";
 import {PDFDocument,StandardFonts,rgb} from "pdf-lib";
 import {prisma} from "@/lib/prisma";
 import {tenantFromHost} from "@/lib/tenant";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {isPreviewHost} from "@/lib/preview";
 import {demoProperties,formatPrice,type PublicProperty} from "@/lib/demo";
 export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
@@ -24,6 +25,7 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{slug:string}
    let tenant:Awaited<ReturnType<typeof tenantFromHost>>=null;
    try{tenant=await tenantFromHost(hostname);}catch(error){if(!preview)throw error;}
    if(tenant){
+     if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate")return NextResponse.json({error:"Propiedad no encontrada"},{status:404});
      const x=await prisma.property.findFirst({where:{tenantId:tenant.tenantId,slug,published:true},include:{photos:{orderBy:{sortOrder:"asc"},take:8}}});
      if(x){
       p={id:x.id,slug:x.slug,refCode:x.refCode,title:x.title,description:x.description,city:x.city,neighborhood:x.neighborhood||"",type:x.type,operation:x.operation==="alquiler"?"alquiler":"venta",price:Number(x.price),bedrooms:x.bedrooms||0,bathrooms:x.bathrooms||0,areaM2:x.areaM2||0,image:x.photos[0]?.url||"",photos:x.photos.map(p=>p.url)};

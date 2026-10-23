@@ -3,6 +3,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {currentAdmin} from "@/lib/auth";
 import {tenantFromHost} from "@/lib/tenant";
+import {getSiteTemplate} from "@/lib/site-template-store";
 import {mediaFilePath,isPhotoId} from "@/lib/property-media";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -11,6 +12,10 @@ export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}
  if(!isPhotoId(id))return new NextResponse(null,{status:404});
  const tenant=await tenantFromHost(req.headers.get("host")||"");
  if(!tenant)return new NextResponse(null,{status:404});
+ if((await getSiteTemplate(tenant.tenantId)).key!=="real-estate"){
+  const admin=await currentAdmin();
+  if(!admin||admin.tenantId!==tenant.tenantId)return new NextResponse(null,{status:404});
+ }
  const photo=await prisma.photo.findFirst({where:{id,property:{tenantId:tenant.tenantId}},select:{id:true,url:true,property:{select:{published:true}}}});
  if(!photo||photo.url!=="/api/media/"+id)return new NextResponse(null,{status:404});
  if(!photo.property.published){
