@@ -25,7 +25,7 @@ export async function RealEstateHome(){
    if(!visible("propiedades"))return [];
    const where={tenantId:tenant.id,published:true};
    const select={id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{orderBy:{sortOrder:"asc" as const},take:1,select:{url:true}}};
-   const featured=settings.featuredIds.length?await prisma.property.findMany({where:{...where,id:{in:settings.featuredIds}},select,take:3}):[];
+   const featured=settings.featuredIds.length?await prisma.property.findMany({where:{...where,id:{in:settings.featuredIds.slice(0,3)}},select,take:3}):[];
    const rows=featured.length?featured:await prisma.property.findMany({where,select,take:3,orderBy:{createdAt:"desc"}});
    if(featured.length)rows.sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id));
    return rows.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(photo=>photo.url)}));
