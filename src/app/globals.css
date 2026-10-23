@@ -1241,3 +1241,16 @@
 .crm-assignment-history strong{color:#293a4d;font-size:12px;overflow-wrap:anywhere}
 .crm-assignment-history small{font-size:11px;color:#778698}
 .crm-assigned-preview{display:block;font-size:11px;color:#627389;margin-top:3px}
+
+/* Responsive CRM cards and assigned-agent filter */
+.crm-lead-property{display:grid;grid-template-columns:17px minmax(0,1fr);column-gap:7px;row-gap:2px;align-content:center}
+.crm-lead-property>svg{grid-column:1;grid-row:1/3}
+.crm-lead-property>span,.crm-lead-property>.crm-assigned-preview{grid-column:2;min-width:0}
+.crm-filters-with-agents{grid-template-columns:minmax(180px,2fr) minmax(145px,1fr) minmax(145px,1fr) auto}
+@media(max-width:1050px){
+ .crm-filters-with-agents{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .crm-filters-with-agents>.btn{justify-self:start}
+}
+@media(max-width:650px){
+ .crm-filters-with-agents{grid-template-columns:minmax(0,1fr)}
+}
