@@ -1,6 +1,7 @@
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {parseRoles} from "@/lib/roles";
 import {tenantFromHost} from "@/lib/tenant";
 export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return NextResponse.json({error:"Formulario disponible cuando se configure la base de datos."},{status:503});
@@ -11,9 +12,13 @@ export async function POST(req:NextRequest){
  if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone)||b.consent!=="yes"||(email&&!/^\S+@\S+\.\S+$/.test(email)))return NextResponse.json({error:"Revisa tus datos y acepta el consentimiento de contacto."},{status:400});
  const tenant=await tenantFromHost(req.headers.get("host")||"");if(!tenant)return NextResponse.json({error:"Sitio no encontrado"},{status:404});
  let propertyId:string|undefined;
+ let assignedAgentId:string|null=null;
  if(typeof b.propertyId==="string"&&b.propertyId){
-  const p=await prisma.property.findFirst({where:{id:b.propertyId,tenantId:tenant.tenantId,published:true}});if(!p)return NextResponse.json({error:"Propiedad no encontrada"},{status:400});propertyId=p.id;
+  const p=await prisma.property.findFirst({where:{id:b.propertyId,tenantId:tenant.tenantId,published:true},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true,tenantId:true}}}});
+  if(!p)return NextResponse.json({error:"Propiedad no encontrada"},{status:400});
+  propertyId=p.id;
+  if(p.assignedAgentId&&p.assignedAgent?.active&&p.assignedAgent.tenantId===tenant.tenantId&&parseRoles(p.assignedAgent.role).includes("agente"))assignedAgentId=p.assignedAgentId;
  }
- await prisma.lead.create({data:{tenantId:tenant.tenantId,propertyId,name,phone,email:email||null,message:message||null,source:"web",consent:true}});
+ await prisma.lead.create({data:{tenantId:tenant.tenantId,propertyId,assignedAgentId,name,phone,email:email||null,message:message||null,source:"web",consent:true}});
  return NextResponse.json({ok:true},{status:201});
 }
