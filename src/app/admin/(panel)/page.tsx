@@ -4,12 +4,23 @@ import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {PropertyCard} from "@/components/property-card";
+import {commercialSchemaState} from "@/lib/commercial-schema";
 import {TrafficChart,TypesChart,type MetricDay} from "@/components/dashboard-charts";
 import {type PublicProperty} from "@/lib/demo";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
  const admin=await requireAdmin(),tenantId=admin.tenantId;
+ let compatible=false;
+ try{
+  const state=await commercialSchemaState();
+  compatible=state.propertyAgent&&state.leadAgent&&state.leadHistory;
+ }catch{compatible=false;}
+ if(!compatible)return <section className="admin-panel">
+  <h1>Actualización pendiente de la base de datos</h1>
+  <p>Esta instalación necesita completar algunas estructuras comerciales para que las páginas del dashboard funcionen correctamente. Tus registros existentes no se han eliminado.</p>
+  {admin.roles.includes("admin")?<Link href="/admin/sistema" className="btn btn-red">Abrir diagnóstico y recuperación</Link>:<p>Solicita al administrador de tu empresa que entre en Estado técnico para revisar el esquema.</p>}
+ </section>;
  if(admin.roles.includes("agente")&&!managesAllLeads(admin))return <AgentDashboard user={admin}/>;
  const since=new Date(Date.now()-30*864e5);
  const [total,leadsCount,viewCount,waCount,props,leads,events,types]=await Promise.all([
