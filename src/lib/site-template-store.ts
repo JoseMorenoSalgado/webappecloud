@@ -1,7 +1,7 @@
 import "server-only";
 import {prisma} from "@/lib/prisma";
 import {type Prisma} from "@prisma/client";
-import {TEMPLATE_DEFAULTS,isTemplateKey,normalizeTemplateContent,type SiteTemplateKey,type TemplateContent} from "@/lib/site-template-registry";
+import {SITE_TEMPLATES,TEMPLATE_DEFAULTS,isTemplateKey,normalizeTemplateContent,type SiteTemplateKey,type TemplateContent} from "@/lib/site-template-registry";
 
 export const TEMPLATE_PAGE_SLUG="site-template";
 export type SiteTemplate={key:SiteTemplateKey;content:TemplateContent};
@@ -17,6 +17,25 @@ export async function getSiteTemplate(tenantId:string):Promise<SiteTemplate>{
  const key=isTemplateKey(blocks.key)?blocks.key:"real-estate"; // existing customers keep NEXUS unchanged
  const drafts=blocksObject(blocks.contentByTemplate);
  return {key,content:normalizeTemplateContent(key,drafts[key])};
+}
+/**
+ * One tenant-scoped read populates the template gallery. Merely previewing
+ * never updates the selected template or draft content.
+ */
+export async function getTemplateLibrary(tenantId:string):Promise<{
+ selected:SiteTemplateKey;
+ variants:Record<SiteTemplateKey,TemplateContent>;
+}>{
+ const record=tenantId==="demo"?null:await prisma.sitePage.findUnique({
+  where:{tenantId_slug:{tenantId,slug:TEMPLATE_PAGE_SLUG}},select:{blocks:true}
+ });
+ const blocks=blocksObject(record?.blocks);
+ const selected=isTemplateKey(blocks.key)?blocks.key:"real-estate";
+ const drafts=blocksObject(blocks.contentByTemplate);
+ const variants=Object.fromEntries(SITE_TEMPLATES.map(({key})=>[
+  key,normalizeTemplateContent(key,drafts[key])
+ ])) as Record<SiteTemplateKey,TemplateContent>;
+ return {selected,variants};
 }
 export async function updateSiteTemplate(tenantId:string,intent:"select"|"content",selected:SiteTemplateKey,form?:FormData){
  await prisma.$transaction(async tx=>{
