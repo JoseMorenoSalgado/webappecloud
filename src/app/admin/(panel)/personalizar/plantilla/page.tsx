@@ -1,3 +1,4 @@
+import "./preview.css";
 import Link from "next/link";
 import {Save,LayoutTemplate,ArrowUpRight} from "lucide-react";
 import {TemplateGallery} from "@/components/template-gallery";
@@ -20,7 +21,9 @@ export default async function TemplateSettings({searchParams}:{searchParams:Prom
  ]);
  const content=variants[key];
  const estate={
-  eyebrow:settings.heroEyebrow,heading:settings.heroHeading,
+  eyebrow:settings.heroEyebrow==="NEXUS REAL ESTATE · NICARAGUA"&&user.tenantName.trim().toLowerCase()!=="nexus real estate"
+   ?"INMOBILIARIA · "+user.tenantName:settings.heroEyebrow,
+  heading:settings.heroHeading,
   highlight:settings.heroHighlight,description:settings.heroDescription,
   action:settings.heroButton
  };
