@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
-import {ArrowLeft,Building2,CalendarClock,Mail,MessageCircle,Phone,Save,StickyNote,CalendarPlus} from "lucide-react";
+import {ArrowLeft,Building2,CalendarClock,Mail,MessageCircle,Phone,Save,StickyNote,CalendarPlus,HandCoins} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
@@ -37,11 +37,13 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
  const assignedUnavailable=!!lead.assignedAgentId&&!agents.some(a=>a.id===lead.assignedAgentId);
  const wa=whatsappLeadUrl(lead.phone,admin.tenantName,lead.property?.refCode);
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
+ const canRecordClosing=canManageProperty&&!!lead.propertyId;
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link><span className={"crm-status crm-status-"+(lead.crm?.status||"nuevo")}>{crmStatusLabel(lead.crm?.status||"nuevo")}</span></div>
   <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source==="whatsapp"?"WhatsApp (registro manual)":lead.source==="telefono"?"Llamada telefónica":"Atención directa"}</p></div><Link className="btn wizard-back" href={"/admin/agenda?lead="+encodeURIComponent(id)}><CalendarPlus size={16}/> Programar actividad</Link></div>
   {(q.saved||q.noteSaved||q.created||q.assigned||q.unchanged)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.assigned?"Responsable actualizado e historial registrado.":q.unchanged?"El responsable no ha cambiado.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
+  {canRecordClosing&&<p className="crm-transaction-link"><Link className="btn wizard-back" href={"/admin/cierres?lead="+encodeURIComponent(id)}><HandCoins size={17}/> Registrar venta o alquiler</Link> <small>El cierre real se registra por separado del estado comercial.</small></p>}
   <div className="crm-detail-grid">
    <div className="crm-detail-primary">
     <section className="admin-panel crm-info-panel"><h2>Datos del prospecto</h2>
