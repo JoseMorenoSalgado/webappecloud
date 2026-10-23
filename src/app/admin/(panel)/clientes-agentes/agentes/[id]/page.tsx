@@ -27,7 +27,7 @@ export default async function AgentDetail({params}:{params:Promise<{id:string}>}
  const manage=admin.roles.includes("admin");
  return <section className="agent-profile">
   <p><Link href={manage?"/admin/clientes-agentes":"/admin"} className="inline-link"><ArrowLeft size={16}/> Volver</Link></p>
-  <div className="admin-heading"><div><h1>{agent.name}</h1><p>Perfil del agente comercial · {agent.active?"Cuenta activa":"Cuenta inactiva"}</p></div></div>
+  <div className="admin-heading"><div><h1>{agent.name}</h1><p>Perfil del agente comercial · {agent.active?"Cuenta activa":"Cuenta inactiva"}</p></div><Link className="btn wizard-back" href={"/admin/reportes/agentes?agente="+encodeURIComponent(agent.id)}>Ver rendimiento</Link></div>
   <div className="agent-profile-summary">
    <div><UserRound size={18}/><span>Agente</span><strong>{agent.name}</strong></div>
    <div><Building2 size={18}/><span>Propiedades asignadas</span><strong>{properties.length}{properties.length===100?"+":""}</strong></div>
