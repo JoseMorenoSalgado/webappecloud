@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
-import {AGENDA_DURATIONS,AGENDA_TYPES} from "@/lib/agenda";
+import {AGENDA_DURATIONS,AGENDA_TYPES} from "@/lib/agenda-constants";
 
 type LeadOption={id:string;name:string;propertyRef:string|null;agentName:string|null};
 function localInput(iso:string){
