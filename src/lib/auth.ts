@@ -23,13 +23,14 @@ export async function currentAdmin(){
  if(!hasDatabaseConfig())return null;
  const cookie=(await cookies()).get(cookieName)?.value;
  if(!cookie||! /^[a-f0-9]{64}$/.test(cookie))return null;
- const session=await prisma.adminSession.findUnique({where:{tokenHash:tokenHash(cookie)},include:{user:{include:{tenant:true}}}});
+ const session=await prisma.adminSession.findUnique({where:{tokenHash:tokenHash(cookie)},select:{expiresAt:true,user:{select:{id:true,name:true,email:true,tenantId:true,role:true,active:true,tenant:{select:{name:true,active:true}}}}}});
  if(!session||session.expiresAt<new Date()||!session.user.active||!session.user.tenant.active)return null;
  // La sesión solo puede operar sobre un dominio asignado a su empresa.
  const hostname=normalizeSiteHost((await headers()).get("host")||"");
- const assigned=await prisma.domain.findFirst({where:{tenantId:session.user.tenantId,hostname},select:{id:true}});
- if(!assigned)return null;
- return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:primaryRole(parseRoles(session.user.role)),roles:parseRoles(session.user.role)};
+ const assigned=await prisma.domain.findUnique({where:{hostname},select:{tenantId:true}});
+ if(!assigned||assigned.tenantId!==session.user.tenantId)return null;
+ const roles=parseRoles(session.user.role);
+ return {userId:session.user.id,name:session.user.name,email:session.user.email,tenantId:session.user.tenantId,tenantName:session.user.tenant.name,role:primaryRole(roles),roles};
 }
 export async function requireAdmin(){
  const user=await currentAdmin();if(!user)redirect("/admin/acceso");

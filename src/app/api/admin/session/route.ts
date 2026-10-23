@@ -52,7 +52,7 @@ export async function POST(req:NextRequest){
 
   const user=await prisma.adminUser.findUnique({
    where:{tenantId_email:{tenantId:domain.tenantId,email}},
-   include:{tenant:true}
+   select:{id:true,active:true,passwordHash:true,tenant:{select:{active:true}}}
   });
   if(!user||!user.active||!user.tenant.active||!verifyPassword(password,user.passwordHash)){
    const expiresAt=new Date(Date.now()+15*60*1000);
