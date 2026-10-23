@@ -114,6 +114,10 @@ jobs:
         run: node scripts/check-agenda.mjs
       - name: Probar notificaciones comerciales y agenda diaria/semanal en MariaDB
         run: node scripts/check-notifications.mjs
+      - name: Simular instalación anterior al registro de cierres
+        run: printf 'DROP TABLE IF EXISTS `CommercialClosing`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+      - name: Probar operaciones reales, comisiones y aislamiento en MariaDB
+        run: node scripts/check-closings.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
@@ -238,6 +242,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Probar notificaciones comerciales y aislamiento de agentes en PostgreSQL
         run: node scripts/check-notifications.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar operaciones comerciales en PostgreSQL
+        run: node scripts/check-closings.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
