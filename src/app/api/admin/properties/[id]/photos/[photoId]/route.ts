@@ -1,7 +1,7 @@
 import {unlink} from "node:fs/promises";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
-import {mediaFilePath,isPhotoId} from "@/lib/property-media";
+import {mediaFilePath,mediaVariantPath,isPhotoId} from "@/lib/property-media";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
 export const runtime="nodejs";
 const res=(error:string,status:number)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
@@ -15,7 +15,7 @@ export async function DELETE(req:NextRequest,{params}:{params:Promise<{id:string
  if(!photo)return res("Fotografía no encontrada.",404);
  await prisma.photo.delete({where:{id:photoId}});
  if(photo.url==="/api/media/"+photoId){
-  try{await unlink(mediaFilePath(admin.tenantId,photoId));}catch{}
+  await Promise.allSettled([unlink(mediaFilePath(admin.tenantId,photoId)),unlink(mediaVariantPath(admin.tenantId,photoId,"card")),unlink(mediaVariantPath(admin.tenantId,photoId,"thumb"))]);
  }
  return NextResponse.json({ok:true},{headers:{"Cache-Control":"no-store"}});
 }
