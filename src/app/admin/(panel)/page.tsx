@@ -1,11 +1,11 @@
 import Link from "next/link";
-import {House,Users,Eye,MessageCircle,ArrowUpRight,BarChart3,ChevronDown,Plus} from "lucide-react";
+import {House,Users,Eye,MessageCircle,ArrowUpRight,Plus} from "lucide-react";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
-import {TrafficChart,TypesChart} from "@/components/dashboard-charts";
+import {DashboardAnalytics} from "@/components/dashboard-analytics";
 import {firstDayOfSeries,makeDailyMetrics} from "@/lib/dashboard-metrics";
 export const dynamic="force-dynamic";
 const days=14;
@@ -75,17 +75,7 @@ export default async function Dashboard(){
      </Link>)}</div>:<p className="admin-empty">Los contactos del sitio aparecerán aquí.</p>}
    </section>
   </div>
-  <details className="dashboard-details">
-   <summary><BarChart3 size={19} aria-hidden="true"/> Estadísticas detalladas <ChevronDown size={18} aria-hidden="true"/></summary>
-   <div className="dashboard-details-inner">
-    <p className="dashboard-simple-intro">Visitas, contactos y tipos de inmuebles de los últimos 14 días.</p>
-    <div className="admin-panels">
-     <section className="admin-panel"><h2>Actividad del sitio</h2><TrafficChart data={chart}/></section>
-     <section className="admin-panel"><h2>Tipos de propiedades</h2><TypesChart data={types.map(x=>({name:x.type,value:x._count._all}))}/></section>
-    </div>
-    <p className="admin-empty">Las visitas y clics no son conversaciones confirmadas.</p>
-   </div>
-  </details>
+  <DashboardAnalytics chart={chart} types={types.map(x=>({name:x.type,value:x._count._all}))}/>
  </>;
 }
 
