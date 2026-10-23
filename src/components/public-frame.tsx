@@ -8,7 +8,8 @@ import {PageView,FloatingWhatsapp} from "@/components/traffic-events";
 import {getSiteTemplate} from "@/lib/site-template-store";
 
 export async function PublicFrame({tenant,demo,children,property}:{tenant:PublicTenant;demo:boolean;children:ReactNode;property?:PublicProperty}){
- const [links,template]=demo?[DEFAULT_SITE_MENU,{key:"real-estate" as const}]:await Promise.all([getSiteMenu(tenant.id),getSiteTemplate(tenant.id)]);
+ const template=await getSiteTemplate(tenant.id);
+ const links=demo?DEFAULT_SITE_MENU:await getSiteMenu(tenant.id);
  return <div className={"public-site"+(template.key!=="real-estate"?" public-site-organization":"")} style={{"--red":tenant.primaryColor,"--red-dark":tenant.primaryColor} as React.CSSProperties}>
   <SiteNav tenant={tenant} links={links} templateKey={template.key}/>
   {demo?<PreviewBanner/>:<PageView/>}

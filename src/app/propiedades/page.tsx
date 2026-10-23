@@ -2,6 +2,8 @@ import Link from "next/link";
 import type {Metadata} from "next";
 import {ArrowUpRight,Search,SlidersHorizontal,Building2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {notFound} from "next/navigation";
 import {getCatalogPage,CATALOG_PAGE_SIZE} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
@@ -13,6 +15,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const raw=await searchParams;
  const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90)};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const requestedPage=/^[1-9]\d{0,5}$/.test(raw.pagina||"")?Number(raw.pagina):1;
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();

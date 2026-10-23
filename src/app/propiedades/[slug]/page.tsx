@@ -1,7 +1,8 @@
 import Link from "next/link";
-import {notFound} from "next/navigation";
 import {ArrowLeft,ArrowUpRight,MapPin,BedDouble,Bath,Maximize2,Download,FileText,Home,MessageCircle,ShieldCheck,Check} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {notFound} from "next/navigation";
 import {assertPagePublished} from "@/lib/site-pages";
 import {formatPrice} from "@/lib/demo";
 import {PublicFrame} from "@/components/public-frame";
@@ -15,6 +16,7 @@ export const dynamic="force-dynamic";
 export default async function Detail({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
  const {tenant,properties,demo}=await getPublicContext();
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const p=properties.find(x=>x.slug===slug);
  if(!p)notFound();

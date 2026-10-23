@@ -1,13 +1,19 @@
 import Link from "next/link";
-import type {Metadata} from "next";
 import {ArrowLeft,ArrowUpRight,Mail,MapPin,MessageCircle,Clock3,ShieldCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {OrganizationContact} from "@/components/templates/organization-site";
 import {ContactForm} from "@/components/contact-form";
 export const dynamic="force-dynamic";
-export const metadata:Metadata={title:"Contacto",description:"Contacta con nuestra inmobiliaria para consultar propiedades disponibles y recibir atención personalizada."};
 export default async function Contact(){
+ const lighter=await getPublicContext({loadProperties:false});
+ const template=await getSiteTemplate(lighter.tenant.id);
+ if(template.key!=="real-estate"){
+  await assertPagePublished(lighter.tenant.id,lighter.demo,"contacto");
+  return <OrganizationContact tenant={lighter.tenant} demo={lighter.demo} template={template}/>;
+ }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"contacto");
  const wa=tenant.whatsapp?"https://wa.me/"+tenant.whatsapp+"?text="+encodeURIComponent("Hola, deseo información sobre sus propiedades disponibles."):null;

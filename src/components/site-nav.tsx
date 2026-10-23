@@ -17,7 +17,7 @@ export function SiteNav({tenant,links,templateKey="real-estate"}:{tenant:PublicT
  });
  return <header className="site-header nexus-header">
   <div className="container nav-inner">
-   <SiteBrand tenant={tenant}/>
+   <SiteBrand tenant={tenant} templateKey={templateKey}/>
    <nav className="nexus-nav-links" aria-label="Navegación principal">{items()}</nav>
    {links.some(x=>x.id==="contacto")&&<Link href="/contacto" className="btn btn-red nexus-header-cta">{presentation.contactAction} <ArrowUpRight size={16}/></Link>}
    <details className="mobile-menu nexus-mobile-menu">

@@ -1,12 +1,18 @@
 import Link from "next/link";
-import type {Metadata} from "next";
 import {ArrowRight,ArrowUpRight,HeartHandshake,ShieldCheck,Compass,CheckCircle2,MessageCircle} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {OrganizationAbout} from "@/components/templates/organization-site";
 export const dynamic="force-dynamic";
-export const metadata:Metadata={title:"Nosotros",description:"Conoce nuestra filosofía, misión y forma de acompañarte en tus decisiones inmobiliarias."};
 export default async function About(){
+ const lighter=await getPublicContext({loadProperties:false});
+ const template=await getSiteTemplate(lighter.tenant.id);
+ if(template.key!=="real-estate"){
+  await assertPagePublished(lighter.tenant.id,lighter.demo,"nosotros");
+  return <OrganizationAbout tenant={lighter.tenant} demo={lighter.demo} template={template}/>;
+ }
  const {tenant,demo,settings,properties}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;
