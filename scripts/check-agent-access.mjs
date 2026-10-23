@@ -55,6 +55,11 @@ function leadForm(name,propertyId=""){
 }
 const propertyId=new URL(createdProperty.headers.get("location"),origin).pathname.match(/\/propiedades\/([a-z0-9]+)\/editar/)?.[1];
 assert.ok(propertyId);
+// Un gestor puede registrar un prospecto desde la propiedad sin volver a buscarla.
+const adminPrefill=await page("/admin/leads/nuevo?propertyId="+encodeURIComponent(propertyId),adminCookie);
+assert.equal(adminPrefill.status,200);
+const adminPrefillHtml=await adminPrefill.text();
+assert.match(adminPrefillHtml,new RegExp('<option[^>]*value="'+propertyId+'"[^>]*selected'),"La propiedad autorizada debe quedar preseleccionada");
 const lead1=await post("/api/admin/crm/leads",leadForm("Cliente asignado CI "+suffix,propertyId),adminCookie);
 assert.equal(lead1.status,303);
 const ownedId=new URL(lead1.headers.get("location"),origin).pathname.split("/").at(-1);
@@ -68,6 +73,12 @@ const homeText=await agentHome.text();
 assert.match(homeText,/Mi espacio comercial/);
 assert.ok(homeText.includes("Cliente asignado CI "+suffix));
 assert.ok(!homeText.includes("Cliente privado CI "+suffix));
+const agentPrefill=await page("/admin/leads/nuevo?propertyId="+encodeURIComponent(propertyId),agentCookie);
+assert.equal(agentPrefill.status,200);
+assert.match(await agentPrefill.text(),new RegExp('<option[^>]*value="'+propertyId+'"[^>]*selected'),"Un agente solo puede preseleccionar sus inmuebles");
+const unauthorizedPrefill=await page("/admin/leads/nuevo?propertyId=property-not-owned",agentCookie);
+assert.equal(unauthorizedPrefill.status,200);
+assert.ok(!(await unauthorizedPrefill.text()).includes('value="property-not-owned" selected'),"Un agente no debe poder seleccionar otros inmuebles por URL");
 const agentLeads=await page("/admin/leads",agentCookie);
 assert.equal(agentLeads.status,200);
 const leadsHtml=await agentLeads.text();
