@@ -8,8 +8,9 @@ import {leadWhere} from "@/lib/agent-scope";
 import {parseRoles} from "@/lib/roles";
 import {CRM_STATUSES,crmStatusLabel,whatsappLeadUrl} from "@/lib/crm-status";
 export const dynamic="force-dynamic";
-type Params={error?:string;saved?:string;noteSaved?:string;created?:string;assigned?:string};
+type Params={error?:string;saved?:string;noteSaved?:string;created?:string;assigned?:string;unchanged?:string};
 const date=(v:Date)=>v.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
+const stamped=(v:Date)=>v.toLocaleString("es-NI",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit",timeZone:"UTC"})+" UTC";
 const errors:Record<string,string>={
  origen:"El formulario no tiene un origen válido. Recarga la página.",
  permisos:"No tienes permiso para editar este prospecto.",
@@ -33,12 +34,13 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
  const canManageProperty=admin.roles.some(r=>["admin","editor"].includes(r));
  const team=canManageProperty?await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
  const agents=team.filter(u=>parseRoles(u.role).includes("agente"));
+ const assignedUnavailable=!!lead.assignedAgentId&&!agents.some(a=>a.id===lead.assignedAgentId);
  const wa=whatsappLeadUrl(lead.phone,admin.tenantName,lead.property?.refCode);
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link><span className={"crm-status crm-status-"+(lead.crm?.status||"nuevo")}>{crmStatusLabel(lead.crm?.status||"nuevo")}</span></div>
   <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source==="whatsapp"?"WhatsApp (registro manual)":lead.source==="telefono"?"Llamada telefónica":"Atención directa"}</p></div></div>
-  {(q.saved||q.noteSaved||q.created||q.assigned)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.assigned?"Responsable actualizado e historial registrado.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
+  {(q.saved||q.noteSaved||q.created||q.assigned||q.unchanged)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.assigned?"Responsable actualizado e historial registrado.":q.unchanged?"El responsable no ha cambiado.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="crm-detail-grid">
    <div className="crm-detail-primary">
@@ -83,6 +85,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
       <label>Agente comercial
        <select name="assignedAgentId" defaultValue={lead.assignedAgentId||""}>
         <option value="">Sin asignar</option>
+        {assignedUnavailable&&<option value={lead.assignedAgentId||""} disabled>Responsable anterior: {lead.assignedAgent?.name||"Cuenta no disponible"}</option>}
         {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
        </select>
       </label>
@@ -90,7 +93,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      </form>
      <h3>Historial de asignaciones</h3>
      {lead.assignmentHistory.length?<ol className="crm-assignment-history">
-      {lead.assignmentHistory.map(h=><li key={h.id}><strong>{h.fromAgentName||"Sin asignar"} → {h.toAgentName||"Sin asignar"}</strong><small>{date(h.createdAt)} · {h.changedByName}</small></li>)}
+      {lead.assignmentHistory.map(h=><li key={h.id}><strong>{h.fromAgentName||"Sin asignar"} → {h.toAgentName||"Sin asignar"}</strong><small>{stamped(h.createdAt)} · {h.changedByName}</small></li>)}
      </ol>:<p className="property-help">No hay reasignaciones registradas.</p>}
     </div>}
     {lead.property&&canManageProperty&&<Link className="inline-link" href={"/admin/propiedades/"+encodeURIComponent(lead.propertyId||"")+"/editar"}>Gestionar inmueble →</Link>}
