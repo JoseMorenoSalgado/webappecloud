@@ -25,3 +25,6 @@ El formulario de contacto en las tres opciones almacena solicitudes como registr
 - Confirmar con el VPS que la versión de `main` esté ejecutándose tras el rebuild de Dockploy.
 
 Pruebas: `scripts/check-template-selection.mjs` se ejecuta sobre MariaDB y PostgreSQL con bases efímeras.
+
+## Versión y despliegue
+El identificador público de esta fase es `2026-10-23-sector-templates-r1`. Comprueba `/api/live` tras reconstruir **la rama main** en Dockploy. Esta versión no cambia el contenedor de Edvorya ni realiza migraciones de esquema; verifica que el volumen persistente `/app/.runtime` continúe montado.

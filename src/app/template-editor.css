@@ -19,3 +19,5 @@
 .admin-shell .template-edit-item{display:grid;gap:9px;padding:13px;border-radius:8px;background:#f7f9fb}
 .admin-shell .template-edit-item>strong{font-size:12px;color:#6a7790}
 @media(max-width:800px){.admin-shell .template-choice-grid{grid-template-columns:1fr}.admin-shell .template-choice-card{padding:13px}.admin-shell .template-setting-panel{padding:15px}.admin-shell .template-content-form fieldset{padding:12px}}
+
+.admin-shell .template-choice-card:has(input:checked){border-color:#b52738;background:#fff3f5;box-shadow:inset 0 0 0 1px rgba(181,39,56,.15)}
