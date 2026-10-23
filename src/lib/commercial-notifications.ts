@@ -29,7 +29,7 @@ export const notificationCategoryNames:Record<NotificationCategory,string>={
 export async function commercialNotifications(user:AgentScope,{limit=16,category="todas"}:{
  limit?:number;category?:NotificationCategory|"todas";
 }={}):Promise<NotificationSnapshot>{
- const cap=Math.max(1,Math.min(50,limit));
+ const cap=Math.max(0,Math.min(50,limit));
  const now=new Date(),in24=new Date(now.getTime()+24*3600_000);
  const since=new Date(now.getTime()-7*86400_000);
  const [agendaReady,crmReady]=await Promise.all([agendaTableReady(),crmTablesReady()]);
@@ -38,7 +38,7 @@ export async function commercialNotifications(user:AgentScope,{limit=16,category
   vencidas:0,proximas:0,"sin-atender":0,"sin-asignar":0
  };
  const items:CommercialNotification[]=[];
- const canSee=(c:NotificationCategory)=>category==="todas"||category===c;
+ const canSee=(c:NotificationCategory)=>cap>0&&(category==="todas"||category===c);
  if(agendaReady){
   const common={...scope,status:"pendiente"};
   const [expired,soon,oldRows,newRows]=await Promise.all([
