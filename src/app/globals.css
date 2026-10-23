@@ -1226,3 +1226,18 @@
 .agent-profile-items a{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;color:#b22b3c;font-size:11px;font-weight:800}
 @media(max-width:950px){.agent-directory{grid-template-columns:1fr}}
 @media(max-width:700px){.agent-profile-summary,.agent-profile-grid{grid-template-columns:minmax(0,1fr)}.agent-profile-leads{grid-column:auto}.agent-directory-card{flex-wrap:wrap}.agent-directory-card .btn{margin-left:55px}.agent-profile-summary{gap:8px}}
+
+/* CRM individual agent assignment and immutable history */
+.crm-owner-label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0 15px;color:#394c62;font-size:13px}
+.crm-agent-assignment{margin-top:20px;padding-top:20px;border-top:1px solid #e7ebf0;display:grid;gap:10px}
+.crm-agent-assignment h3{font-size:14px;color:#27394e;margin:0;font-weight:800}
+.crm-agent-assignment form{display:grid;gap:10px;margin:0}
+.crm-agent-assignment form label{display:grid;gap:6px;color:#53667d;font-size:12px;font-weight:750}
+.crm-agent-assignment form select{background:#fff;border:1px solid #dbe4ec;border-radius:8px;padding:10px;min-height:44px;max-width:100%;color:#27394e}
+.crm-agent-assignment form button{justify-self:start}
+.crm-assignment-history{padding:0;margin:0;list-style:none;display:grid;gap:0}
+.crm-assignment-history li{padding:10px 0;border-bottom:1px solid #edf1f5;display:grid;gap:4px}
+.crm-assignment-history li:last-child{border-bottom:0}
+.crm-assignment-history strong{color:#293a4d;font-size:12px;overflow-wrap:anywhere}
+.crm-assignment-history small{font-size:11px;color:#778698}
+.crm-assigned-preview{display:block;font-size:11px;color:#627389;margin-top:3px}
