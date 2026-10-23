@@ -44,7 +44,8 @@ const filtered=await (await request("/admin/notificaciones?categoria=proximas",a
 assert.ok(filtered.includes(upcomingTitle));
 assert.ok(!filtered.includes(overdueTitle),"Category filter did not remove overdue item.");
 const dashboard=await (await request("/admin",admin)).text();
-assert.match(dashboard,/admin-notification-count/);
+assert.match(dashboard,/admin-nav-count/,"Alertas deben tener contador en el menú de navegación");
+assert.ok(!dashboard.includes("admin-notification-trigger"),"No debe repetirse la campana en encabezados");
 const day=new Date(upcoming),selectedDate=day.toISOString().slice(0,10);
 const dayView=await request("/admin/agenda?vista=dia&fecha="+selectedDate+"&mes="+selectedDate.slice(0,7),admin);
 assert.equal(dayView.status,200);
