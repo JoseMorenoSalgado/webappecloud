@@ -33,7 +33,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
  const from=new Date(Date.UTC(year,mm-1,1)-10*86400e3);
  const to=new Date(Date.UTC(year,mm,1)+10*86400e3);
  const view:AgendaView=q.vista==="dia"||q.vista==="semana"?q.vista:"mes";
- const date=q.fecha&&/^\\d{4}-\\d{2}-\\d{2}$/.test(q.fecha)&&q.fecha.slice(0,7)===month&&!Number.isNaN(Date.parse(q.fecha))?q.fecha:undefined;
+ const date=q.fecha&&/^\d{4}-\d{2}-\d{2}$/.test(q.fecha)&&q.fecha.slice(0,7)===month&&!Number.isNaN(Date.parse(q.fecha))?q.fecha:undefined;
  const canCompare=managesAllLeads(user);
  const staff=canCompare?await prisma.adminUser.findMany({where:{tenantId:user.tenantId},
   select:{id:true,name:true,active:true,role:true},orderBy:{name:"asc"}}):[];
