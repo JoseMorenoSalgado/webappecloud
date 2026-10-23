@@ -27,11 +27,20 @@ const login=await fetch(origin+"/api/admin/session",{method:"POST",headers:{Orig
 assert.equal(login.status,303,"Cannot login as test administrator");
 const cookie=login.headers.getSetCookie().find(s=>s.startsWith("webappecloud_session="))?.split(";")[0];
 assert.ok(cookie);
-const editor=await fetch(origin+"/admin/personalizar/contenido",{headers:{Cookie:cookie}});
-assert.equal(editor.status,200);
-const adminHtml=await editor.text();
-for(const field of ["aboutMission","aboutVision","servicesHeading","servicesDescription","servicesSale","servicesRent","servicesAdvice"]){
- assert.ok(adminHtml.includes('name="'+field+'"'),"Missing editable field "+field);
+const legacy=await fetch(origin+"/admin/personalizar/contenido",{headers:{Cookie:cookie},redirect:"manual"});
+assert.ok([303,307,308].includes(legacy.status),"The former all-in-one editor must redirect");
+assert.match(legacy.headers.get("location")||"",/\/admin\/personalizar\/paginas/);
+for(const [path,fields] of [
+ ["/admin/personalizar/paginas/home",["heroHeading","heroDescription"]],
+ ["/admin/personalizar/paginas/nosotros",["aboutMission","aboutVision"]],
+ ["/admin/personalizar/paginas/servicios",["servicesHeading","servicesDescription","servicesSale","servicesRent","servicesAdvice"]],
+ ["/admin/personalizar/paginas/contacto",["contactHeading","contactEmail"]],
+ ["/admin/personalizar/identidad",["primaryColor","tagline"]]
+]){
+ const res=await fetch(origin+path,{headers:{Cookie:cookie}});
+ assert.equal(res.status,200,"Independent editor missing: "+path);
+ const html=await res.text();
+ for(const field of fields)assert.ok(html.includes('name="'+field+'"'),"Missing editable field "+field+" in "+path);
 }
 const values={
  heroEyebrow:"NEXUS INMOBILIARIA NICARAGUA",heroHeading:"Tu nuevo hogar comienza",heroHighlight:"con nosotros.",
