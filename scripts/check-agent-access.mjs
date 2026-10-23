@@ -31,7 +31,7 @@ const directory=await page("/admin/clientes-agentes",adminCookie);
 assert.equal(directory.status,200);
 const directoryHtml=await directory.text();
 assert.ok(directoryHtml.includes(agentEmail));
-const agentMatch=directoryHtml.match(/href="\/admin\/clientes-agentes\/agentes\/([a-z0-9]{20,40})"/);
+const agentMatch=directoryHtml.slice(directoryHtml.indexOf(agentEmail),directoryHtml.indexOf(agentEmail)+1500).match(/href="\/admin\/clientes-agentes\/agentes\/([a-z0-9]{20,40})"/);
 assert.ok(agentMatch,"Agent profile link missing");
 const agentId=agentMatch[1];
 const property=new FormData();
