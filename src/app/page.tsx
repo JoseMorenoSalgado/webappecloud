@@ -17,8 +17,9 @@ export default async function Home(){
  const published=demo?new Set(["home","propiedades","nosotros","servicios","contacto"]):
   new Set((await getPageDefinitions(tenant.id)).filter(p=>p.published).map(p=>p.id));
  const visible=(page:string)=>published.has(page);
+ const featuredIds=new Set(settings.featuredIds);
  const chosen=settings.featuredIds.length?
-  properties.filter(p=>settings.featuredIds.includes(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):
+  properties.filter(p=>featuredIds.has(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):
   properties;
  const displayed=(chosen.length?chosen:properties).slice(0,3);
  return <PublicFrame tenant={tenant} demo={demo}>
