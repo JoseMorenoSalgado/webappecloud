@@ -36,3 +36,13 @@ export async function getCatalogPage(tenantId:string,filters:CatalogFilters,page
  }));
  return {properties,count,currentPage,totalPages};
 }
+
+/** Bounded tenant-scoped suggestions, rendered as native HTML datalist. */
+export async function getCatalogLocationSuggestions(tenantId:string):Promise<string[]>{
+ const where={tenantId,published:true};
+ const [cities,zones]=await Promise.all([
+  prisma.property.findMany({where,distinct:["city"],select:{city:true},take:20,orderBy:{city:"asc"}}),
+  prisma.property.findMany({where:{...where,neighborhood:{not:null}},distinct:["neighborhood"],select:{neighborhood:true},take:20,orderBy:{neighborhood:"asc"}})
+ ]);
+ return [...new Set([...cities.map(p=>p.city),...zones.map(p=>p.neighborhood||"")].map(v=>v.trim()).filter(Boolean))].slice(0,40);
+}
