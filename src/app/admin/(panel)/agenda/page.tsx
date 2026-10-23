@@ -6,7 +6,8 @@ import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {AGENDA_TYPES,AGENDA_STATUSES,agendaScope,agendaLabel,agendaStatusLabel} from "@/lib/agenda";
 import {AgendaCreateForm,AgendaRescheduleForm} from "@/components/agenda-forms";
 import {agendaTableReady} from "@/lib/agenda-schema";
-import {AgendaCalendar,AgendaLocalDate} from "@/components/agenda-calendar";
+import {AgendaCalendar,AgendaLocalDate,type AgendaView} from "@/components/agenda-calendar";
+import {parseRoles} from "@/lib/roles";
 export const dynamic="force-dynamic";
 
 const errors:Record<string,string>={
@@ -19,7 +20,7 @@ const errors:Record<string,string>={
  activacion:"No se pudo preparar la agenda. Comprueba los permisos de la base de datos."
 };
 const pad=(n:number)=>String(n).padStart(2,"0");
-type Search={mes?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string};
+type Search={mes?:string;vista?:string;fecha?:string;agente?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string};
 export default async function CommercialAgenda({searchParams}:{searchParams:Promise<Search>}){
  const user=await requireRole(["admin","editor","agente"]);
  const q=await searchParams;
@@ -28,11 +29,21 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
  const current=now.toISOString().slice(0,7);
  const month=/^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes||"")?q.mes!:current;
  const [year,mm]=month.split("-").map(Number);
- const from=new Date(Date.UTC(year,mm-1,1)-48*3600e3);
- const to=new Date(Date.UTC(year,mm,1)+48*3600e3);
+ // Include adjacent days to account for browser-local dates spanning a UTC month boundary.
+ const from=new Date(Date.UTC(year,mm-1,1)-10*86400e3);
+ const to=new Date(Date.UTC(year,mm,1)+10*86400e3);
+ const view:AgendaView=q.vista==="dia"||q.vista==="semana"?q.vista:"mes";
+ const date=q.fecha&&/^\\d{4}-\\d{2}-\\d{2}$/.test(q.fecha)&&q.fecha.slice(0,7)===month&&!Number.isNaN(Date.parse(q.fecha))?q.fecha:undefined;
+ const canCompare=managesAllLeads(user);
+ const staff=canCompare?await prisma.adminUser.findMany({where:{tenantId:user.tenantId},
+  select:{id:true,name:true,active:true,role:true},orderBy:{name:"asc"}}):[];
+ const agents=staff.filter(a=>parseRoles(a.role).includes("agente"));
+ const agentChoice=canCompare&&(q.agente==="none"||agents.some(a=>a.id===q.agente))?q.agente||"":"";
+ const agentScope=agentChoice?{tenantId:user.tenantId,lead:{is:{...leadWhere(user),
+   assignedAgentId:agentChoice==="none"?null:agentChoice}}}:agendaScope(user);
  const status=AGENDA_STATUSES.find(s=>s.value===q.estado)?.value||"";
  const type=AGENDA_TYPES.find(t=>t.value===q.tipo)?.value||"";
- const scope=agendaScope(user);
+ const scope=agentScope;
  const [events,leads,overdue,upcoming]=await Promise.all([
   prisma.agendaEvent.findMany({where:{...scope,startsAt:{gte:from,lt:to},
    ...(status?{status}:{}),...(type?{type}:{})},orderBy:{startsAt:"asc"},take:300,
@@ -56,15 +67,27 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
   <div className="agenda-metrics">
    <div><AlertTriangle size={19}/><span>Actividades vencidas</span><strong>{overdue}</strong><small>Pendientes con horario ya pasado</small></div>
    <div><CalendarClock size={19}/><span>Próximos 7 días</span><strong>{upcoming}</strong><small>Actividades todavía pendientes</small></div>
-   <div><CalendarDays size={19}/><span>Actividades del mes</span><strong>{events.length}{events.length===300?"+":""}</strong><small>Todos los estados, antes de aplicar filtros visuales</small></div>
+   <div><CalendarDays size={19}/><span>Actividades del mes</span><strong>{events.length}{events.length===300?"+":""}</strong><small>Incluye días próximos al mes elegido y respeta los filtros</small></div>
   </div>
   <details className="admin-panel agenda-create-panel" open={!!selectedLead}>
    <summary><span><CalendarDays size={20}/> Programar nueva actividad</span><span>+</span></summary>
    {leads.length?<AgendaCreateForm leads={leads.map(l=>({id:l.id,name:l.name,propertyRef:l.property?.refCode||null,agentName:l.assignedAgent?.name||null}))} defaultLeadId={selectedLead}/>:<p className="property-help">Para programar una actividad debes tener al menos un prospecto disponible. <Link href="/admin/leads/nuevo" className="inline-link">Registrar prospecto →</Link></p>}
   </details>
-  <AgendaCalendar month={month} events={visible.map(e=>({id:e.id,title:e.title,type:e.type,status:e.status,startsAt:e.startsAt.toISOString(),leadName:e.lead.name}))}/>
-  <section className="admin-panel">
-   <div className="heading-row"><div><h2>Actividades del mes</h2><p>Selecciona una actividad para revisar el prospecto o actualizar su estado.</p></div></div>
+  {canCompare&&<form className="agenda-agent-filter" method="get" action="/admin/agenda">
+   <input type="hidden" name="mes" value={month}/><input type="hidden" name="vista" value={view}/>
+   {date&&<input type="hidden" name="fecha" value={date}/>}
+   <label htmlFor="agenda-agent-select">Agenda del agente</label>
+   <select id="agenda-agent-select" name="agente" defaultValue={agentChoice}>
+    <option value="">Toda la inmobiliaria</option><option value="none">Prospectos sin agente</option>
+    {agents.map(a=><option key={a.id} value={a.id}>{a.name}{!a.active?" (inactivo)":""}</option>)}
+   </select>
+   <button className="btn wizard-back" type="submit">Ver agenda</button>
+  </form>}
+  <AgendaCalendar month={month} view={view} date={date} events={visible.map(e=>({
+   id:e.id,title:e.title,type:e.type,status:e.status,startsAt:e.startsAt.toISOString(),
+   leadId:e.leadId,leadName:e.lead.name}))}/>
+  {view==="mes"&&<section className="admin-panel">
+   <div className="heading-row"><div><h2>Actividades del mes y fechas limítrofes</h2><p>Selecciona una actividad para revisar el prospecto o actualizar su estado.</p></div></div>
    <form className="agenda-list-filters" method="get" action="/admin/agenda">
     <input type="hidden" name="mes" value={month}/>
     <label>Estado<select name="estado" defaultValue={status}><option value="">Todos</option>{AGENDA_STATUSES.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}</select></label>
@@ -89,7 +112,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
     </div>
    </article>)}</div>:<div className="admin-empty"><CalendarDays size={28}/><p>No hay actividades registradas con estos filtros.</p></div>}
    {events.length===300&&<p className="property-help">Se muestran las primeras 300 actividades. Acota los filtros para consultar otras fechas.</p>}
-  </section>
+  </section>}
   <p className="property-help">Las actividades son registros internos. Programarlas no envía automáticamente invitaciones por correo, WhatsApp ni recordatorios externos.</p>
  </section>;
 }
