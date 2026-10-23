@@ -20,7 +20,7 @@ assert.match(gallery,/name="templateKey" value=\{selected\}/);
 assert.match(gallery,/Confirmar y aplicar plantilla/);
 assert.ok(!gallery.includes("fetch("),"Preview interaction must not make server requests");
 assert.ok(!gallery.includes("window.location"),"Preview cannot navigate the public site");
-assert.match(templatePage,/getTemplateLibrary\\(user.tenantId\\)/);
+assert.ok(templatePage.includes("getTemplateLibrary(user.tenantId)"));
 assert.match(templatePage,/where:\{tenantId:user.tenantId,published:true\}/);
 assert.match(templatePage,/<TemplateGallery current=\{key\} variants=\{variants\}/);
 const getter=store.slice(store.indexOf("export async function getTemplateLibrary"),store.indexOf("export async function updateSiteTemplate"));
