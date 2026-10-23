@@ -31,6 +31,8 @@ assert.match(css,/\.public-site \.property-gallery-photo\{[^}]*width:auto!import
  "Gallery must not stretch the original photo or crop it");
 assert.match(css,/@media\(max-width:820px\)\{[^}]*\.public-site \.property-detail-layout\{grid-template-columns:minmax\(0,1fr\)/,
  "Contact panel should stack below image on mobile");
+assert.match(css,/\.public-site \.property-card>\.property-photo>img\{[^}]*object-fit:cover!important/s,
+ "Featured home cards must fill their photo frame instead of showing empty sidebars");
 const gallery=readFileSync("src/components/property-gallery.tsx","utf8");
 assert.ok(gallery.includes('useEmblaCarousel')&&gallery.includes('emblaApi?.scrollNext()'),
  "Swipe carousel must use Embla");
