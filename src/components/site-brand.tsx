@@ -3,7 +3,7 @@ import {Layers3} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
 import {sitePresentation} from "@/lib/site-presentation";
 
-/** Reusable organization branding; NEXUS's approved identity is a preset. */
+/** Reusable organization branding; customer-specific identity is selected by its presentation preset. */
 export function SiteBrand({tenant}:{tenant:PublicTenant}){
  const brand=sitePresentation(tenant);
  return <Link className="brand nexus-brand" href="/" aria-label={"Inicio · "+tenant.name}>
