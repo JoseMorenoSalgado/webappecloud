@@ -1,12 +1,13 @@
 import Link from "next/link";
-import {ArrowUpRight,FileText,ListTree,Palette,Plus,Search,ExternalLink} from "lucide-react";
+import {ArrowUpRight,Plus,Search,X} from "lucide-react";
+import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {requireAdmin} from "@/lib/auth";
-import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
+import {getPageDefinitions} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 type Query={saved?:string;error?:string;estado?:string;buscar?:string};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
- const [pages,menu]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteMenu(admin.tenantId)]);
+ const pages=await getPageDefinitions(admin.tenantId);
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
@@ -14,27 +15,24 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
   (!search||[p.title,p.href,p.summary].join(" ").toLocaleLowerCase("es").includes(search)));
  const published=pages.filter(p=>p.published).length;
  const tabs=[{id:"todas",label:"Todas",total:pages.length},{id:"publicadas",label:"Publicadas",total:published},{id:"borradores",label:"Borradores",total:pages.length-published}];
+ const tabHref=(id:string)=>{const params=new URLSearchParams({estado:id});if(search)params.set("buscar",search);return "/admin/personalizar/paginas?"+params.toString();};
  return <>
   <div className="admin-heading cms-heading"><div><h1>Páginas</h1>
    <p>Gestiona las páginas de tu sitio web: edita el contenido, publica o guarda borradores.</p></div>
    {canEdit&&<Link href="/admin/personalizar/paginas/nueva" className="btn btn-red"><Plus size={17}/> Nueva página</Link>}
   </div>
-  <nav aria-label="Herramientas de personalización" className="cms-toolbar">
-   <Link href="/admin/personalizar/paginas" className="cms-toolbar-current"><FileText size={17}/> Páginas</Link>
-   <Link href="/admin/personalizar/menu"><ListTree size={17}/> Menú principal</Link>
-   <Link href="/admin/personalizar/identidad"><Palette size={17}/> Identidad visual</Link>
-   <Link href="/" target="_blank" className="cms-toolbar-visit">Ver sitio <ExternalLink size={16}/></Link>
-  </nav>
+  <SiteCustomizerNav current="pages"/>
   {q.saved&&<p className="property-success" role="status">Estado de publicación actualizado correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudieron actualizar los datos. Comprueba los permisos.</p>}
   <section className="admin-panel cms-list-panel">
    <div className="cms-list-controls">
-    <div className="cms-status-tabs">{tabs.map(t=><Link href={"/admin/personalizar/paginas?estado="+t.id} key={t.id}
+    <div className="cms-status-tabs">{tabs.map(t=><Link href={tabHref(t.id)} key={t.id}
       aria-current={status===t.id?"page":undefined}>{t.label} <span>{t.total}</span></Link>)}</div>
     <form action="/admin/personalizar/paginas" method="get" className="cms-search">
      <input type="hidden" name="estado" value={status}/>
      <label><Search size={16}/><input aria-label="Buscar páginas" name="buscar" defaultValue={q.buscar||""} placeholder="Buscar páginas" maxLength={90}/></label>
      <button type="submit" className="btn wizard-back">Buscar</button>
+     {(search||status!=="todas")&&<Link href="/admin/personalizar/paginas" className="cms-clear-search"><X size={15}/> Limpiar</Link>}
     </form>
    </div>
    <div className="cms-table-wrap">
@@ -57,10 +55,9 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
      </tr>)}</tbody>
     </table>
     {!results.length&&<div className="cms-no-results"><strong>No se encontraron páginas.</strong>
-     <p>Modifica la búsqueda o crea una página nueva.</p></div>}
+     <p>{search||status!=="todas"?"Prueba otro filtro o limpia la búsqueda.":"Añade tu primera página desde el botón Nueva página."}</p></div>}
    </div>
-   <div className="cms-list-footer"><span>{results.length} páginas mostradas · {menu.length} enlaces en el menú</span>
-    {canEdit&&<Link href="/admin/personalizar/paginas/nueva"><Plus size={14}/> Añadir nueva página</Link>}</div>
+   <div className="cms-list-footer"><span>{results.length} de {pages.length} páginas</span></div>
   </section>
   <p className="property-help">La portada siempre está publicada. Cada página se edita individualmente; el menú y la identidad visual se gestionan por separado.</p>
  </>;

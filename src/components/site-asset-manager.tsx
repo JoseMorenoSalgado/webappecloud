@@ -1,7 +1,7 @@
 "use client";
 import {useRef,useState} from "react";
 import {useRouter} from "next/navigation";
-import {ImagePlus,Trash2} from "lucide-react";
+import {ImagePlus,Trash2,ImageIcon} from "lucide-react";
 type Kind="hero"|"logo";
 export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean;canEdit:boolean}){
  const router=useRouter(),ref=useRef<HTMLInputElement>(null);
@@ -36,7 +36,7 @@ export function SiteAssetManager({kind,exists,canEdit}:{kind:Kind;exists:boolean
  }
  return <div className="site-image-manager">
   <div className={"site-image-preview "+(kind==="logo"?"site-preview-logo":"site-preview-hero")}>
-   {exists?<img src={"/api/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":"Banner principal"}/>:kind==="hero"?<span>Banner predeterminado del sitio</span>:<img src="/brand/nexus-icon.webp" alt="Logo predeterminado de NEXUS"/>}
+   {exists?<img src={"/api/site-media/"+kind} alt={kind==="logo"?"Logo corporativo":"Banner principal"}/>:kind==="hero"?<span>Banner predeterminado del sitio</span>:<span className="site-empty-logo"><ImageIcon size={22} aria-hidden="true"/> Agrega el logotipo de tu organización</span>}
   </div>
   <div className="site-image-actions">
    {canEdit&&<label className="property-upload-button"><ImagePlus size={17}/>{busy?"Procesando...":exists?"Reemplazar imagen":"Subir imagen"}

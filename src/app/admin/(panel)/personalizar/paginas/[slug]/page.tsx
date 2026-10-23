@@ -20,7 +20,7 @@ const sections:Record<Builtin,{title:string;description:string;path:string;field
    {name:"heroDescription",label:"Descripción del banner",max:480,multiline:true},
    {name:"heroButton",label:"Texto del botón principal",max:45}
   ]},
- propiedades:{title:"Propiedades",description:"Configura la presentación de propiedades destacadas del inicio; el catálogo y las fotografías se administran en Propiedades.",path:"/propiedades",
+ propiedades:{title:"Propiedades",description:"Configura el bloque de inmuebles destacados. El catálogo y las fotografías se gestionan en Propiedades.",path:"/propiedades",
   fields:[
    {name:"sectionEyebrow",label:"Etiqueta de sección",max:90},
    {name:"sectionHeading",label:"Título de propiedades destacadas",max:95},

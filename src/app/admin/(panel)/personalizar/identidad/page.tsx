@@ -1,5 +1,5 @@
-import Link from "next/link";
-import {ArrowLeft,ExternalLink,ImageIcon,Palette,Save} from "lucide-react";
+import {ImageIcon,Palette,Save} from "lucide-react";
+import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {hasSiteAsset} from "@/lib/site-assets";
@@ -13,10 +13,10 @@ export default async function SiteIdentity({searchParams}:{searchParams:Promise<
  ]);
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  return <>
-  <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Personalizar</Link>
-   <h1>Identidad visual</h1><p>Logotipo, imagen principal, lema y color institucional de tu inmobiliaria.</p></div>
-   <Link href="/" target="_blank" className="btn wizard-back">Ver sitio <ExternalLink size={16}/></Link>
+  <div className="admin-heading"><div>
+   <h1>Identidad visual</h1><p>Logotipo, imagen de portada, lema y colores de tu organización.</p></div>
   </div>
+  <SiteCustomizerNav current="identity"/>
   {q.saved&&<p className="property-success" role="status">Identidad visual guardada correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudieron guardar los cambios. Elige un color oscuro que contraste con texto blanco.</p>}
   <section className="admin-panel site-editor-images">

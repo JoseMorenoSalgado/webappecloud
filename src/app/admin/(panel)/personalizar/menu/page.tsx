@@ -1,5 +1,5 @@
-import Link from "next/link";
-import {ArrowLeft,ExternalLink,ListTree} from "lucide-react";
+import {ListTree} from "lucide-react";
+import {SiteCustomizerNav} from "@/components/site-customizer-nav";
 import {requireRole} from "@/lib/auth";
 import {getPageDefinitions,getSiteMenu} from "@/lib/site-pages";
 import {SiteMenuEditor} from "@/components/site-menu-editor";
@@ -10,9 +10,10 @@ export default async function MenuSettings({searchParams}:{searchParams:Promise<
  const menu=await getSiteMenu(admin.tenantId,pages);
  const q=await searchParams;
  return <>
-  <div className="admin-heading"><div><Link href="/admin/personalizar" className="inline-link"><ArrowLeft size={16}/> Personalizar</Link>
+  <div className="admin-heading"><div>
    <h1>Menú principal</h1><p>Elige las páginas visibles en el encabezado, cambia sus textos y organízalas con las flechas.</p></div>
-   <Link className="btn wizard-back" href="/" target="_blank">Ver sitio <ExternalLink size={16}/></Link></div>
+  </div>
+  <SiteCustomizerNav current="menu"/>
   {q.saved&&<p role="status" className="property-success">Menú guardado y publicado correctamente.</p>}
   {q.error&&<p role="alert" className="admin-error">No se pudo actualizar el menú. Comprueba los nombres, permisos y páginas publicadas.</p>}
   <section className="admin-panel site-menu-panel"><div className="site-section-heading"><ListTree size={22}/>
