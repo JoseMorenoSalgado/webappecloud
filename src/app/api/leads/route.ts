@@ -35,7 +35,8 @@ export async function POST(req:NextRequest){
    }
   }
   if(hasAgentColumn&&!assignedAgentId){
-   assignedAgentId=await selectFallbackLeadAgent(tenant.tenantId);
+   try{assignedAgentId=await selectFallbackLeadAgent(tenant.tenantId);}
+   catch(error){console.warn("[web] Automatic assignment unavailable; keeping inquiry unassigned",error instanceof Error?error.name:"unknown");}
   }
   const data={tenantId:tenant.tenantId,propertyId,name,phone,email:email||null,message:message||null,source:"web",consent:true};
   try{
