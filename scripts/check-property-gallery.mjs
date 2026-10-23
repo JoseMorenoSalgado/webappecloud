@@ -22,7 +22,10 @@ assert.ok(html.indexOf("property-detail-layout")<html.indexOf("property-detail-s
  "Contact sidebar must share the property detail grid");
 assert.ok(html.indexOf("property-gallery-viewport")<html.indexOf("Detalles de la propiedad"),
  "Gallery should precede technical details");
-const css=readFileSync("src/app/globals.css","utf8");
+const css=[
+ "src/app/styles/templates/nexus-property.css",
+ "src/app/styles/templates/nexus-property-cover.css"
+].map(file=>readFileSync(file,"utf8")).join("\n");
 assert.match(css,/\.public-site \.property-detail-layout\{display:grid;grid-template-columns:/,
  "Desktop property page should use compact two-column layout");
 assert.match(css,/\.public-site \.property-detail-sidebar\{[^}]*position:sticky/,
