@@ -29,7 +29,7 @@ export async function POST(req:NextRequest){
  try{
   await prisma.agendaEvent.create({data:{tenantId:user.tenantId,leadId:lead.id,type,title,
    startsAt,durationMinutes:duration,location:location||null,notes:notes||null,createdByName:user.name.slice(0,120)}});
-  return propertyRedirect("/admin/agenda?created=1");
+  return propertyRedirect("/admin/agenda?mes="+startsAt.toISOString().slice(0,7)+"&created=1");
  }catch(error){
   console.error("[agenda] create failed",error instanceof Error?error.name:"unknown");
   return back("servidor");
