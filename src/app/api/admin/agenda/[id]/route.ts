@@ -32,7 +32,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
   // Repeat the authorization scope in the UPDATE to avoid a stale read after lead transfer.
   const result=await prisma.agendaEvent.updateMany({where:{id,...agendaScope(user)},data});
   const requested=form.get("mes");
-  const originalMonth=typeof requested==="string"&&/^\\d{4}-(0[1-9]|1[0-2])$/.test(requested)?requested:"";
+  const originalMonth=typeof requested==="string"&&/^\d{4}-(0[1-9]|1[0-2])$/.test(requested)?requested:"";
   const month=intent==="reschedule"&&data.startsAt?data.startsAt.toISOString().slice(0,7):originalMonth;
   return result.count?propertyRedirect("/admin/agenda?"+(month?"mes="+month+"&":"")+"updated=1"):back("noexiste");
  }catch(error){
