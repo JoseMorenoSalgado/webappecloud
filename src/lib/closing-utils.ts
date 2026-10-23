@@ -16,10 +16,10 @@ export function decimalAmount(raw:FormDataEntryValue|null,allowZero=false):strin
 }
 export function validClosedAt(raw:FormDataEntryValue|null):Date|null{
  if(typeof raw!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(raw))return null;
- const date=new Date(raw+"T12:00:00.000Z");
+ const date=new Date(raw+"T00:00:00.000Z");
  if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==raw)return null;
- const future=new Date();future.setUTCDate(future.getUTCDate()+1);
- return date>future||date<new Date("2000-01-01T00:00:00.000Z")?null:date;
+ const today=new Date();today.setUTCHours(0,0,0,0);
+ return date>today||date<new Date("2000-01-01T00:00:00.000Z")?null:date;
 }
 export const closingMoney=(raw:string|number)=>new Intl.NumberFormat("es-NI",{
  style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:2
