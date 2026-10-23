@@ -18,8 +18,9 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
  const report=await generateReport(admin.tenantId,days);
  const closingsReady=await closingTableReady();
  const from=new Date();from.setUTCHours(0,0,0,0);from.setUTCDate(from.getUTCDate()-(days-1));
+ const through=new Date();through.setUTCHours(0,0,0,0);through.setUTCDate(through.getUTCDate()+1);
  const realClosings=closingsReady?await prisma.commercialClosing.groupBy({by:["kind"],
-  where:{tenantId:admin.tenantId,status:"confirmado",closedAt:{gte:from,lte:new Date()}},
+  where:{tenantId:admin.tenantId,status:"confirmado",closedAt:{gte:from,lt:through}},
   _count:{_all:true},_sum:{amount:true,commissionAmount:true}}):[];
  const realAmount=realClosings.reduce((v,c)=>v+Number(c._sum.amount||0),0);
  const realCommission=realClosings.reduce((v,c)=>v+Number(c._sum.commissionAmount||0),0);
