@@ -107,6 +107,8 @@ jobs:
         run: node scripts/check-admin-access.mjs
       - name: Probar CRM y actualización segura de MariaDB existente
         run: node scripts/check-crm.mjs
+      - name: Validar perfiles y permisos de agentes en MariaDB
+        run: node scripts/check-agent-access.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
@@ -211,6 +213,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Probar CRM sobre instalación nueva PostgreSQL
         run: node scripts/check-crm.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Validar aislamiento comercial de agentes en PostgreSQL
+        run: node scripts/check-agent-access.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
