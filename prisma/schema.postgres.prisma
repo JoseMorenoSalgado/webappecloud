@@ -242,6 +242,28 @@ model CommercialClosing {
   createdByName String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  commissionPayments CommissionPayment[]
   @@index([tenantId,closedAt])
   @@index([tenantId,agentId,closedAt])
+}
+
+/** Append-only commission payment ledger. Corrections void entries, never delete them. */
+model CommissionPayment {
+ id String @id @default(cuid())
+ tenantId String
+ closingId String
+ closing CommercialClosing @relation(fields:[closingId],references:[id],onDelete:Restrict)
+ amount Decimal @db.Decimal(13,2)
+ paidAt DateTime
+ method String @default("transferencia")
+ reference String?
+ notes String? @db.Text
+ createdByName String
+ status String @default("confirmado")
+ voidReason String? @db.Text
+ voidedAt DateTime?
+ voidedByName String?
+ createdAt DateTime @default(now())
+ @@index([tenantId,closingId,paidAt])
+ @@index([tenantId,paidAt])
 }
