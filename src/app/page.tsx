@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,Building2,KeyRound,MapPin,Search,ShieldCheck,Sparkles,CheckCircle2} from "lucide-react";
+import {ArrowRight,ArrowUpRight,Building2,KeyRound,Search,ShieldCheck,CheckCircle2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {PropertyCard} from "@/components/property-card";
@@ -8,9 +8,9 @@ import {ContactForm} from "@/components/contact-form";
 export const dynamic="force-dynamic";
 const DEFAULT_EYEBROW="NEXUS REAL ESTATE · NICARAGUA";
 const services=[
- {href:"/servicios#comprar",Icon:Building2,number:"01",title:"Compra y venta",desc:"Opciones para encontrar una vivienda o explorar oportunidades inmobiliarias."},
- {href:"/servicios#alquilar",Icon:KeyRound,number:"02",title:"Alquileres",desc:"Alternativas para vivir o establecer tu proyecto según tus necesidades."},
- {href:"/servicios#asesoria",Icon:ShieldCheck,number:"03",title:"Acompañamiento",desc:"Información clara y atención directa para tomar decisiones con confianza."}
+ {href:"/servicios#comprar",Icon:Building2,title:"Compra y venta",desc:"Opciones para encontrar una vivienda o explorar oportunidades inmobiliarias."},
+ {href:"/servicios#alquilar",Icon:KeyRound,title:"Alquileres",desc:"Alternativas para vivir o establecer tu proyecto según tus necesidades."},
+ {href:"/servicios#asesoria",Icon:ShieldCheck,title:"Acompañamiento",desc:"Información clara y atención directa para tomar decisiones con confianza."}
 ];
 export default async function Home(){
  const {tenant,properties,demo,settings,heroImage}=await getPublicContext();
@@ -24,7 +24,7 @@ export default async function Home(){
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">
    <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
-    <div className="container nexus-hero-layout">
+    <div className="container nexus-hero-layout nexus-hero-layout-simple">
      <div className="nexus-hero-copy">
       <p className="nexus-eyebrow-on-dark"><span className="nexus-eyebrow-line"/> {settings.heroEyebrow===DEFAULT_EYEBROW?tenant.name.toUpperCase()+" · NICARAGUA":settings.heroEyebrow}</p>
       <h1>{settings.heroHeading} <em>{settings.heroHighlight}</em></h1>
@@ -34,13 +34,7 @@ export default async function Home(){
        {visible("nosotros")&&<Link href="/nosotros" className="nexus-hero-secondary">Conócenos <ArrowRight size={17}/></Link>}
       </div>
      </div>
-     <div className="nexus-hero-side" aria-label="Orientación inmobiliaria">
-      <span className="nexus-hero-side-mark"><Sparkles size={19}/></span>
-      <p>Una decisión importante merece una buena guía.</p>
-      <span>Compra · Alquila · Invierte</span>
-     </div>
     </div>
-    <div className="nexus-hero-bottom"><div className="container"><span>01 / EXPERIENCIAS INMOBILIARIAS</span><span>NICARAGUA <MapPin size={14}/></span></div></div>
    </section>
 
    {visible("propiedades")&&<section className="nexus-search-wrap" aria-label="Buscador de inmuebles">
@@ -77,8 +71,8 @@ export default async function Home(){
       <p>Un servicio inmobiliario cercano, con opciones para tus diferentes objetivos.</p></div>
       <Link href="/servicios" className="nexus-text-link">Conocer servicios <ArrowUpRight size={18}/></Link>
      </div>
-     <div className="nexus-services-grid">{services.map(({href,Icon,number,title,desc})=><Link href={href} key={href} className="nexus-service-card">
-      <span className="nexus-service-top"><Icon size={27} strokeWidth={1.65}/><small>{number}</small></span>
+     <div className="nexus-services-grid">{services.map(({href,Icon,title,desc})=><Link href={href} key={href} className="nexus-service-card">
+      <span className="nexus-service-top"><Icon size={27} strokeWidth={1.65}/></span>
       <h3>{title}</h3><p>{desc}</p><span className="nexus-service-more">Conocer más <ArrowUpRight size={18}/></span>
      </Link>)}</div>
     </div>

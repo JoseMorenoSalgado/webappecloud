@@ -1,13 +1,12 @@
 import Link from "next/link";
-import {House,Users,Eye,MessageCircle,ArrowUpRight} from "lucide-react";
+import {House,Users,Eye,MessageCircle,ArrowUpRight,BarChart3,ChevronDown,Plus} from "lucide-react";
 import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
-import {PropertyCard} from "@/components/property-card";
 import {commercialSchemaState} from "@/lib/commercial-schema";
 import {CommercialAlertsPreview} from "@/components/commercial-alerts-preview";
-import {TrafficChart,TypesChart,type MetricDay} from "@/components/dashboard-charts";
-import {type PublicProperty} from "@/lib/demo";
+import {TrafficChart,TypesChart} from "@/components/dashboard-charts";
+import {firstDayOfSeries,makeDailyMetrics} from "@/lib/dashboard-metrics";
 export const dynamic="force-dynamic";
 const days=14;
 export default async function Dashboard(){
@@ -23,31 +22,70 @@ export default async function Dashboard(){
   {admin.roles.includes("admin")?<Link href="/admin/sistema" className="btn btn-red">Abrir diagnóstico y recuperación</Link>:<p>Solicita al administrador de tu empresa que entre en Estado técnico para revisar el esquema.</p>}
  </section>;
  if(admin.roles.includes("agente")&&!managesAllLeads(admin))return <AgentDashboard user={admin}/>;
- const since=new Date(Date.now()-30*864e5);
- const [total,leadsCount,viewCount,waCount,props,leads,events,types]=await Promise.all([
-  prisma.property.count({where:{tenantId}}),prisma.lead.count({where:{tenantId,createdAt:{gte:since}}}),
+ const now=new Date();
+ const since=new Date(now.getTime()-30*864e5);
+ const chartStart=firstDayOfSeries(days,now);
+ const [total,leadsCount,viewCount,waCount,props,leads,events,types,leadSeries]=await Promise.all([
+  prisma.property.count({where:{tenantId}}),
+  prisma.lead.count({where:{tenantId,createdAt:{gte:since}}}),
   prisma.visitEvent.count({where:{tenantId,kind:"view",createdAt:{gte:since}}}),
   prisma.visitEvent.count({where:{tenantId,kind:"whatsapp",createdAt:{gte:since}}}),
-  prisma.property.findMany({where:{tenantId},include:{photos:{orderBy:{sortOrder:"asc"},take:1}},take:3,orderBy:{createdAt:"desc"}}),
-  prisma.lead.findMany({where:{tenantId},take:5,orderBy:{createdAt:"desc"},include:{property:{select:{refCode:true}}}}),
-  prisma.visitEvent.findMany({where:{tenantId,createdAt:{gte:new Date(Date.now()-days*864e5)}} ,select:{kind:true,createdAt:true}}),
-  prisma.property.groupBy({by:["type"],where:{tenantId},_count:{_all:true}})
+  prisma.property.findMany({where:{tenantId},select:{id:true,title:true,refCode:true,published:true},take:4,orderBy:{createdAt:"desc"}}),
+  prisma.lead.findMany({where:{tenantId},take:4,orderBy:{createdAt:"desc"},select:{id:true,name:true,createdAt:true,property:{select:{refCode:true}}}}),
+  prisma.visitEvent.findMany({where:{tenantId,createdAt:{gte:chartStart}},select:{kind:true,createdAt:true}}),
+  prisma.property.groupBy({by:["type"],where:{tenantId},_count:{_all:true}}),
+  prisma.lead.findMany({where:{tenantId,createdAt:{gte:chartStart}},select:{createdAt:true}})
  ]);
- const leadSeries=await prisma.lead.findMany({where:{tenantId,createdAt:{gte:new Date(Date.now()-days*864e5)}},select:{createdAt:true}});
- const key=(d:Date)=>d.toISOString().slice(0,10);
- const today=Date.now();
- const chart:MetricDay[]=Array.from({length:days},(_,i)=>{const date=new Date(today-(days-1-i)*864e5),k=key(date);
-  return {day:date.toLocaleDateString("es",{day:"2-digit",month:"short",timeZone:"UTC"}),visitas:events.filter(e=>key(e.createdAt)===k&&e.kind==="view").length,whatsapp:events.filter(e=>key(e.createdAt)===k&&e.kind==="whatsapp").length,leads:leadSeries.filter(l=>key(l.createdAt)===k).length};
- });
- const latest:PublicProperty[]=props.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler":"venta",price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(x=>x.url)}));
- const cards=[{label:"Propiedades",value:total,Icon:House},{label:"Nuevos leads",value:leadsCount,Icon:Users},{label:"Visitas al sitio",value:viewCount,Icon:Eye},{label:"Clics en WhatsApp",value:waCount,Icon:MessageCircle}];
- return <><div className="admin-heading"><div><h1>Panel de administración</h1><p>Resumen general de tu plataforma inmobiliaria · últimos 30 días</p></div><Link href="/admin/propiedades/nueva" className="btn btn-red">+ Nueva propiedad</Link></div>
+ const chart=makeDailyMetrics(events,leadSeries,days,now);
+ const cards=[
+  {label:"Propiedades",value:total,description:"Inmuebles registrados",Icon:House},
+  {label:"Prospectos",value:leadsCount,description:"Recibidos en 30 días",Icon:Users},
+  {label:"Visitas",value:viewCount,description:"Páginas vistas en 30 días",Icon:Eye},
+  {label:"WhatsApp",value:waCount,description:"Clics en 30 días",Icon:MessageCircle}
+ ];
+ return <>
+  <div className="admin-heading"><div><h1>Resumen</h1>
+   <p>Lo más importante de tu inmobiliaria en un solo lugar.</p></div>
+   {admin.roles.some(role=>["admin","editor"].includes(role))&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={17}/> Nueva propiedad</Link>}
+  </div>
+  <div className="metric-grid">
+   {cards.map(x=><div className="metric-card" key={x.label}>
+    <div className="metric-label"><span>{x.label}</span><span className="metric-icon"><x.Icon size={19}/></span></div>
+    <strong>{x.value.toLocaleString("es")}</strong><small>{x.description}</small>
+   </div>)}
+  </div>
   <CommercialAlertsPreview user={admin}/>
-  <div className="metric-grid">{cards.map(x=><div className="metric-card" key={x.label}><div className="metric-label"><span>{x.label}</span><span className="metric-icon"><x.Icon size={20}/></span></div><strong>{x.value.toLocaleString("es")}</strong><small>{x.label==="Propiedades"?"Total registradas":"Eventos registrados en 30 días"}</small></div>)}</div>
-  <div className="admin-panels"><div className="admin-panel"><h2>Visitas y contactos</h2><TrafficChart data={chart}/></div><div className="admin-panel"><h2>Tipos de propiedades</h2><TypesChart data={types.map(x=>({name:x.type,value:x._count._all}))}/></div></div>
-  <div className="admin-panels"><div className="admin-panel"><div className="heading-row"><h2>Propiedades recientes</h2><Link className="inline-link" href="/admin/propiedades">Ver todas <ArrowUpRight size={16}/></Link></div>{latest.length?<div className="admin-property-list">{latest.map(p=><PropertyCard key={p.id} property={p}/>)}</div>:<p className="admin-empty">No has registrado propiedades todavía.</p>}</div>
-   <div className="admin-panel"><div className="heading-row"><h2>Últimos leads</h2><Link className="inline-link" href="/admin/leads">Ver todos <ArrowUpRight size={16}/></Link></div>{leads.length?leads.map(l=><div className="lead-row" key={l.id}><div><strong>{l.name}</strong><small>{l.property?.refCode||"Consulta general"}</small></div><small>{l.createdAt.toLocaleDateString("es")}</small></div>):<p className="admin-empty">Aún no hay consultas recibidas.</p>}</div></div>
-  <p className="admin-empty">Las métricas reflejan eventos registrados en la aplicación; un clic en WhatsApp no confirma una conversación.</p>
+  <div className="admin-panels">
+   <section className="admin-panel" aria-labelledby="recent-properties">
+    <div className="heading-row"><h2 id="recent-properties">Propiedades recientes</h2>
+     <Link className="inline-link" href="/admin/propiedades">Ver todas <ArrowUpRight size={16}/></Link></div>
+    {props.length?<div className="dashboard-simple-list">{props.map(p=>
+     <Link href={"/admin/propiedades/"+encodeURIComponent(p.id)+"/editar"} key={p.id}>
+      <span><strong>{p.title}</strong><small>Ref. {p.refCode}</small></span>
+      <span className={"status-pill"+(p.published?"":" is-draft")}>{p.published?"Publicada":"Borrador"}</span>
+     </Link>)}</div>:<p className="admin-empty">Aún no hay propiedades. Usa «Nueva propiedad» para comenzar.</p>}
+   </section>
+   <section className="admin-panel" aria-labelledby="recent-leads">
+    <div className="heading-row"><h2 id="recent-leads">Últimos prospectos</h2>
+     <Link className="inline-link" href="/admin/leads">Ver todos <ArrowUpRight size={16}/></Link></div>
+    {leads.length?<div className="dashboard-simple-list">{leads.map(l=>
+     <Link key={l.id} href={"/admin/leads/"+encodeURIComponent(l.id)}>
+      <span><strong>{l.name}</strong><small>{l.property?.refCode||"Consulta general"} · {l.createdAt.toLocaleDateString("es",{timeZone:"UTC"})}</small></span>
+      <ArrowUpRight size={16} aria-hidden="true"/>
+     </Link>)}</div>:<p className="admin-empty">Los contactos del sitio aparecerán aquí.</p>}
+   </section>
+  </div>
+  <details className="dashboard-details">
+   <summary><BarChart3 size={19} aria-hidden="true"/> Estadísticas detalladas <ChevronDown size={18} aria-hidden="true"/></summary>
+   <div className="dashboard-details-inner">
+    <p className="dashboard-simple-intro">Visitas, contactos y tipos de inmuebles de los últimos 14 días.</p>
+    <div className="admin-panels">
+     <section className="admin-panel"><h2>Actividad del sitio</h2><TrafficChart data={chart}/></section>
+     <section className="admin-panel"><h2>Tipos de propiedades</h2><TypesChart data={types.map(x=>({name:x.type,value:x._count._all}))}/></section>
+    </div>
+    <p className="admin-empty">Las visitas y clics no son conversaciones confirmadas.</p>
+   </div>
+  </details>
  </>;
 }
 
@@ -59,7 +97,7 @@ async function AgentDashboard({user}:{user:{tenantId:string;userId:string;name:s
   prisma.lead.count({where:leadWhere(user)})
  ]);
  return <>
-  <div className="admin-heading"><div><h1>Mi espacio comercial</h1><p>Hola, {user.name}. Gestiona las consultas vinculadas a tus inmuebles.</p></div><Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(user.userId)} className="btn wizard-back">Mi perfil</Link><Link className="btn wizard-back" href="/admin/reportes/agentes">Mi rendimiento</Link></div>
+  <div className="admin-heading"><div><h1>Mi espacio comercial</h1><p>Hola, {user.name}. Gestiona las consultas vinculadas a tus inmuebles.</p></div><div className="dashboard-agent-links"><Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(user.userId)} className="btn wizard-back">Mi perfil</Link><Link className="btn wizard-back" href="/admin/reportes/agentes">Mi rendimiento</Link></div></div>
   <CommercialAlertsPreview user={user}/>
   <div className="metric-grid">
    <div className="metric-card"><div className="metric-label">Propiedades asignadas <House size={19}/></div><strong>{totalProps}</strong><small>Inmuebles a tu cargo</small></div>
