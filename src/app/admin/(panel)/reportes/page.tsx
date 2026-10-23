@@ -18,7 +18,8 @@ export default async function Reports({searchParams}:{searchParams:Promise<{peri
  return <>
   <div className="admin-heading">
    <div><h1>Reportes comerciales</h1><p>Consultas, interés por inmueble y seguimiento de prospectos.</p></div>
-   <Link className="btn wizard-back" href={"/api/admin/reportes/csv?periodo="+days}><Download size={17}/> Exportar CSV</Link>
+   <div className="agent-report-header-links"><Link className="btn wizard-back" href={"/admin/reportes/agentes?periodo="+days}>Rendimiento por agente</Link>
+   <Link className="btn wizard-back" href={"/api/admin/reportes/csv?periodo="+days}><Download size={17}/> Exportar CSV</Link></div>
   </div>
   <div className="reports-toolbar">
    <nav aria-label="Período de estadísticas" className="reports-periods">
