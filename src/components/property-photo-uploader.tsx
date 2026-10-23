@@ -12,6 +12,7 @@ export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;pho
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[success,setSuccess]=useState("");
  const [preview,setPreview]=useState<Photo|null>(null);
  const [dragged,setDragged]=useState<string|null>(null);
+ const lowQuality=items.filter(photo=>dimensions[photo.id]&&Math.min(dimensions[photo.id].width,dimensions[photo.id].height)<700).length;
  useEffect(()=>{setItems(photos);setError("");},[propertyId,photos]);
  const endpoint="/api/admin/properties/"+encodeURIComponent(propertyId)+"/photos";
  async function saveOrder(next:Photo[]){
@@ -75,6 +76,7 @@ export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;pho
    <span className="property-photo-count">{items.length} de 15 fotografías</span>
   </div>
   <p className="property-photo-instructions">La primera fotografía es la portada. Arrastra las imágenes para ordenarlas, utiliza las flechas o selecciona «Hacer portada».</p>
+  {lowQuality>0&&<p className="property-help" role="status">Aviso: {lowQuality} fotografía(s) tienen menos de 700 píxeles en su lado más corto. Para una presentación nítida, considera subir versiones de mayor resolución.</p>}
   {error&&<p className="admin-error" role="alert">{error}</p>}
   {success&&<p className="property-success" role="status">{success}</p>}
   {items.length>0?<div className="property-upload-grid property-photo-sort-grid">
@@ -84,7 +86,7 @@ export function PropertyPhotoUploader({propertyId,photos}:{propertyId:string;pho
      <img src={photo.url} alt={photo.alt||"Fotografía "+(i+1)} loading="lazy" onLoad={e=>{const img=e.currentTarget;setDimensions(prev=>({...prev,[photo.id]:{width:img.naturalWidth,height:img.naturalHeight}}));}}/>
      {i===0&&<span className="property-cover-label"><Star size={12}/> Portada</span>}
     </div>
-    <div className="property-photo-resolution">{dimensions[photo.id]?<span>{dimensions[photo.id].width} × {dimensions[photo.id].height} px{dimensions[photo.id].width<1200?" · Resolución baja":""}</span>:<span>Comprobando resolución…</span>}</div>
+    <div className="property-photo-resolution">{dimensions[photo.id]?<span>{dimensions[photo.id].width} × {dimensions[photo.id].height} px{Math.min(dimensions[photo.id].width,dimensions[photo.id].height)<700?" · Calidad limitada para ampliación":" · Apta para visualización"}</span>:<span>Comprobando resolución…</span>}</div>
     <div className="property-photo-sort-actions">
      <button type="button" title="Ver imagen completa" aria-label={"Ampliar fotografía "+(i+1)} onClick={()=>setPreview(photo)}><Eye size={16}/></button>
      <button type="button" title="Mover a la izquierda" aria-label={"Mover fotografía "+(i+1)+" a la izquierda"} onClick={()=>move(i,i-1)} disabled={busy||i===0}><ArrowLeft size={16}/></button>
