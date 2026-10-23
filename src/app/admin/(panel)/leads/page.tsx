@@ -5,10 +5,11 @@ import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 import {CRM_STATUSES,crmStatusLabel,isCrmStatus,whatsappLeadUrl} from "@/lib/crm-status";
 
 export const dynamic="force-dynamic";
-type Search={q?:string;status?:string;page?:string;activated?:string;error?:string};
+type Search={q?:string;status?:string;agent?:string;page?:string;activated?:string;error?:string};
 const date=(x:Date)=>x.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function AdminLeads({searchParams}:{searchParams:Promise<Search>}){
  const admin=await requireRole(["admin","editor","agente"]);
@@ -27,7 +28,11 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
    {admin.roles.includes("admin")?<form action="/api/admin/crm/activate" method="post"><button className="btn btn-red">Activar CRM de prospectos</button></form>:<p>Un administrador debe activar la función para empezar a utilizarla.</p>}
   </section>
  </>;
+ const team=managesAllLeads(admin)?await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
+ const agents=team.filter(u=>parseRoles(u.role).includes("agente"));
+ const agentFilter=params.agent==="none"?"none":agents.some(a=>a.id===params.agent)?params.agent||"":"";
  const filters:Prisma.LeadWhereInput[]=[];
+ if(agentFilter)filters.push({assignedAgentId:agentFilter==="none"?null:agentFilter});
  if(q)filters.push({OR:[
   {name:{contains:q}},{phone:{contains:q}},{email:{contains:q}},
   {property:{is:{refCode:{contains:q}}}}
@@ -39,19 +44,19 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  const [total,leads,allCount,managed]=await Promise.all([
   prisma.lead.count({where}),
   prisma.lead.findMany({where,orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12,
-   include:{property:{select:{refCode:true,title:true}},crm:true}}),
+   include:{property:{select:{refCode:true,title:true}},assignedAgent:{select:{name:true}},crm:true}}),
   prisma.lead.count({where:base}),
   prisma.leadCrm.groupBy({by:["status"],where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{lead:{is:base}}:{})},_count:{_all:true}})
  ]);
  const counts=new Map(managed.map(x=>[x.status,x._count._all]));
  const newCount=allCount-managed.filter(x=>x.status!=="nuevo").reduce((n,x)=>n+x._count._all,0);
- const paramsFor=(p:number)=>{const u=new URLSearchParams({q,status,page:String(p)});return "/admin/leads?"+u.toString();};
+ const paramsFor=(p:number)=>{const u=new URLSearchParams({q,status,agent:agentFilter,page:String(p)});return "/admin/leads?"+u.toString();};
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
   {params.activated&&<p className="property-success" role="status">CRM activado correctamente. Los contactos anteriores se conservaron.</p>}
   {params.error&&<p className="admin-error" role="alert">No se pudo completar la operación. Comprueba los permisos del usuario.</p>}
-  {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente las consultas de propiedades asignadas a tu cuenta.</p>}
+  {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente tus prospectos asignados, aunque una propiedad cambie de responsable.</p>}
   <div className="crm-overview">
    <div><span>Total de consultas</span><strong>{allCount}</strong><Users size={20}/></div>
    <div><span>Nuevos prospectos</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
@@ -63,6 +68,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
     <option value="">Todos los estados</option>
     {CRM_STATUSES.map(s=><option value={s.value} key={s.value}>{s.label}</option>)}
    </select></label>
+   {managesAllLeads(admin)&&<label><span>Responsable</span><select name="agent" defaultValue={agentFilter}><option value="">Todos los agentes</option><option value="none">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
    <button className="btn btn-dark" type="submit"><Filter size={16}/> Filtrar</button>
   </form>
   <div className="property-result-heading"><strong>{total} resultados</strong><span>Página {page} de {Math.max(1,Math.ceil(total/12))}</span></div>
@@ -75,7 +81,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
       <div className="crm-avatar" aria-hidden="true">{l.name.slice(0,1).toLocaleUpperCase("es")}</div>
       <div className="crm-lead-name"><strong>{l.name}</strong><span>{l.phone} {l.email?" · "+l.email:""}</span><small>{date(l.createdAt)}</small></div>
      </div>
-     <div className="crm-lead-property"><Building2 size={15}/><span>{l.property?.refCode?l.property.refCode+" · "+l.property.title:"Consulta general"}</span></div>
+     <div className="crm-lead-property"><Building2 size={15}/><span>{l.property?.refCode?l.property.refCode+" · "+l.property.title:"Consulta general"}</span><small className="crm-assigned-preview">Responsable: {l.assignedAgent?.name||"Sin asignar"}</small></div>
      <div className="crm-lead-side">
       <span className={"crm-status crm-status-"+(progress?.status||"nuevo")}>{crmStatusLabel(progress?.status||"nuevo")}</span>
       {progress?.nextContactAt&&<small>Próximo contacto: {date(progress.nextContactAt)}</small>}
