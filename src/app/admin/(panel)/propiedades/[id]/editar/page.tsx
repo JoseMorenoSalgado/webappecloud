@@ -1,3 +1,5 @@
+import {stat} from "node:fs/promises";
+import {mediaFilePath,mediaVariantPath} from "@/lib/property-media";
 import Link from "next/link";
 import {notFound} from "next/navigation";
 import {ExternalLink,Save,Trash2,Users,UserPlus,Images} from "lucide-react";
@@ -23,6 +25,11 @@ export default async function EditProperty({params,searchParams}:{params:Promise
  const q=await searchParams;
  const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},include:{photos:{orderBy:{sortOrder:"asc"}}}});
  if(!property)notFound();
+ const photoSizes=Object.fromEntries(await Promise.all(property.photos.map(async photo=>{
+  const paths=[mediaFilePath(admin.tenantId,photo.id),mediaVariantPath(admin.tenantId,photo.id,"card"),mediaVariantPath(admin.tenantId,photo.id,"thumb")];
+  const sizes=await Promise.all(paths.map(path=>stat(path).then(file=>file.size).catch(()=>null)));
+  return [photo.id,{full:sizes[0],card:sizes[1],thumb:sizes[2]}] as const;
+ })));
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const hasDocument=await hasCustomPdf(admin.tenantId,property.id);
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
@@ -42,7 +49,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
    </div>
   </form>}
   <section id="editar-fotos" className="admin-panel property-photo-panel editor-media-panel"><div className="editor-panel-heading"><Images size={19}/><h2>Fotografías ({property.photos.length})</h2></div><p>Sube imágenes JPG, PNG o WebP (máximo 8 MB cada una, hasta 15). Se convierten a WebP y se eliminan los metadatos de ubicación.</p>
-   {canEdit?<PropertyPhotoUploader propertyId={id} photos={property.photos.map(x=>({id:x.id,url:x.url,alt:x.alt||property.title}))}/>:<p>Solo disponible para administradores y editores.</p>}
+   {canEdit?<PropertyPhotoUploader propertyId={id} sizes={photoSizes} photos={property.photos.map(x=>({id:x.id,url:x.url,alt:x.alt||property.title}))}/>:<p>Solo disponible para administradores y editores.</p>}
   </section>
   <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">
    <p className="property-help">La ficha se genera automáticamente con los datos del inmueble o puedes subir una versión personalizada de tu empresa.</p>
