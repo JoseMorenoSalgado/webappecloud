@@ -74,6 +74,8 @@ jobs:
         run: npx tsx scripts/check-dashboard-metrics.ts
       - name: Evitar regresiones CSS en menú móvil
         run: node scripts/check-mobile-navigation.mjs
+      - name: Verificar formularios compactos de propiedades y seguimiento CRM
+        run: node scripts/check-editor-ux.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
