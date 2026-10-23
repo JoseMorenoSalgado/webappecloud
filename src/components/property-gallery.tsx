@@ -6,6 +6,7 @@ import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import {ChevronLeft,ChevronRight,Expand,Image as ImageIcon,ZoomIn} from "lucide-react";
 import "yet-another-react-lightbox/styles.css";
+import {mediaVariantUrl} from "@/lib/media-url";
 
 type PhotoSize={width:number;height:number};
 export function PropertyGallery({photos,title}:{photos:string[];title:string}){
@@ -73,7 +74,7 @@ export function PropertyGallery({photos,title}:{photos:string[];title:string}){
   {multiple&&<div className="property-gallery-thumbs" aria-label="Seleccionar una fotografía">
    {photos.map((photo,i)=><button type="button" key={photo+"-thumb-"+i} onClick={()=>emblaApi?.scrollTo(i)}
      className={index===i?"selected":""} aria-pressed={index===i} aria-label={"Mostrar fotografía "+(i+1)}>
-    <img src={photo} alt="" loading="lazy" decoding="async"/>
+    <img src={mediaVariantUrl(photo,"thumb")} alt="" loading="lazy" decoding="async"/>
    </button>)}
   </div>}
   <Lightbox open={lightboxOpen} close={()=>setLightboxOpen(false)} index={index}
