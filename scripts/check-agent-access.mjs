@@ -86,4 +86,59 @@ const forbiddenProperty=await page("/admin/propiedades/"+propertyId+"/editar",ag
 assert.ok([303,307,308].includes(forbiddenProperty.status));
 const withoutAssignedProperty=await post("/api/admin/crm/leads",leadForm("Contacto no permitido"),agentCookie);
 assert.match(withoutAssignedProperty.headers.get("location")||"",/error=propiedad/);
-console.log("Agent profile, assigned property, CRM scoping, API authorization and dashboard isolation passed.");
+
+const secondEmail="agent-second-"+suffix+"@example.test";
+const secondUser=new FormData();
+secondUser.set("intent","create");secondUser.set("name","Agente Segundo "+suffix);
+secondUser.set("email",secondEmail);secondUser.set("password",agentPassword);secondUser.append("roles","agente");
+const createdSecond=await post("/api/admin/users",secondUser,adminCookie);
+assert.match(createdSecond.headers.get("location")||"",/status=creado/);
+const directoryAfter=await (await page("/admin/clientes-agentes",adminCookie)).text();
+const secondIndex=directoryAfter.indexOf(secondEmail);
+assert.ok(secondIndex>=0);
+const secondMatch=directoryAfter.slice(secondIndex,secondIndex+1500).match(/href="\/admin\/clientes-agentes\/agentes\/([a-z0-9]{20,40})"/);
+assert.ok(secondMatch);
+const secondAgentId=secondMatch[1],secondCookie=await login(secondEmail,agentPassword);
+
+// Reassign the property. Its existing leads must retain their original owner.
+property.set("intent","save");property.set("assignedAgentId",secondAgentId);
+const movedProperty=await post("/api/admin/properties/"+propertyId,property,adminCookie);
+assert.match(movedProperty.headers.get("location")||"",/saved=1/);
+assert.equal((await page("/admin/leads/"+ownedId,agentCookie)).status,200,
+ "Property reassignment should not take away existing lead ownership.");
+assert.equal((await page("/admin/leads/"+ownedId,secondCookie)).status,404,
+ "New property agent must not automatically inherit older leads.");
+
+// Only administrators/editors can explicitly reassign a prospect, with an audit entry.
+const assignForm=new FormData();assignForm.set("intent","assign");assignForm.set("assignedAgentId",secondAgentId);
+const badTransfer=await post("/api/admin/crm/leads/"+ownedId,assignForm,agentCookie);
+assert.match(badTransfer.headers.get("location")||"",/error=permisos/);
+const transferred=await post("/api/admin/crm/leads/"+ownedId,assignForm,adminCookie);
+assert.match(transferred.headers.get("location")||"",/assigned=1/);
+assert.equal((await page("/admin/leads/"+ownedId,agentCookie)).status,404,
+ "Previous owner must immediately lose lead access.");
+assert.equal((await page("/admin/leads/"+ownedId,secondCookie)).status,200,
+ "New owner must immediately gain access.");
+const historyHtml=await (await page("/admin/leads/"+ownedId,adminCookie)).text();
+assert.match(historyHtml,/Historial de asignaciones/);
+assert.match(historyHtml,/Agente CI/);
+assert.match(historyHtml,/Agente Segundo/);
+const oldOwnerWrite=await post("/api/admin/crm/leads/"+ownedId,note,agentCookie);
+assert.match(oldOwnerWrite.headers.get("location")||"",/error=noexiste/);
+
+// General inquiries can be allocated to an agent without any linked property.
+const allocateGeneral=new FormData();
+allocateGeneral.set("intent","assign");allocateGeneral.set("assignedAgentId",agentId);
+const generalTransferred=await post("/api/admin/crm/leads/"+otherId,allocateGeneral,adminCookie);
+assert.match(generalTransferred.headers.get("location")||"",/assigned=1/);
+assert.equal((await page("/admin/leads/"+otherId,agentCookie)).status,200);
+assert.equal((await page("/admin/leads/"+otherId,secondCookie)).status,404);
+
+const unassign=new FormData();unassign.set("intent","assign");unassign.set("assignedAgentId","");
+const unassigned=await post("/api/admin/crm/leads/"+ownedId,unassign,adminCookie);
+assert.match(unassigned.headers.get("location")||"",/assigned=1/);
+assert.equal((await page("/admin/leads/"+ownedId,secondCookie)).status,404);
+const unassignedHtml=await (await page("/admin/leads/"+ownedId,adminCookie)).text();
+assert.match(unassignedHtml,/Sin agente asignado/);
+console.log("Agent ownership is independent of properties; transfers, unassignment, audit history and tenant-scoped permissions passed.");
+
