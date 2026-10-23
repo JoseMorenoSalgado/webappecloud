@@ -4,7 +4,7 @@ import {ROLE_LABELS,parseRoles} from "@/lib/roles";
 import {redirect} from "next/navigation";
 import Link from "next/link";
 export const dynamic="force-dynamic";
-const messages:Record<string,string>={creado:"Usuario creado correctamente.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
+const messages:Record<string,string>={creado:"Usuario creado correctamente.",perfil:"Perfil actualizado. Debe iniciarse una nueva sesión para aplicar el cambio.",guardado:"Permisos actualizados.",datos:"Revisa los datos ingresados.",duplicado:"No se pudo crear el usuario. Verifica si el correo ya existe.",propia:"No puedes modificar tu propia cuenta desde esta sección.",ultimo:"Debe quedar al menos un administrador activo."};
 export default async function Users({searchParams}:{searchParams:Promise<{status?:string}>}){
  const admin=await requireAdmin();if(!admin.roles.includes("admin"))redirect("/admin");
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId},orderBy:[{active:"desc"},{createdAt:"asc"}],select:{id:true,name:true,email:true,role:true,active:true}});
@@ -24,7 +24,7 @@ export default async function Users({searchParams}:{searchParams:Promise<{status
    </article>)}</div>:<p className="property-help">Crea un usuario con el rol Agente comercial para asignarle propiedades y consultar sus prospectos.</p>}
   </div>
   <p className="property-help">Los clientes potenciales se gestionan en Solicitudes / Leads y no reciben automáticamente acceso administrativo. Los agentes son colaboradores con roles asignados.</p>
-  {status&&messages[status]&&<p role="status" className={["creado","guardado"].includes(status)?"property-success":"admin-error"}>{messages[status]}</p>}
+  {status&&messages[status]&&<p role="status" className={["creado","guardado","perfil"].includes(status)?"property-success":"admin-error"}>{messages[status]}</p>}
   <div className="admin-panel"><h2>Crear usuario</h2><form className="user-create-form" method="post" action="/api/admin/users">
    <input type="hidden" name="intent" value="create"/>
    <label>Nombre completo<input name="name" minLength={2} maxLength={120} required autoComplete="name"/></label>
