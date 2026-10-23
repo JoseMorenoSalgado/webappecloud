@@ -34,10 +34,10 @@ export async function generateAgentPerformance(tenantId:string,periodRaw:string|
  });
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  const ids=agents.map(a=>a.id);
- const rows=new Map(agents.map(a=>[a.id,{
+ const rows=new Map<string,AgentPerformanceRow>(agents.map(a=>[a.id,{
   id:a.id,name:a.name,email:a.email,active:a.active,properties:0,leads:0,
   stages:emptyStages(),overdue:0,upcoming:0,conversion:null
- } satisfies AgentPerformanceRow]));
+ }]));
  const scope={tenantId,createdAt:{gte:from,lte:now}};
  const [propertyCounts,leadCounts,stageRows,followupRows,unassigned]=await Promise.all([
   ids.length?prisma.property.groupBy({by:["assignedAgentId"],where:{tenantId,assignedAgentId:{in:ids}},_count:{_all:true}}):Promise.resolve([]),
