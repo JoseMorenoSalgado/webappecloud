@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import {leadWhere,managesAllLeads} from "@/lib/agent-scope";
 import {AGENDA_TYPES,AGENDA_STATUSES,agendaScope,agendaLabel,agendaStatusLabel} from "@/lib/agenda";
 import {AgendaCreateForm,AgendaRescheduleForm} from "@/components/agenda-forms";
+import {agendaTableReady} from "@/lib/agenda-schema";
 import {AgendaCalendar,AgendaLocalDate} from "@/components/agenda-calendar";
 export const dynamic="force-dynamic";
 
@@ -14,13 +15,15 @@ const errors:Record<string,string>={
  permisos:"Tu usuario no tiene permisos para modificar la agenda.",
  prospecto:"El prospecto no existe o no está asignado a tu cuenta.",
  noexiste:"La actividad ya no está disponible para tu usuario.",
- servidor:"No fue posible guardar la operación. Revisa los registros del servidor."
+ servidor:"No fue posible guardar la operación. Revisa los registros del servidor.",
+ activacion:"No se pudo preparar la agenda. Comprueba los permisos de la base de datos."
 };
 const pad=(n:number)=>String(n).padStart(2,"0");
-type Search={mes?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;error?:string};
+type Search={mes?:string;estado?:string;tipo?:string;lead?:string;created?:string;updated?:string;activated?:string;error?:string};
 export default async function CommercialAgenda({searchParams}:{searchParams:Promise<Search>}){
  const user=await requireRole(["admin","editor","agente"]);
  const q=await searchParams;
+ if(!await agendaTableReady())return <section className="agenda-dashboard"><div className="admin-heading"><div><h1>Agenda comercial</h1><p>Programa llamadas, visitas y reuniones relacionadas con tus prospectos.</p></div></div><div className="admin-panel"><h2>Activar agenda comercial</h2><p>La agenda necesita una tabla nueva e independiente. Se conservarán los prospectos y las propiedades existentes.</p>{q.error&&<p role="alert" className="admin-error">{errors[q.error]||errors.activacion}</p>}{user.roles.includes("admin")?<form action="/api/admin/agenda/activate" method="post"><button type="submit" className="btn btn-red">Activar agenda</button></form>:<p className="property-help">Un administrador de esta empresa debe activar la agenda antes de usarla.</p>}</div></section>;
  const now=new Date();
  const current=now.toISOString().slice(0,7);
  const month=/^\d{4}-(0[1-9]|1[0-2])$/.test(q.mes||"")?q.mes!:current;
@@ -48,7 +51,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
   <div className="admin-heading"><div><h1>Agenda comercial</h1><p>Organiza visitas, llamadas y reuniones con seguimiento por prospecto y responsable.</p></div>
    <Link className="btn wizard-back" href="/admin/leads">Ir al CRM <ArrowUpRight size={16}/></Link>
   </div>
-  {(q.created||q.updated)&&<p className="property-success" role="status">{q.created?"Actividad programada correctamente.":"Agenda actualizada correctamente."}</p>}
+  {(q.created||q.updated||q.activated)&&<p className="property-success" role="status">{q.activated?"Agenda activada correctamente.":q.created?"Actividad programada correctamente.":"Agenda actualizada correctamente."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="agenda-metrics">
    <div><AlertTriangle size={19}/><span>Actividades vencidas</span><strong>{overdue}</strong><small>Pendientes con horario ya pasado</small></div>
