@@ -12,7 +12,7 @@ export async function tenantFromHost(hostname:string){
  const d=await prisma.domain.findUnique({where:{hostname:canonicalHost(hostname)},select:{tenantId:true,tenant:{select:{id:true,name:true,tagline:true,whatsapp:true,logoUrl:true,contactEmail:true,primaryColor:true,active:true}}}});
  return d?.tenant.active?d:null;
 }
-export async function getPublicContext():Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
+export async function getPublicContext(options:{loadProperties?:boolean}={}):Promise<{tenant:PublicTenant;properties:PublicProperty[];demo:boolean;settings:SiteSettings;heroImage:boolean}>{
  const h=await headers();
  const hostname=h.get("host")||"";
  const preview=isPreviewHost(hostname);
@@ -34,7 +34,7 @@ export async function getPublicContext():Promise<{tenant:PublicTenant;properties
    notFound();
  }
  const [props,settings,heroImage,customLogo]=await Promise.all([
-  prisma.property.findMany({where:{tenantId:d.tenantId,published:true},select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
+  options.loadProperties===false?Promise.resolve([]):prisma.property.findMany({where:{tenantId:d.tenantId,published:true},select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
   getSiteSettings(d.tenantId),hasSiteAsset(d.tenantId,"hero"),hasSiteAsset(d.tenantId,"logo")
  ]);
  const prioritized=[...props].sort((a,b)=>{
