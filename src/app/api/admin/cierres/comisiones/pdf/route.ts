@@ -34,7 +34,7 @@ export async function GET(req:NextRequest){
    {label:"Pendiente",value:closingMoney(report.totals.balance)},
    {label:"Operaciones",value:String(report.rows.filter(r=>r.status==="confirmado").length)}],
   columns:[{title:"Referencia / Cliente",width:157},{title:"Agente",width:95},
-   {title:"Comisión",width:78},{title:"Pagado",width:68},{title:"Saldo",width:67},{title:"Estado",width:51.28}],
+   {title:"Comisión",width:78},{title:"Pagado",width:68},{title:"Saldo",width:67},{title:"Estado",width:52.28}],
   rows:filtered.map(r=>[r.propertyRefCode+" / "+r.clientName,r.agentName,closingMoney(r.commission),
    closingMoney(r.paid),closingMoney(r.balance),r.paymentStatus]),
   note:"Registro interno. Abonos declarados; no constituye comprobante bancario."
