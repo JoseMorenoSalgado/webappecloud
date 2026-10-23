@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type {Metadata} from "next";
-import {ArrowUpRight,Search,SlidersHorizontal,Building2} from "lucide-react";
+import {ArrowUpRight,Search,SlidersHorizontal,Building2,X} from "lucide-react";
+import "./catalog-filters.css";
 import {getPublicContext} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {notFound} from "next/navigation";
@@ -40,6 +41,8 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const demoPage=Math.min(requestedPage,demoTotalPages);
  const result=demo?{properties:demoMatching.slice((demoPage-1)*CATALOG_PAGE_SIZE,demoPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:demoPage,totalPages:demoTotalPages}:await getCatalogPage(tenant.id,f,requestedPage);
  const matching=result.properties;
+ const advancedActive=Boolean(ciudad||codigo||precioMin!==undefined||precioMax!==undefined);
+ const filtersActive=Boolean(f.operacion||f.tipo||f.ubicacion||advancedActive||orden!=="recientes");
  const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v!==undefined&&v!=="").map(([k,v])=>[k,String(v)])),pagina:String(page)}).toString();
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido">
   <section className="nexus-inner-hero nexus-catalog-hero"><div className="container">
@@ -52,16 +55,24 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
   <section className="nexus-section nexus-catalog-section"><div className="container">
    <form className="nexus-catalog-filter-card" method="get" action="/propiedades">
     <div className="nexus-catalog-filter-heading"><SlidersHorizontal size={20}/><strong>Filtrar propiedades</strong></div>
-    <div className="nexus-search-form">
+    <div className="nexus-search-form catalog-primary-filters">
      <label>Operación<select name="operacion" defaultValue={f.operacion}><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></label>
      <label>Tipo de propiedad<select name="tipo" defaultValue={f.tipo}><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
      <label>Ciudad o zona<input name="ubicacion" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
+     <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
+    </div>
+    <details className="catalog-extra-filters" open={advancedActive}>
+     <summary>Más filtros{advancedActive?" (activos)":""}</summary>
+     <div className="catalog-extra-grid">
      <label>Ciudad exacta<input name="ciudad" defaultValue={ciudad} maxLength={90} placeholder="Ej. Granada"/></label>
      <label>Código de propiedad<input name="codigo" defaultValue={codigo} maxLength={90} placeholder="Referencia"/></label>
      <label>Precio mínimo<input type="number" name="precioMin" min="0" max="9999999999" step="0.01" defaultValue={precioMin??""} placeholder="Desde"/></label>
      <label>Precio máximo<input type="number" name="precioMax" min="0" max="9999999999" step="0.01" defaultValue={precioMax??""} placeholder="Hasta"/></label>
-     <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
+     </div>
+    </details>
+    <div className="catalog-filter-actions">
      <button className="btn btn-red" type="submit"><Search size={17}/> Aplicar filtros</button>
+     <Link href="/propiedades" className="catalog-reset-filters"><X size={16}/> {filtersActive?"Limpiar filtros":"Ver todas las propiedades"}</Link>
     </div>
    </form>
    <div className="nexus-catalog-results"><div>
