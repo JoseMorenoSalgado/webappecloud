@@ -18,7 +18,7 @@ export async function signIn(form:FormData){
  const key=createHash("sha256").update(domain.tenantId+":"+email).digest("hex"),now=new Date();
  const previous=await prisma.adminLoginThrottle.findUnique({where:{key}});
  if(previous&&previous.expiresAt>now&&previous.attempts>=8)redirect("/admin/acceso?error=bloqueado");
- const user=await prisma.adminUser.findUnique({where:{tenantId_email:{tenantId:domain.tenantId,email}},include:{tenant:true}});
+ const user=await prisma.adminUser.findUnique({where:{tenantId_email:{tenantId:domain.tenantId,email}},select:{id:true,active:true,passwordHash:true,tenant:{select:{active:true}}}});
  if(!user||!user.active||!user.tenant.active||!verifyPassword(password,user.passwordHash)){
   const expiresAt=new Date(Date.now()+15*60*1000);
   if(previous&&previous.expiresAt>now)await prisma.adminLoginThrottle.update({where:{key},data:{attempts:{increment:1}}});
