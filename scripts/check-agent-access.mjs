@@ -87,6 +87,16 @@ assert.ok([303,307,308].includes(forbiddenProperty.status));
 const withoutAssignedProperty=await post("/api/admin/crm/leads",leadForm("Contacto no permitido"),agentCookie);
 assert.match(withoutAssignedProperty.headers.get("location")||"",/error=propiedad/);
 
+// Public inquiries inherit a stable responsible agent when the property is submitted.
+const webLeadName="Consulta web comercial CI "+suffix;
+const publicLead=await fetch(origin+"/api/leads",{
+ method:"POST",headers:{Origin:origin,"Content-Type":"application/json"},
+ body:JSON.stringify({name:webLeadName,phone:"87776666",email:"prospecto-web@example.test",consent:"yes",
+  propertyId,message:"Consulta de integración con propiedad asignada."})
+});
+assert.equal(publicLead.status,201,"Published property form must create a prospect.");
+const webOwnedHtml=await (await page("/admin/leads",agentCookie)).text();
+assert.ok(webOwnedHtml.includes(webLeadName),"Public inquiry was not assigned to property's agent.");
 const secondEmail="agent-second-"+suffix+"@example.test";
 const secondUser=new FormData();
 secondUser.set("intent","create");secondUser.set("name","Agente Segundo "+suffix);
