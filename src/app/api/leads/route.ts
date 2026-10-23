@@ -11,7 +11,7 @@ export async function POST(req:NextRequest){
  let b:Record<string,unknown>;try{b=await req.json();}catch{return NextResponse.json({error:"Datos inválidos"},{status:400});}
  if(b.website)return NextResponse.json({ok:true});
  const name=String(b.name||"").trim().slice(0,120),phone=String(b.phone||"").trim().slice(0,30),email=String(b.email||"").trim().slice(0,180),message=String(b.message||"").trim().slice(0,2000);
- if(name.length<2||!/^[+\\d() -]{7,30}$/.test(phone)||b.consent!=="yes"||(email&&!/^\\S+@\\S+\\.\\S+$/.test(email)))return NextResponse.json({error:"Revisa tus datos y acepta el consentimiento de contacto."},{status:400});
+ if(name.length<2||!/^[+\d() -]{7,30}$/.test(phone)||b.consent!=="yes"||(email&&!/^\S+@\S+\.\S+$/.test(email)))return NextResponse.json({error:"Revisa tus datos y acepta el consentimiento de contacto."},{status:400});
  try{
   const tenant=await tenantFromHost(req.headers.get("host")||"");
   if(!tenant)return NextResponse.json({error:"Sitio no encontrado"},{status:404});
