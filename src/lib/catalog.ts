@@ -4,7 +4,8 @@ import type {PublicProperty} from "@/lib/demo";
 import type {Prisma} from "@prisma/client";
 
 export const CATALOG_PAGE_SIZE=12;
-export type CatalogFilters={operacion:string;tipo:string;ubicacion:string};
+export type CatalogSort="recientes"|"precio-asc"|"precio-desc";
+export type CatalogFilters={operacion:string;tipo:string;ubicacion:string;orden?:CatalogSort};
 export async function getCatalogPage(tenantId:string,filters:CatalogFilters,page:number){
  const where:Prisma.PropertyWhereInput={
   tenantId,published:true,
@@ -19,7 +20,7 @@ export async function getCatalogPage(tenantId:string,filters:CatalogFilters,page
  const totalPages=Math.max(1,Math.ceil(count/CATALOG_PAGE_SIZE));
  const currentPage=Math.min(Math.max(1,Math.floor(page)||1),totalPages);
  const rows=await prisma.property.findMany({
-  where,orderBy:[{createdAt:"desc"},{id:"desc"}],
+  where,orderBy:filters.orden==="precio-asc"?[{price:"asc" as const},{id:"desc" as const}]:filters.orden==="precio-desc"?[{price:"desc" as const},{id:"desc" as const}]:[{createdAt:"desc" as const},{id:"desc" as const}],
   skip:(currentPage-1)*CATALOG_PAGE_SIZE,take:CATALOG_PAGE_SIZE,
   select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{orderBy:{sortOrder:"asc"},take:1,select:{url:true}}}
  });
