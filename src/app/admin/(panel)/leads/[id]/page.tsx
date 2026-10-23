@@ -5,9 +5,10 @@ import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {leadWhere} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 import {CRM_STATUSES,crmStatusLabel,whatsappLeadUrl} from "@/lib/crm-status";
 export const dynamic="force-dynamic";
-type Params={error?:string;saved?:string;noteSaved?:string;created?:string};
+type Params={error?:string;saved?:string;noteSaved?:string;created?:string;assigned?:string};
 const date=(v:Date)=>v.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 const errors:Record<string,string>={
  origen:"El formulario no tiene un origen válido. Recarga la página.",
@@ -15,6 +16,7 @@ const errors:Record<string,string>={
  datos:"La solicitud contiene datos inválidos.",
  estado:"Selecciona un estado válido.",
  fecha:"La fecha de próximo contacto no es válida.",
+ agente:"Selecciona un agente activo de esta inmobiliaria.",
  nota:"La nota debe tener entre 3 y 2000 caracteres.",
  servidor:"No fue posible guardar el cambio. Revisa los registros del servidor."
 };
@@ -24,17 +26,19 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
  const {id}=await params,q=await searchParams;
  const lead=await prisma.lead.findFirst({
   where:{id,...leadWhere(admin)},
-  include:{crm:true,notes:{where:{tenantId:admin.tenantId},orderBy:{createdAt:"desc"},take:50},property:{select:{refCode:true,title:true,slug:true,published:true}}}
+  include:{crm:true,notes:{where:{tenantId:admin.tenantId},orderBy:{createdAt:"desc"},take:50},property:{select:{refCode:true,title:true,slug:true,published:true}},assignedAgent:{select:{id:true,name:true}},assignmentHistory:{orderBy:{createdAt:"desc"},take:30}}
  });
  if(!lead)notFound();
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  const canManageProperty=admin.roles.some(r=>["admin","editor"].includes(r));
+ const team=canManageProperty?await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
+ const agents=team.filter(u=>parseRoles(u.role).includes("agente"));
  const wa=whatsappLeadUrl(lead.phone,admin.tenantName,lead.property?.refCode);
  const url="/api/admin/crm/leads/"+encodeURIComponent(id);
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link><span className={"crm-status crm-status-"+(lead.crm?.status||"nuevo")}>{crmStatusLabel(lead.crm?.status||"nuevo")}</span></div>
   <div className="admin-heading"><div><h1>{lead.name}</h1><p>Consulta recibida el {date(lead.createdAt)} · Origen: {lead.source==="web"?"Formulario web":lead.source==="whatsapp"?"WhatsApp (registro manual)":lead.source==="telefono"?"Llamada telefónica":"Atención directa"}</p></div></div>
-  {(q.saved||q.noteSaved||q.created)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
+  {(q.saved||q.noteSaved||q.created||q.assigned)&&<p className="property-success" role="status">{q.created?"Prospecto registrado correctamente.":q.assigned?"Responsable actualizado e historial registrado.":q.saved?"Seguimiento guardado correctamente.":"Nota registrada en el historial."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
   <div className="crm-detail-grid">
    <div className="crm-detail-primary">
@@ -62,6 +66,7 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
    </div>
    <aside className="admin-panel crm-followup-panel"><h2><CalendarClock size={19}/> Seguimiento</h2>
     <p>Actualiza la etapa comercial y programa el próximo contacto.</p>
+    <p className="crm-owner-label"><strong>Responsable:</strong> {lead.assignedAgent?.name||"Sin agente asignado"}</p>
     {canEdit?<form method="post" action={url} className="crm-followup-form">
      <input type="hidden" name="intent" value="status"/>
      <label>Estado comercial<select name="status" defaultValue={lead.crm?.status||"nuevo"}>
@@ -70,6 +75,24 @@ export default async function CrmLead({params,searchParams}:{params:Promise<{id:
      <label>Próximo contacto<input name="nextContactAt" type="date" defaultValue={lead.crm?.nextContactAt?.toISOString().slice(0,10)||""}/></label>
      <button className="btn btn-red" type="submit"><Save size={17}/> Guardar seguimiento</button>
     </form>:<div className="crm-contact-data"><strong>{crmStatusLabel(lead.crm?.status||"nuevo")}</strong>{lead.crm?.nextContactAt&&<span>Próximo contacto: {date(lead.crm.nextContactAt)}</span>}</div>}
+    {canManageProperty&&<div className="crm-agent-assignment">
+     <h3>Asignar responsable</h3>
+     <p className="property-help">Este agente conservará el prospecto aunque cambie el responsable de la propiedad.</p>
+     <form method="post" action={url}>
+      <input name="intent" type="hidden" value="assign"/>
+      <label>Agente comercial
+       <select name="assignedAgentId" defaultValue={lead.assignedAgentId||""}>
+        <option value="">Sin asignar</option>
+        {agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}
+       </select>
+      </label>
+      <button className="btn wizard-back" type="submit">Guardar responsable</button>
+     </form>
+     <h3>Historial de asignaciones</h3>
+     {lead.assignmentHistory.length?<ol className="crm-assignment-history">
+      {lead.assignmentHistory.map(h=><li key={h.id}><strong>{h.fromAgentName||"Sin asignar"} → {h.toAgentName||"Sin asignar"}</strong><small>{date(h.createdAt)} · {h.changedByName}</small></li>)}
+     </ol>:<p className="property-help">No hay reasignaciones registradas.</p>}
+    </div>}
     {lead.property&&canManageProperty&&<Link className="inline-link" href={"/admin/propiedades/"+encodeURIComponent(lead.propertyId||"")+"/editar"}>Gestionar inmueble →</Link>}
     {lead.property?.published&&!canManageProperty&&<Link className="inline-link" target="_blank" href={"/propiedades/"+encodeURIComponent(lead.property.slug)}>Ver propiedad pública →</Link>}
    </aside>
