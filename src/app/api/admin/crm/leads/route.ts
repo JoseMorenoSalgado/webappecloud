@@ -3,6 +3,7 @@ import {requireAdmin} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {managesAllLeads} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 
 export const runtime="nodejs";
@@ -34,12 +35,15 @@ export async function POST(req:NextRequest){
   if(!["whatsapp","telefono","manual"].includes(source))return back("datos");
   if(form.get("consent")!=="on")return back("consentimiento");
   if(!managesAllLeads(admin)&&!propertyId)return back("propiedad");
+  let assignedAgentId:string|null=null;
   if(propertyId){
-   const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true}});
+   const property=await prisma.property.findFirst({where:{tenantId:admin.tenantId,id:propertyId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,assignedAgentId:true,assignedAgent:{select:{active:true,role:true,tenantId:true}}}});
    if(!property)return back("propiedad");
+   if(property.assignedAgentId&&property.assignedAgent?.active&&property.assignedAgent.tenantId===admin.tenantId&&parseRoles(property.assignedAgent.role).includes("agente"))assignedAgentId=property.assignedAgentId;
   }
+  if(!managesAllLeads(admin))assignedAgentId=admin.userId;
   const lead=await prisma.lead.create({data:{
-   tenantId:admin.tenantId,propertyId:propertyId||null,name,phone,email:email||null,
+   tenantId:admin.tenantId,propertyId:propertyId||null,assignedAgentId,name,phone,email:email||null,
    message:message||null,source,consent:true
   }});
   return propertyRedirect("/admin/leads/"+encodeURIComponent(lead.id)+"?created=1");
