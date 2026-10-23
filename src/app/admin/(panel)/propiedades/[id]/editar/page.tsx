@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
-import {ExternalLink,Save,Trash2} from "lucide-react";
+import {ExternalLink,Save,Trash2,Users,UserPlus} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
@@ -28,7 +28,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
  const users=await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,email:true,role:true}});
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  return <>
-  <div className="admin-heading"><div><h1>Editar propiedad</h1><p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p></div><Link href="/admin/propiedades" className="inline-link">← Propiedades</Link></div>
+  <div className="admin-heading"><div><h1>Editar propiedad</h1><p>Referencia {property.refCode} · {property.published?"Publicada":"Borrador"}</p></div><div className="admin-context-actions"><Link href={"/admin/leads?q="+encodeURIComponent(property.refCode)} className="inline-link"><Users size={16}/> Ver prospectos</Link><Link href={"/admin/leads/nuevo?propertyId="+encodeURIComponent(property.id)} className="inline-link"><UserPlus size={16}/> Registrar interesado</Link><Link href="/admin/propiedades" className="inline-link">← Propiedades</Link></div></div>
   {q.created&&<p className="property-success" role="status">Propiedad creada correctamente. Ahora puedes añadir fotografías.</p>}
   {q.saved&&<p className="property-success" role="status">Cambios guardados correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}

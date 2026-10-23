@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {Building2,BedDouble,Bath,Maximize2,MapPin,Pencil,Plus,Search,Image as ImageIcon,ExternalLink} from "lucide-react";
+import {Building2,MapPin,Pencil,Plus,Search,Image as ImageIcon,ExternalLink,Users,X} from "lucide-react";
 import {prisma} from "@/lib/prisma";
 import {requireRole} from "@/lib/auth";
 export const dynamic="force-dynamic";
@@ -18,43 +18,57 @@ export default async function AdminProperties({searchParams}:{searchParams:Promi
  };
  const [total,rows,activeCount,draftCount]=await Promise.all([
   prisma.property.count({where}),
-  prisma.property.findMany({where,include:{photos:{orderBy:{sortOrder:"asc"},take:1}},orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
+  prisma.property.findMany({where,select:{id:true,slug:true,title:true,refCode:true,city:true,neighborhood:true,price:true,operation:true,published:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{select:{url:true},orderBy:{sortOrder:"asc"},take:1}},orderBy:{createdAt:"desc"},skip:(page-1)*12,take:12}),
   prisma.property.count({where:{tenantId:admin.tenantId,published:true}}),
   prisma.property.count({where:{tenantId:admin.tenantId,published:false}})
  ]);
- const filters=new URLSearchParams({q,status,operation}),nextUrl=(p:number)=>{const params=new URLSearchParams(filters);params.set("page",String(p));return "/admin/propiedades?"+params.toString();};
+ const filters=new URLSearchParams();
+ if(q)filters.set("q",q);
+ if(status==="publicada"||status==="borrador")filters.set("status",status);
+ if(operation==="venta"||operation==="alquiler")filters.set("operation",operation);
+ const queryUrl=(next:URLSearchParams)=>"/admin/propiedades"+(next.size?"?"+next.toString():"");
+ const nextUrl=(p:number)=>{const params=new URLSearchParams(filters);params.set("page",String(p));return queryUrl(params);};
+ const statusUrl=(value:""|"publicada"|"borrador")=>{const params=new URLSearchParams(filters);params.delete("page");if(value)params.set("status",value);else params.delete("status");return queryUrl(params);};
+ const isFiltered=filters.size>0;
  const canEdit=admin.role==="admin"||admin.role==="editor";
  return <>
   <div className="admin-heading"><div><h1>Propiedades</h1><p>Organiza, publica y administra el catálogo de tu inmobiliaria.</p></div>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={18}/> Nueva propiedad</Link>}</div>
   {(x.updated||x.deleted)&&<div className="property-success" role="status">{x.deleted?"Propiedad eliminada.":"Estado de publicación actualizado."}</div>}
   {x.error&&<div className="admin-error" role="alert">No fue posible completar la operación solicitada.</div>}
-  <div className="property-summary"><div><strong>{activeCount+draftCount}</strong><span>Propiedades totales</span></div><div><strong>{activeCount}</strong><span>Publicadas</span></div><div><strong>{draftCount}</strong><span>Borradores</span></div></div>
+  <nav className="admin-quick-filters" aria-label="Estado de las propiedades">
+   <Link href={statusUrl("")} aria-current={!status?"page":undefined} className={!status?"selected":""}>Todas <strong>{activeCount+draftCount}</strong></Link>
+   <Link href={statusUrl("publicada")} aria-current={status==="publicada"?"page":undefined} className={status==="publicada"?"selected":""}>Publicadas <strong>{activeCount}</strong></Link>
+   <Link href={statusUrl("borrador")} aria-current={status==="borrador"?"page":undefined} className={status==="borrador"?"selected":""}>Borradores <strong>{draftCount}</strong></Link>
+  </nav>
   <form method="get" className="property-filters" action="/admin/propiedades">
    <label><span>Buscar inmuebles</span><div className="property-search"><Search size={17}/><input name="q" placeholder="Referencia, nombre o ciudad" defaultValue={q}/></div></label>
    <label><span>Estado</span><select name="status" defaultValue={status}><option value="">Todos</option><option value="publicada">Publicadas</option><option value="borrador">Borradores</option></select></label>
    <label><span>Operación</span><select name="operation" defaultValue={operation}><option value="">Todas</option><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select></label>
-   <button className="btn btn-dark" type="submit">Filtrar</button>
+   <div className="admin-filter-actions"><button className="btn btn-dark" type="submit">Buscar</button>{isFiltered&&<Link href="/admin/propiedades" className="admin-clear-filters"><X size={15}/> Limpiar</Link>}</div>
   </form>
   <div className="property-result-heading"><strong>{total} resultados</strong><span>Página {page} de {Math.max(1,Math.ceil(total/12))}</span></div>
-  {rows.length?<div className="property-admin-grid">{rows.map(p=>{
-   const photo=p.photos[0];
-   return <article key={p.id} className="property-admin-card">
-    <div className="property-admin-photo">{photo?<img loading="lazy" src={photo.url} alt={p.title}/>:<div className="property-photo-placeholder"><ImageIcon size={32}/><span>Sin fotografía</span></div>}
-     <span className={"property-admin-status "+(p.published?"is-published":"is-draft")}>{p.published?"Publicada":"Borrador"}</span>
-    </div>
+  {rows.length?<div className="property-admin-grid property-list-compact">{rows.map(item=>{
+   const photo=item.photos[0];
+   const label=[item.bedrooms?item.bedrooms+" hab.":null,item.bathrooms?item.bathrooms+" baños":null,item.areaM2?item.areaM2+" m²":null].filter(Boolean).join(" · ");
+   return <article key={item.id} className="property-admin-card">
+    <div className="property-admin-photo">{photo?<img loading="lazy" src={photo.url} alt={item.title}/>:<div className="property-photo-placeholder"><ImageIcon size={23}/><span>Sin foto</span></div>}</div>
     <div className="property-admin-content">
-     <div className="property-admin-code">{p.refCode}<span>{p.operation==="venta"?"En venta":"En alquiler"}</span></div>
-     <h2>{p.title}</h2><div className="property-admin-location"><MapPin size={15}/>{[p.neighborhood,p.city].filter(Boolean).join(", ")}</div>
-     <strong className="property-admin-price">{money(Number(p.price))}</strong>
-     <div className="property-admin-facts"><span><BedDouble size={15}/>{p.bedrooms??0} hab.</span><span><Bath size={15}/>{p.bathrooms??0} baños</span><span><Maximize2 size={15}/>{p.areaM2??0} m²</span></div>
+     <div className="property-admin-code"><strong>{item.refCode}</strong><span className={"property-admin-status "+(item.published?"is-published":"is-draft")}>{item.published?"Publicada":"Borrador"}</span></div>
+     <h2><Link href={"/admin/propiedades/"+encodeURIComponent(item.id)+"/editar"}>{item.title}</Link></h2>
+     <div className="property-admin-location"><MapPin size={14}/>{[item.neighborhood,item.city].filter(Boolean).join(", ")||"Ubicación por completar"}</div>
+     {label&&<small className="property-admin-specs">{label}</small>}
+    </div>
+    <div className="property-admin-controls">
+     <div className="property-admin-amount"><strong>{money(Number(item.price))}</strong><small>{item.operation==="venta"?"En venta":"En alquiler"}</small></div>
      <div className="property-admin-actions">
-      <Link href={"/admin/propiedades/"+encodeURIComponent(p.id)+"/editar"} className="btn wizard-back"><Pencil size={15}/> Editar</Link>
-      {p.published?<Link className="property-admin-view" target="_blank" href={"/propiedades/"+encodeURIComponent(p.slug)} aria-label={"Ver "+p.title}><ExternalLink size={18}/></Link>:null}
-      {canEdit&&<form method="post" action={"/api/admin/properties/"+encodeURIComponent(p.id)}><input type="hidden" name="intent" value={p.published?"unpublish":"publish"}/><button type="submit" className="btn btn-text">{p.published?"Ocultar":"Publicar"}</button></form>}
+      <Link href={"/admin/propiedades/"+encodeURIComponent(item.id)+"/editar"} className="btn wizard-back"><Pencil size={15}/> Editar</Link>
+      <Link href={"/admin/leads?q="+encodeURIComponent(item.refCode)} className="admin-row-link"><Users size={15}/> Prospectos</Link>
+      {item.published&&<Link className="admin-row-link admin-view-link" target="_blank" rel="noopener noreferrer" href={"/propiedades/"+encodeURIComponent(item.slug)}><ExternalLink size={15}/> Ver sitio</Link>}
+      <form method="post" action={"/api/admin/properties/"+encodeURIComponent(item.id)}><input type="hidden" name="intent" value={item.published?"unpublish":"publish"}/><button type="submit" className="btn btn-text">{item.published?"Ocultar":"Publicar"}</button></form>
      </div>
     </div>
    </article>;
-  })}</div>:<div className="property-empty"><Building2 size={34}/><h2>No encontramos propiedades</h2><p>Prueba con otros filtros o crea tu primer inmueble.</p>{canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red">Crear propiedad</Link>}</div>}
+  })}</div>:<div className="property-empty"><Building2 size={30}/><h2>{isFiltered?"No hay propiedades con esos filtros":"Tu catálogo está vacío"}</h2><p>{isFiltered?"Prueba otra búsqueda o limpia los filtros.":"Registra tu primer inmueble para empezar."}</p><div className="admin-empty-actions">{isFiltered&&<Link className="btn wizard-back" href="/admin/propiedades">Limpiar filtros</Link>}{!isFiltered&&canEdit&&<Link href="/admin/propiedades/nueva" className="btn btn-red"><Plus size={16}/> Nueva propiedad</Link>}</div></div>}
   {total>12&&<div className="property-pagination">{page>1&&<Link className="btn wizard-back" href={nextUrl(page-1)}>← Anterior</Link>}{page*12<total&&<Link className="btn wizard-back" href={nextUrl(page+1)}>Siguiente →</Link>}</div>}
  </>;
 }

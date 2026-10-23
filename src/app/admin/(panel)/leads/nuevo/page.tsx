@@ -17,7 +17,7 @@ const errors:Record<string,string>={
  origen:"La solicitud se hizo desde un origen no autorizado.",
  servidor:"No se pudo registrar el prospecto. Inténtalo nuevamente."
 };
-export default async function CreateLead({searchParams}:{searchParams:Promise<{error?:string}>}){
+export default async function CreateLead({searchParams}:{searchParams:Promise<{error?:string;propertyId?:string}>}){
  const admin=await requireRole(["admin","editor","agente"]);
  if(!await crmTablesReady())redirect("/admin/leads");
  const props=await prisma.property.findMany({where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
@@ -39,7 +39,7 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
      <label>Correo electrónico<input name="email" type="email" maxLength={180} placeholder="cliente@ejemplo.com"/></label>
      <label>Canal de entrada<select name="source" defaultValue="whatsapp"><option value="whatsapp">WhatsApp</option><option value="telefono">Llamada telefónica</option><option value="manual">Atención directa</option></select></label>
     </div>
-    <label>Propiedad de interés<select name="propertyId" defaultValue="" required={!managesAllLeads(admin)}><option value="">{managesAllLeads(admin)?"Consulta general, sin propiedad específica":"Selecciona una de tus propiedades"}</option>{props.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    <label>Propiedad de interés<select name="propertyId" defaultValue={selectedProperty} required={!managesAllLeads(admin)}><option value="">{managesAllLeads(admin)?"Consulta general, sin propiedad específica":"Selecciona una de tus propiedades"}</option>{props.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
     {managesAllLeads(admin)&&<label>Responsable comercial<select name="assignedAgentId" defaultValue="auto"><option value="auto">Automático según el inmueble</option><option value="">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
     <label>Observaciones de la consulta<textarea name="message" maxLength={2000} placeholder="Ej.: Solicita precio y disponibilidad para visitar la propiedad."/></label>
    </div>

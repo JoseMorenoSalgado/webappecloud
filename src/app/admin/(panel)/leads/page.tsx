@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus} from "lucide-react";
+import {Building2,CalendarClock,ChevronRight,ClipboardList,Filter,MessageCircle,Search,Users,UserPlus,X} from "lucide-react";
 import {Prisma} from "@prisma/client";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -50,36 +50,37 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  ]);
  const counts=new Map(managed.map(x=>[x.status,x._count._all]));
  const newCount=allCount-managed.filter(x=>x.status!=="nuevo").reduce((n,x)=>n+x._count._all,0);
- const paramsFor=(p:number)=>{const u=new URLSearchParams({q,status,agent:agentFilter,page:String(p)});return "/admin/leads?"+u.toString();};
+ const paramsFor=(p:number)=>{const u=new URLSearchParams();if(q)u.set("q",q);if(status)u.set("status",status);if(agentFilter)u.set("agent",agentFilter);u.set("page",String(p));return "/admin/leads?"+u.toString();};
+ const hasFilters=Boolean(q||status||agentFilter);
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>Prospectos y seguimiento</h1><p>Organiza las consultas inmobiliarias, programa contactos y registra gestiones.</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/> Registrar prospecto</Link>}</div>
   {params.activated&&<p className="property-success" role="status">CRM activado correctamente. Los contactos anteriores se conservaron.</p>}
   {params.error&&<p className="admin-error" role="alert">No se pudo completar la operación. Comprueba los permisos del usuario.</p>}
   {!managesAllLeads(admin)&&<p className="panel-notice">Mostrando únicamente tus prospectos asignados, aunque una propiedad cambie de responsable.</p>}
-  <div className="crm-overview">
+  <div className="crm-overview crm-overview-compact">
    <div><span>Total de consultas</span><strong>{allCount}</strong><Users size={20}/></div>
    <div><span>Nuevos prospectos</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
    <div><span>En seguimiento</span><strong>{(counts.get("contactado")||0)+(counts.get("visita")||0)+(counts.get("negociacion")||0)}</strong><CalendarClock size={20}/></div>
   </div>
-  <form className={"crm-filters"+(managesAllLeads(admin)?" crm-filters-with-agents":"")} method="get" action="/admin/leads">
+  <form className={"crm-filters crm-filters-compact"+(managesAllLeads(admin)?" crm-filters-with-agents":"")} method="get" action="/admin/leads">
    <label><span>Buscar contacto</span><div className="property-search"><Search size={17}/><input name="q" placeholder="Nombre, teléfono, correo o referencia" defaultValue={q} maxLength={80}/></div></label>
    <label><span>Estado comercial</span><select name="status" defaultValue={status}>
     <option value="">Todos los estados</option>
     {CRM_STATUSES.map(s=><option value={s.value} key={s.value}>{s.label}</option>)}
    </select></label>
    {managesAllLeads(admin)&&<label><span>Responsable</span><select name="agent" defaultValue={agentFilter}><option value="">Todos los agentes</option><option value="none">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
-   <button className="btn btn-dark" type="submit"><Filter size={16}/> Filtrar</button>
+   <div className="admin-filter-actions"><button className="btn btn-dark" type="submit"><Filter size={16}/> Aplicar</button>{hasFilters&&<Link href="/admin/leads" className="admin-clear-filters"><X size={15}/> Limpiar</Link>}</div>
   </form>
   <div className="property-result-heading"><strong>{total} resultados</strong><span>Página {page} de {Math.max(1,Math.ceil(total/12))}</span></div>
-  {leads.length?<div className="crm-list">
+  {leads.length?<div className="crm-list crm-list-compact">
    {leads.map(l=>{
     const wa=whatsappLeadUrl(l.phone,admin.tenantName,l.property?.refCode);
     const progress=l.crm;
     return <article key={l.id} className="crm-lead-card">
      <div className="crm-lead-main">
       <div className="crm-avatar" aria-hidden="true">{l.name.slice(0,1).toLocaleUpperCase("es")}</div>
-      <div className="crm-lead-name"><strong>{l.name}</strong><span>{l.phone} {l.email?" · "+l.email:""}</span><small>{date(l.createdAt)}</small></div>
+      <div className="crm-lead-name"><strong><Link href={"/admin/leads/"+encodeURIComponent(l.id)}>{l.name}</Link></strong><span>{l.phone}{l.email?" · "+l.email:""}</span><small>{date(l.createdAt)}</small></div>
      </div>
      <div className="crm-lead-property"><Building2 size={15}/><span>{l.property?.refCode?l.property.refCode+" · "+l.property.title:"Consulta general"}</span><small className="crm-assigned-preview">Responsable: {l.assignedAgent?.name||"Sin asignar"}</small></div>
      <div className="crm-lead-side">
@@ -87,11 +88,11 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
       {progress?.nextContactAt&&<small>Próximo contacto: {date(progress.nextContactAt)}</small>}
       <div className="crm-lead-actions">
        {wa&&<a href={wa} target="_blank" rel="noopener noreferrer" className="crm-whatsapp-link"><MessageCircle size={16}/> WhatsApp</a>}
-       <Link href={"/admin/leads/"+encodeURIComponent(l.id)} className="btn wizard-back">Ver ficha <ChevronRight size={16}/></Link>
+       <Link href={"/admin/leads/"+encodeURIComponent(l.id)} className="btn wizard-back">Seguimiento <ChevronRight size={16}/></Link>
       </div>
      </div>
     </article>;
-   })}</div>:<div className="property-empty"><Users size={34}/><h2>Sin prospectos</h2><p>{q||status?"Prueba con otros filtros.":"Las consultas enviadas desde tu sitio web aparecerán aquí."}</p></div>}
+   })}</div>:<div className="property-empty"><Users size={34}/><h2>{hasFilters?"No hay coincidencias":"Sin prospectos todavía"}</h2><p>{hasFilters?"Prueba con otros filtros.":"Las consultas enviadas desde tu sitio web aparecerán aquí."}</p>{hasFilters&&<Link href="/admin/leads" className="btn wizard-back">Limpiar filtros</Link>}</div>}
   {total>12&&<nav className="property-pagination" aria-label="Paginación de prospectos">
    {page>1&&<Link href={paramsFor(page-1)} className="btn wizard-back">← Anterior</Link>}
    {page*12<total&&<Link href={paramsFor(page+1)} className="btn wizard-back">Siguiente →</Link>}
