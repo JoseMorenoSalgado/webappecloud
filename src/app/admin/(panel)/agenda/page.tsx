@@ -60,7 +60,7 @@ export default async function CommercialAgenda({searchParams}:{searchParams:Prom
  });
  return <section className="agenda-dashboard">
   <div className="admin-heading"><div><h1>Agenda comercial</h1><p>Organiza visitas, llamadas y reuniones con seguimiento por prospecto y responsable.</p></div>
-   <Link className="btn wizard-back" href="/admin/leads">Ir al CRM <ArrowUpRight size={16}/></Link>
+
   </div>
   {(q.created||q.updated||q.activated)&&<p className="property-success" role="status">{q.activated?"Agenda activada correctamente.":q.created?"Actividad programada correctamente.":"Agenda actualizada correctamente."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}

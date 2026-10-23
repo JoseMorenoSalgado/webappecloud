@@ -19,6 +19,8 @@ assert.match(html,/dashboard-simple-list/);
 assert.match(html,/dashboard-details/);
 assert.match(html,/Más herramientas/);
 assert.match(html,/Prospectos/);
+assert.ok(!html.includes("admin-topbar"),"La página privada no debe renderizar un encabezado redundante");
+assert.match(html,/Cerrar sesión/);
 assert.ok(!html.includes("Próximamente</span>"),"No debe mostrar enlaces de navegación que no funcionan");
 const home=await fetch(base+"/");
 assert.equal(home.status,200);
@@ -27,3 +29,9 @@ assert.ok(publicHtml.includes("nexus-hero-layout-simple"));
 assert.ok(!publicHtml.includes("nexus-hero-side-mark"),"No debe verse el bloque decorativo lateral");
 assert.ok(!publicHtml.includes("01 \/ EXPERIENCIAS"),"No debe mostrarse contador decorativo");
 console.log("UX simplificada: navegación, KPIs, recientes y home verificados.");
+
+const agenda=await fetch(base+"/admin/agenda",{headers:{Cookie:cookie}});
+assert.equal(agenda.status,200);
+const agendaHtml=await agenda.text();
+assert.match(agendaHtml,/Agenda comercial/);
+assert.ok(!agendaHtml.includes("Ir al CRM"),"La agenda no debe duplicar accesos del menú principal");

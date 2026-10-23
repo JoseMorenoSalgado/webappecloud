@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
+import {signOut} from "@/app/admin/actions";
 import {useEffect,useRef,useState} from "react";
 import {usePathname} from "next/navigation";
 import {
  LayoutDashboard,Building2,UsersRound,Settings,CalendarDays,
  ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck,UserRound,
- X,Bell,HandCoins,ExternalLink,type LucideIcon
+ X,Bell,HandCoins,ExternalLink,LogOut,type LucideIcon
 } from "lucide-react";
 
 type Entry={href:string;label:string;Icon:LucideIcon};
@@ -24,13 +25,14 @@ const secondary:Entry[]=[
 function selectedLink(pathname:string,href:string){
  return href==="/admin"?pathname===href:pathname===href||pathname.startsWith(href+"/");
 }
-export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:{
- role?:string;roles?:string[];userId?:string;notificationCount?:number
+export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0}:{
+ role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number
 }){
  const pathname=usePathname();
  const [mobileOpen,setMobileOpen]=useState(false);
  const menuTrigger=useRef<HTMLButtonElement>(null);
  const closeButton=useRef<HTMLButtonElement>(null);
+ const drawer=useRef<HTMLElement>(null);
  useEffect(()=>{setMobileOpen(false);},[pathname]);
  useEffect(()=>{
   if(!mobileOpen)return;
@@ -42,6 +44,13 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
    if(event.key==="Escape"){
     setMobileOpen(false);
     menuTrigger.current?.focus();
+   }
+   if(event.key==="Tab"&&drawer.current){
+    const focusables=[...drawer.current.querySelectorAll<HTMLElement>('a[href],button:not([disabled])')];
+    if(!focusables.length)return;
+    const first=focusables[0],last=focusables[focusables.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
    }
   };
   document.addEventListener("keydown",close);
@@ -84,6 +93,10 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
    <Link href="/" target="_blank" rel="noopener noreferrer" className="admin-nav-website">
     <ExternalLink size={17} aria-hidden="true"/><span>Ver página pública</span>
    </Link>
+   <div className="admin-account-desktop">
+    <span className="admin-account-name">{userName}</span>
+    <form action={signOut}><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
+   </div>
   </nav>
   <div className="admin-nav-mobile">
    <button type="button" ref={menuTrigger} className="admin-mobile-trigger" onClick={()=>setMobileOpen(v=>!v)} aria-expanded={mobileOpen} aria-controls="admin-mobile-drawer">
@@ -91,13 +104,18 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
    </button>
    {mobileOpen&&<>
     <button type="button" className="admin-mobile-overlay" onClick={()=>setMobileOpen(false)} aria-label="Cerrar navegación"/>
-    <aside id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
+    <aside ref={drawer} id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
      <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" ref={closeButton} onClick={()=>{setMobileOpen(false);menuTrigger.current?.focus();}} aria-label="Cerrar menú"><X size={20}/></button></div>
      <nav className="admin-nav admin-nav-mobile-list" aria-label="Navegación móvil">
       <span className="admin-nav-section-label">Trabajo diario</span>{entries(main,()=>setMobileOpen(false))}
       {tools.length>0&&<><span className="admin-nav-section-label">Más herramientas</span>{entries(tools,()=>setMobileOpen(false))}</>}
       <Link href="/" target="_blank" rel="noopener noreferrer" onClick={()=>setMobileOpen(false)}><ExternalLink size={17}/>Ver página pública</Link>
      </nav>
+     <div className="admin-mobile-account">
+      <span className="admin-mobile-account-label">Sesión actual</span>
+      <strong>{userName}</strong>
+      <form action={signOut}><button type="submit"><LogOut size={17} aria-hidden="true"/> Cerrar sesión</button></form>
+     </div>
     </aside>
    </>}
   </div>
