@@ -118,6 +118,8 @@ jobs:
         run: npx prisma db push
       - name: Probar operaciones reales, comisiones y aislamiento en MariaDB
         run: node scripts/check-closings.mjs
+      - name: Probar abonos de comisiones y PDF privado en MariaDB
+        run: node scripts/check-commissions.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
@@ -248,6 +250,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Probar operaciones comerciales en PostgreSQL
         run: node scripts/check-closings.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar comisiones y reportes PDF en PostgreSQL
+        run: node scripts/check-commissions.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
