@@ -11,10 +11,10 @@ export type CommercialPdfInput={
 const A4:[number,number]=[595.28,841.89],margin=39,contentWidth=A4[0]-margin*2;
 const ink=rgb(.13,.20,.28),muted=rgb(.39,.46,.54),red=rgb(.70,.12,.21);
 const neutral=rgb(.93,.95,.97),line=rgb(.86,.89,.92),white=rgb(1,1,1);
-function printable(text:string){return text.normalize("NFKD")
- .replace(/[\u0300-\u036f]/g,"").replace(/[\u2010-\u2015]/g,"-")
- .replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"')
- .replace(/[^\x20-\x7e]/g," ").replace(/\s+/g," ").trim();}
+function printable(text:string){return text.normalize("NFC")
+ .replace(/[\u2010-\u2015]/g,"-").replace(/[\u2018\u2019]/g,"'")
+ .replace(/[\u201c\u201d]/g,'"').replace(/[^\x20-\x7e\xA0-\xFF]/g," ")
+ .replace(/\s+/g," ").trim();}
 function fit(font:PDFFont,raw:string,width:number,size:number){
  const value=printable(raw);
  if(font.widthOfTextAtSize(value,size)<=width)return value;
