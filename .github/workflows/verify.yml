@@ -112,6 +112,8 @@ jobs:
         run: node scripts/check-agent-access.mjs
       - name: Probar agenda comercial y activación segura en MariaDB
         run: node scripts/check-agenda.mjs
+      - name: Probar notificaciones comerciales y agenda diaria/semanal en MariaDB
+        run: node scripts/check-notifications.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
@@ -230,6 +232,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Probar agenda comercial, estados y agentes en PostgreSQL
         run: node scripts/check-agenda.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar notificaciones comerciales y aislamiento de agentes en PostgreSQL
+        run: node scripts/check-notifications.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
