@@ -1,20 +1,9 @@
 import "server-only";
 import type {Prisma} from "@prisma/client";
 import {leadWhere,type AgentScope} from "@/lib/agent-scope";
+import {AGENDA_TYPES,AGENDA_STATUSES} from "@/lib/agenda-constants";
+export {AGENDA_TYPES,AGENDA_STATUSES,AGENDA_DURATIONS} from "@/lib/agenda-constants";
 
-export const AGENDA_TYPES=[
- {value:"visita",label:"Visita al inmueble"},
- {value:"llamada",label:"Llamada de seguimiento"},
- {value:"reunion",label:"Reunión comercial"}
-] as const;
-export const AGENDA_STATUSES=[
- {value:"pendiente",label:"Pendiente"},
- {value:"realizada",label:"Realizada"},
- {value:"cancelada",label:"Cancelada"}
-] as const;
-export const AGENDA_DURATIONS=[15,30,45,60,90,120,180] as const;
-export type AgendaType=typeof AGENDA_TYPES[number]["value"];
-export type AgendaStatus=typeof AGENDA_STATUSES[number]["value"];
 export function isAgendaType(v:string):v is AgendaType{return AGENDA_TYPES.some(t=>t.value===v);}
 export function isAgendaStatus(v:string):v is AgendaStatus{return AGENDA_STATUSES.some(t=>t.value===v);}
 export function agendaScope(user:AgentScope):Prisma.AgendaEventWhereInput{
