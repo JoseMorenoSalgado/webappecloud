@@ -4,16 +4,17 @@ import {ArrowUpRight,Search,SlidersHorizontal,Building2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {notFound} from "next/navigation";
-import {getCatalogPage,CATALOG_PAGE_SIZE} from "@/lib/catalog";
+import {getCatalogPage,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
-type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string};
+type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
  const raw=await searchParams;
- const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90)};
+ const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
+ const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
@@ -24,7 +25,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
   (!f.operacion||p.operation===f.operacion)&&
   (!f.tipo||p.type.toLowerCase()===normalizedType)&&
   (!f.ubicacion||`${p.city} ${p.neighborhood}`.toLowerCase().includes(normalizedLocation))
- );
+ ).sort((a,b)=>orden==="precio-asc"?a.price-b.price:orden==="precio-desc"?b.price-a.price:0);
  const demoTotalPages=Math.max(1,Math.ceil(demoMatching.length/CATALOG_PAGE_SIZE));
  const demoPage=Math.min(requestedPage,demoTotalPages);
  const result=demo?{properties:demoMatching.slice((demoPage-1)*CATALOG_PAGE_SIZE,demoPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:demoPage,totalPages:demoTotalPages}:await getCatalogPage(tenant.id,f,requestedPage);
@@ -45,6 +46,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
      <label>Operación<select name="operacion" defaultValue={f.operacion}><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></label>
      <label>Tipo de propiedad<select name="tipo" defaultValue={f.tipo}><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
      <label>Ciudad o zona<input name="ubicacion" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
+     <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
      <button className="btn btn-red" type="submit"><Search size={17}/> Aplicar filtros</button>
     </div>
    </form>
