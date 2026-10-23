@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {notFound} from "next/navigation";
-import {ExternalLink,Save,Trash2,Users,UserPlus} from "lucide-react";
+import {ExternalLink,Save,Trash2,Users,UserPlus,Images} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
@@ -32,7 +32,8 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   {q.created&&<p className="property-success" role="status">Propiedad creada correctamente. Ahora puedes añadir fotografías.</p>}
   {q.saved&&<p className="property-success" role="status">Cambios guardados correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
-  {canEdit&&<form action={"/api/admin/properties/"+encodeURIComponent(id)} method="post" className="admin-form property-editor">
+  <nav className="editor-quick-nav" aria-label="Ir a una sección de la propiedad"><a href="#editar-datos">Datos principales</a><a href="#editar-fotos">Fotografías ({property.photos.length})</a><a href="#editar-pdf">Ficha PDF</a></nav>
+  {canEdit&&<form id="editar-datos" action={"/api/admin/properties/"+encodeURIComponent(id)} method="post" className="admin-form property-editor">
    <input type="hidden" name="intent" value="save"/>
    <AdminPropertyFields property={{...property,price:Number(property.price)}} agents={agents}/>
    <div className="property-editor-actions">
@@ -40,17 +41,17 @@ export default async function EditProperty({params,searchParams}:{params:Promise
     {property.published&&<Link className="btn wizard-back" href={"/propiedades/"+encodeURIComponent(property.slug)} target="_blank">Ver publicada <ExternalLink size={15}/></Link>}
    </div>
   </form>}
-  <section className="admin-panel property-photo-panel"><h2>Galería de fotografías</h2><p>JPG, PNG o WebP. Máximo 8 MB cada una y 15 fotografías por inmueble. El servidor elimina los metadatos de ubicación al convertirlas a WebP.</p>
+  <section id="editar-fotos" className="admin-panel property-photo-panel editor-media-panel"><div className="editor-panel-heading"><Images size={19}/><h2>Fotografías ({property.photos.length})</h2></div><p>Sube imágenes JPG, PNG o WebP (máximo 8 MB cada una, hasta 15). Se convierten a WebP y se eliminan los metadatos de ubicación.</p>
    {canEdit?<PropertyPhotoUploader propertyId={id} photos={property.photos.map(x=>({id:x.id,url:x.url,alt:x.alt||property.title}))}/>:<p>Solo disponible para administradores y editores.</p>}
   </section>
-  <section className="admin-panel property-photo-panel">
-   <div className="property-pdf-heading"><h2>Ficha técnica en PDF</h2><p>Ofrece la ficha automática y también una versión corporativa preparada por NEXUS.</p></div>
+  <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">
+   <p className="property-help">La ficha se genera automáticamente con los datos del inmueble o puedes subir una versión personalizada de tu empresa.</p>
    <div className="property-pdf-auto">
     <div><strong>Ficha automática</strong><span>Se genera con el precio, ubicación, descripción y fotografías del inmueble.</span></div>
     {property.published?<Link href={"/api/propiedades/"+encodeURIComponent(property.slug)+"/pdf"} className="btn wizard-back">Descargar automática</Link>:<span className="property-help">Disponible al publicar el inmueble</span>}
    </div>
    <PropertyDocumentManager propertyId={id} hasDocument={hasDocument} canEdit={canEdit}/>
-  </section>
+  </div></details>
   {admin.roles.includes("admin")&&<details className="property-danger"><summary><Trash2 size={16}/> Eliminar inmueble</summary>
    <p>La eliminación es permanente. Las consultas de prospectos existentes se conservarán, pero dejarán de estar asociadas a este inmueble.</p>
    <form method="post" action={"/api/admin/properties/"+encodeURIComponent(id)}>
