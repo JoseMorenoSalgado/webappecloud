@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {ArrowUpRight,CheckCircle2,FileDown,HandCoins,House,ShieldCheck,TrendingUp,Undo2} from "lucide-react";
+import {ArrowUpRight,CheckCircle2,FileDown,FileText,HandCoins,House,ShieldCheck,TrendingUp,Undo2} from "lucide-react";
 import {requireRole} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {closingTableReady} from "@/lib/closing-schema";
@@ -59,7 +59,9 @@ export default async function Closings({searchParams}:{searchParams:Promise<{per
  const preselect=leads.some(l=>l.id===q.lead)?q.lead||"":"";
  return <section className="closing-dashboard">
   <div className="admin-heading"><div><h1>Cierres comerciales</h1><p>Operaciones registradas por el equipo, con importes y comisiones en dólares estadounidenses.</p></div>
-   <Link className="btn wizard-back" href={"/api/admin/cierres/csv?periodo="+days+(selected?"&agente="+encodeURIComponent(selected):"")}><FileDown size={16}/> Exportar CSV</Link>
+   <div className="closing-download-actions"><Link className="btn wizard-back" href="/admin/cierres/comisiones"><HandCoins size={16}/> Comisiones y pagos</Link>
+   <Link className="btn wizard-back" href={"/api/admin/cierres/pdf?periodo="+days+(selected?"&agente="+encodeURIComponent(selected):"")}><FileText size={16}/> Reporte PDF</Link>
+   <Link className="btn wizard-back" href={"/api/admin/cierres/csv?periodo="+days+(selected?"&agente="+encodeURIComponent(selected):"")}><FileDown size={16}/> Exportar CSV</Link></div>
   </div>
   {(q.created||q.voided||q.activated)&&<p className="property-success" role="status">{q.created?"Operación registrada correctamente.":q.voided?"Operación anulada y conservada en el historial.":"Módulo activado."}</p>}
   {q.error&&<p className="admin-error" role="alert">{errors[q.error]||errors.servidor}</p>}
