@@ -25,6 +25,7 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
  const users=managesAllLeads(admin)?await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
  const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  const q=await searchParams;
+ const selectedProperty=props.some(property=>property.id===q.propertyId)?q.propertyId:"";
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link></div>
   <div className="admin-heading"><div><h1>Registrar prospecto</h1><p>Guarda un contacto recibido por WhatsApp, teléfono o atención directa para darle seguimiento.</p></div></div>
