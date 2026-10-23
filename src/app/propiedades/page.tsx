@@ -74,7 +74,6 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
      <button className="btn btn-red" type="submit"><Search size={17}/> Aplicar filtros</button>
      <Link href="/propiedades" className="catalog-reset-filters"><X size={16}/> {filtersActive?"Limpiar filtros":"Ver todas las propiedades"}</Link>
     </div>
-    </div>
    </form>
    <div className="nexus-catalog-results"><div>
     <span className="nexus-section-kicker">DESCUBRE TU PRÓXIMO INMUEBLE</span>
