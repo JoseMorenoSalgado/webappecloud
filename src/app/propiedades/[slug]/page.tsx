@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,MapPin,BedDouble,Bath,Maximize2,Download,FileText,Home,MessageCircle,ShieldCheck,Check} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {prisma} from "@/lib/prisma";
+import type {PublicProperty} from "@/lib/demo";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {notFound} from "next/navigation";
 import {assertPagePublished} from "@/lib/site-pages";
@@ -15,10 +17,18 @@ export const dynamic="force-dynamic";
 
 export default async function Detail({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
- const {tenant,properties,demo}=await getPublicContext();
+ const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
- const p=properties.find(x=>x.slug===slug);
+ const p:PublicProperty|undefined=demo?demoProperties.find(x=>x.slug===slug):await (async()=>{
+  const row=await prisma.property.findUnique({
+   where:{tenantId_slug:{tenantId:tenant.id,slug}},
+   select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,published:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}}
+  });
+  if(!row?.published)return undefined;
+  const photos=row.photos.map(photo=>photo.url);
+  return {id:row.id,slug:row.slug,refCode:row.refCode,title:row.title,description:row.description,city:row.city,neighborhood:row.neighborhood||"",type:row.type,operation:row.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(row.price),bedrooms:row.bedrooms||0,bathrooms:row.bathrooms||0,areaM2:row.areaM2||0,image:photos[0]||"",photos};
+ })();
  if(!p)notFound();
  const customPdfAvailable=!demo&&await hasCustomPdf(tenant.id,p.id);
  return <PublicFrame tenant={tenant} demo={demo} property={p}>
