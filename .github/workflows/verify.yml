@@ -84,6 +84,8 @@ jobs:
         run: node scripts/check-template-boundaries.mjs
       - name: Verificar datos predeterminados por plantilla
         run: node scripts/check-template-defaults.mjs
+      - name: Verificar biblioteca visual sin publicación accidental
+        run: node scripts/check-template-gallery.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
