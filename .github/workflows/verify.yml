@@ -128,6 +128,8 @@ jobs:
         run: node scripts/check-independent-pages.mjs
       - name: Comprobar vistas previas y experiencia CMS mejorada
         run: node scripts/check-cms-ux.mjs
+      - name: Reproducir instalación MariaDB heredada y comprobar recuperación sin pérdida de datos
+        run: node scripts/check-legacy-db.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
         run: |
           set -euo pipefail
