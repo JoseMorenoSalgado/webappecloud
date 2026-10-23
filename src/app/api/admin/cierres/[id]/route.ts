@@ -1,6 +1,7 @@
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
+import {commissionTableReady} from "@/lib/commission-schema";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 export const runtime="nodejs";
 const back=(error:string)=>propertyRedirect("/admin/cierres?error="+encodeURIComponent(error));
@@ -16,6 +17,10 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
  const raw=form.get("reason");
  const reason=typeof raw==="string"?raw.trim():null;
  if(!reason||reason.length<10||reason.length>1000)return back("motivo");
+ if(await commissionTableReady()){
+  const payments=await prisma.commissionPayment.count({where:{tenantId:admin.tenantId,closingId:id,status:"confirmado"}});
+  if(payments>0)return back("pagos");
+ }
  const changed=await prisma.commercialClosing.updateMany({
   where:{id,tenantId:admin.tenantId,status:"confirmado"},
   data:{status:"anulado",voidReason:reason,voidedAt:new Date(),voidedByName:admin.name.slice(0,120)}
