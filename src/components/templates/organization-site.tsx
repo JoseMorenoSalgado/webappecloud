@@ -3,13 +3,16 @@ import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusin
 import {type PublicTenant} from "@/lib/demo";
 import {type SiteTemplate} from "@/lib/site-template-store";
 import {PublicFrame} from "@/components/public-frame";
+import {getPageDefinitions} from "@/lib/site-pages";
 import {ContactForm} from "@/components/contact-form";
 type Props={tenant:PublicTenant;demo:boolean;template:SiteTemplate;heroImage?:boolean};
 const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake]};
 function context(template:SiteTemplate){return template.key==="education"?{
  label:"Educación",servicesLabel:"Programas",aboutLabel:"Nuestra institución"
 }:{label:"Servicios",servicesLabel:"Nuestros servicios",aboutLabel:"Quiénes somos"};}
-export function OrganizationHome({tenant,demo,template,heroImage}:Props){
+export async function OrganizationHome({tenant,demo,template,heroImage}:Props){
+ const pages=await getPageDefinitions(tenant.id);
+ const visible=new Set(pages.filter(p=>p.published).map(p=>p.id));
  const c=context(template),data=template.content,Icons=icons[template.key==="education"?"education":"services"];
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" className="organization-main">
@@ -19,12 +22,12 @@ export function OrganizationHome({tenant,demo,template,heroImage}:Props){
      <h1>{data.headline}</h1>
      <p className="organization-hero-description">{data.description}</p>
      <div className="organization-hero-actions">
-      <Link className="btn organization-primary-button" href="/servicios">{data.actionLabel} <ArrowUpRight size={18}/></Link>
-      <Link className="organization-secondary-link" href="/contacto">Solicitar información <ArrowRight size={18}/></Link>
+      {visible.has("servicios")&&<Link className="btn organization-primary-button" href="/servicios">{data.actionLabel} <ArrowUpRight size={18}/></Link>}
+      {visible.has("contacto")&&<Link className="organization-secondary-link" href="/contacto">Solicitar información <ArrowRight size={18}/></Link>}
      </div>
     </div>
    </section>
-   <section className="organization-section" aria-labelledby="organization-services-title"><div className="container">
+   {visible.has("servicios")&&<section className="organization-section" aria-labelledby="organization-services-title"><div className="container">
     <div className="organization-section-heading"><div><span className="organization-section-kicker">{c.servicesLabel.toUpperCase()}</span><h2 id="organization-services-title">{c.servicesLabel}</h2></div>
      <Link href="/servicios" className="organization-text-link">Ver más <ArrowUpRight size={17}/></Link></div>
     <div className="organization-cards">{data.cards.map((item,i)=>{
@@ -34,15 +37,15 @@ export function OrganizationHome({tenant,demo,template,heroImage}:Props){
       <Link href="/servicios" aria-label={"Conocer "+item.title}>Más información <ArrowUpRight size={16}/></Link>
      </article>;
     })}</div>
-   </div></section>
-   <section className="organization-about-preview"><div className="container organization-about-layout">
+   </div></section>}
+   {visible.has("nosotros")&&<section className="organization-about-preview"><div className="container organization-about-layout">
     <div><span className="organization-section-kicker">{c.aboutLabel.toUpperCase()}</span><h2>{data.aboutTitle}</h2><p>{data.aboutText}</p>
      <Link className="organization-text-link" href="/nosotros">Conócenos <ArrowUpRight size={17}/></Link></div>
     <aside className="organization-feature-panel"><span>{tenant.name}</span><strong>{tenant.tagline||data.eyebrow}</strong></aside>
-   </div></section>
-   <section className="organization-cta"><div className="container"><div><span>ESTAMOS PARA AYUDARTE</span><h2>{data.contactTitle}</h2><p>{data.contactText}</p></div>
+   </div></section>}
+   {visible.has("contacto")&&<section className="organization-cta"><div className="container"><div><span>ESTAMOS PARA AYUDARTE</span><h2>{data.contactTitle}</h2><p>{data.contactText}</p></div>
     <Link href="/contacto" className="btn organization-primary-button">Contactar <ArrowRight size={17}/></Link>
-   </div></section>
+   </div></section>}
   </main>
  </PublicFrame>;
 }
