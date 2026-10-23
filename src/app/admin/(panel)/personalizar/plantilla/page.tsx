@@ -1,13 +1,33 @@
 import Link from "next/link";
 import {Save,LayoutTemplate,ArrowUpRight} from "lucide-react";
+import {TemplateGallery} from "@/components/template-gallery";
+import {getSiteSettings} from "@/lib/site-settings";
+import {prisma} from "@/lib/prisma";
 import {requireRole} from "@/lib/auth";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
-import {getSiteTemplate} from "@/lib/site-template-store";
+import {getTemplateLibrary} from "@/lib/site-template-store";
 import {SITE_TEMPLATES} from "@/lib/site-template-registry";
 export const dynamic="force-dynamic";
 export default async function TemplateSettings({searchParams}:{searchParams:Promise<{saved?:string;error?:string}>}){
  const user=await requireRole(["admin","editor"]);
- const [{key,content},params]=await Promise.all([getSiteTemplate(user.tenantId),searchParams]);
+ const [{selected:key,variants},settings,listings,params]=await Promise.all([
+  getTemplateLibrary(user.tenantId),
+  getSiteSettings(user.tenantId),
+  prisma.property.findMany({where:{tenantId:user.tenantId,published:true},select:{
+   title:true,city:true,price:true,photos:{take:1,orderBy:{sortOrder:"asc"},select:{url:true}}
+  },orderBy:{createdAt:"desc"},take:3}),
+  searchParams
+ ]);
+ const content=variants[key];
+ const estate={
+  eyebrow:settings.heroEyebrow,heading:settings.heroHeading,
+  highlight:settings.heroHighlight,description:settings.heroDescription,
+  action:settings.heroButton
+ };
+ const displayListings=listings.map(item=>({
+  title:item.title,city:item.city,price:"$"+Number(item.price).toLocaleString("en-US"),
+  imageUrl:item.photos[0]?.url||null
+ }));
  return <>
   <div className="admin-heading"><div><h1>Plantilla del sitio</h1>
    <p>Elige el tipo de sitio de tu empresa. Cada organización conserva su plantilla y su contenido.</p></div>
@@ -16,20 +36,8 @@ export default async function TemplateSettings({searchParams}:{searchParams:Prom
   <SiteCustomizerNav current="template"/>
   {params.saved&&<p className="property-success" role="status">Configuración de plantilla guardada.</p>}
   {params.error&&<p className="admin-error" role="alert">No pudimos guardar los cambios. Verifica los campos y vuelve a intentarlo.</p>}
-  <section className="admin-panel template-setting-panel">
-   <div className="editor-panel-heading"><LayoutTemplate size={21}/><h2>Tipo de página web</h2></div>
-   <p className="property-help">La plantilla inmobiliaria actual de NEXUS se conserva. Cambiar de plantilla no elimina propiedades ni prospectos.</p>
-   <form method="post" action="/api/admin/site-template" className="template-choice-form">
-    <input type="hidden" name="intent" value="select"/>
-    <div className="template-choice-grid">
-     {SITE_TEMPLATES.map(t=><label key={t.key} className={"template-choice-card"+(key===t.key?" is-current":"")}>
-      <input type="radio" name="templateKey" value={t.key} defaultChecked={key===t.key}/>
-      <span><strong>{t.label}</strong><small>{t.description}</small></span>
-     </label>)}
-    </div>
-    <button type="submit" className="btn btn-red"><Save size={17}/> Aplicar plantilla seleccionada</button>
-   </form>
-  </section>
+  <TemplateGallery current={key} variants={variants} businessName={user.tenantName}
+   estate={estate} listings={displayListings}/>
   {key==="real-estate"?<section className="admin-panel template-setting-panel">
    <h2>Contenido inmobiliario</h2>
    <p>La portada y sus textos se mantienen en el editor existente; los inmuebles y fichas se gestionan desde Propiedades.</p>
