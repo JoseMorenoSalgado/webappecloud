@@ -62,7 +62,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
    <div><span>Nuevos prospectos</span><strong>{newCount}</strong><MessageCircle size={20}/></div>
    <div><span>En seguimiento</span><strong>{(counts.get("contactado")||0)+(counts.get("visita")||0)+(counts.get("negociacion")||0)}</strong><CalendarClock size={20}/></div>
   </div>
-  <form className="crm-filters" method="get" action="/admin/leads">
+  <form className={"crm-filters"+(managesAllLeads(admin)?" crm-filters-with-agents":"")} method="get" action="/admin/leads">
    <label><span>Buscar contacto</span><div className="property-search"><Search size={17}/><input name="q" placeholder="Nombre, teléfono, correo o referencia" defaultValue={q} maxLength={80}/></div></label>
    <label><span>Estado comercial</span><select name="status" defaultValue={status}>
     <option value="">Todos los estados</option>
