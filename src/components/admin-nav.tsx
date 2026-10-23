@@ -8,6 +8,7 @@ const available=[
  {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
  {href:"/admin/propiedades",label:"Propiedades",Icon:Building2},
  {href:"/admin/leads",label:"Solicitudes / Leads",Icon:UsersRound},
+ {href:"/admin/agenda",label:"Agenda comercial",Icon:CalendarDays},
  {href:"/admin/reportes",label:"Reportes",Icon:ChartNoAxesCombined},
  {href:"/admin/personalizar",label:"Personalizar",Icon:Settings}
 ];
@@ -22,7 +23,7 @@ export function AdminNav({role="admin",roles=[role],userId}:{role?:string;roles?
   return ()=>document.removeEventListener("keydown",closeOnEscape);
  },[mobileOpen]);
  const has=(r:string)=>roles.includes(r);
- const visible=available.filter(x=>has("admin")||has("editor")||(has("agente")&&["/admin","/admin/leads"].includes(x.href))||(has("lector")&&x.href==="/admin"));
+ const visible=available.filter(x=>has("admin")||has("editor")||(has("agente")&&["/admin","/admin/leads","/admin/agenda"].includes(x.href))||(has("lector")&&x.href==="/admin"));
  const items=(close:()=>void)=><>
   {visible.map(x=>{
    const selected=x.href==="/admin"?pathname===x.href:pathname===x.href||pathname.startsWith(x.href+"/");
@@ -31,7 +32,7 @@ export function AdminNav({role="admin",roles=[role],userId}:{role?:string;roles?
   {has("admin")&&<Link href="/admin/clientes-agentes" onClick={close} className={pathname.startsWith("/admin/clientes-agentes")?"active":undefined}><ShieldCheck size={18}/>Clientes y agentes</Link>}
   {has("agente")&&!has("admin")&&!has("editor")&&<Link href="/admin/reportes/agentes" onClick={close} className={pathname.startsWith("/admin/reportes/agentes")?"active":undefined}><ChartNoAxesCombined size={18}/>Mi rendimiento</Link>}
   {has("agente")&&userId&&<Link href={"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId)} onClick={close} className={pathname==="/admin/clientes-agentes/agentes/"+userId?"active":undefined}><UserRound size={18}/>Mi perfil comercial</Link>}
-  {has("admin")&&<><span aria-disabled="true" title="Próximamente"><Tags size={18}/>Categorías</span><span aria-disabled="true" title="Próximamente"><CalendarDays size={18}/>Calendario</span></>}
+  {has("admin")&&<><span aria-disabled="true" title="Próximamente"><Tags size={18}/>Categorías</span></>}
  </>;
  return <>
   <nav className="admin-nav admin-nav-desktop" aria-label="Menú de administración">{items(()=>{})}</nav>
