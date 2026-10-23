@@ -63,7 +63,7 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
   <nav className="admin-nav admin-nav-desktop admin-nav-simplified" aria-label="Menú de administración">
    <span className="admin-nav-section-label">Trabajo diario</span>
    {entries(main,()=>{})}
-   {tools.length>0&&<details className="admin-nav-more" key={toolActive?"current-tools":"other-tools"} defaultOpen={toolActive}>
+   {tools.length>0&&<details className="admin-nav-more" key={toolActive?"current-tools":"other-tools"} open={toolActive}>
     <summary><Settings size={18} aria-hidden="true"/><span>Más herramientas</span><ChevronDown size={16} aria-hidden="true"/></summary>
     <div className="admin-nav-more-content">{entries(tools,()=>{})}</div>
    </details>}
