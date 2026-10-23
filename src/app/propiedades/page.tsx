@@ -22,7 +22,9 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
   (!f.tipo||p.type.toLowerCase()===normalizedType)&&
   (!f.ubicacion||`${p.city} ${p.neighborhood}`.toLowerCase().includes(normalizedLocation))
  );
- const result=demo?{properties:demoMatching.slice((requestedPage-1)*CATALOG_PAGE_SIZE,requestedPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:Math.min(requestedPage,Math.max(1,Math.ceil(demoMatching.length/CATALOG_PAGE_SIZE))),totalPages:Math.max(1,Math.ceil(demoMatching.length/CATALOG_PAGE_SIZE))}:await getCatalogPage(tenant.id,f,requestedPage);
+ const demoTotalPages=Math.max(1,Math.ceil(demoMatching.length/CATALOG_PAGE_SIZE));
+ const demoPage=Math.min(requestedPage,demoTotalPages);
+ const result=demo?{properties:demoMatching.slice((demoPage-1)*CATALOG_PAGE_SIZE,demoPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:demoPage,totalPages:demoTotalPages}:await getCatalogPage(tenant.id,f,requestedPage);
  const matching=result.properties;
  const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v)),pagina:String(page)}).toString();
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido">
