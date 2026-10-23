@@ -63,6 +63,7 @@ model Property {
   @@index([tenantId,published,operation,type])
   @@index([tenantId,published,createdAt,id])
   @@index([tenantId,published,price,id])
+  @@index([tenantId,published,city])
 }
 model Photo {
   id String @id @default(cuid())

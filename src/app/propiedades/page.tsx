@@ -10,7 +10,7 @@ import {PublicFrame} from "@/components/public-frame";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
-type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string};
+type Filters={operacion?:string;tipo?:string;ubicacion?:string;pagina?:string;orden?:string;precioMin?:string;precioMax?:string;ciudad?:string;codigo?:string};
 export default async function Catalog({searchParams}:{searchParams:Promise<Filters>}){
  const raw=await searchParams;
  const orden:CatalogSort=raw.orden==="precio-asc"||raw.orden==="precio-desc"?raw.orden:"recientes";
@@ -18,7 +18,9 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const rawMin=parsePrice(raw.precioMin),rawMax=parsePrice(raw.precioMax);
  const precioMin=rawMin!==undefined&&rawMax!==undefined&&rawMin>rawMax?undefined:rawMin;
  const precioMax=rawMin!==undefined&&rawMax!==undefined&&rawMin>rawMax?undefined:rawMax;
- const f={precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
+ const ciudad=typeof raw.ciudad==="string"?raw.ciudad.trim().slice(0,90):"";
+ const codigo=typeof raw.codigo==="string"?raw.codigo.trim().slice(0,90):"";
+ const f={ciudad,codigo,precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
  if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
@@ -26,6 +28,8 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();
  const normalizedType=f.tipo.toLocaleLowerCase();
  const demoMatching=demoProperties.filter(p=>
+  (!ciudad||p.city.toLowerCase()===ciudad.toLowerCase())&&
+  (!codigo||p.refCode.toLowerCase()===codigo.toLowerCase())&&
   (precioMin===undefined||p.price>=precioMin)&&
   (precioMax===undefined||p.price<=precioMax)&&
   (!f.operacion||p.operation===f.operacion)&&
@@ -52,6 +56,8 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
      <label>Operación<select name="operacion" defaultValue={f.operacion}><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></label>
      <label>Tipo de propiedad<select name="tipo" defaultValue={f.tipo}><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
      <label>Ciudad o zona<input name="ubicacion" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
+     <label>Ciudad exacta<input name="ciudad" defaultValue={ciudad} maxLength={90} placeholder="Ej. Granada"/></label>
+     <label>Código de propiedad<input name="codigo" defaultValue={codigo} maxLength={90} placeholder="Referencia"/></label>
      <label>Precio mínimo<input type="number" name="precioMin" min="0" max="9999999999" step="0.01" defaultValue={precioMin??""} placeholder="Desde"/></label>
      <label>Precio máximo<input type="number" name="precioMax" min="0" max="9999999999" step="0.01" defaultValue={precioMax??""} placeholder="Hasta"/></label>
      <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
