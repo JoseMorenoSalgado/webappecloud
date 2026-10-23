@@ -6,6 +6,7 @@ import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
 import {AdminPropertyFields} from "@/components/admin-property-fields";
 import {PropertyPhotoUploader} from "@/components/property-photo-uploader";
+import {ThumbnailMaintenance} from "@/components/thumbnail-maintenance";
 import {PropertyDocumentManager} from "@/components/property-document-manager";
 import {hasCustomPdf} from "@/lib/property-document";
 export const dynamic="force-dynamic";
@@ -43,6 +44,7 @@ export default async function EditProperty({params,searchParams}:{params:Promise
   </form>}
   <section id="editar-fotos" className="admin-panel property-photo-panel editor-media-panel"><div className="editor-panel-heading"><Images size={19}/><h2>Fotografías ({property.photos.length})</h2></div><p>Sube imágenes JPG, PNG o WebP (máximo 8 MB cada una, hasta 15). Se convierten a WebP y se eliminan los metadatos de ubicación.</p>
    {canEdit?<PropertyPhotoUploader propertyId={id} photos={property.photos.map(x=>({id:x.id,url:x.url,alt:x.alt||property.title}))}/>:<p>Solo disponible para administradores y editores.</p>}
+   {canEdit&&<ThumbnailMaintenance/>}
   </section>
   <details id="editar-pdf" className="admin-panel property-photo-panel editor-disclosure editor-pdf-disclosure"><summary><span><strong>Ficha técnica en PDF</strong><small>Descargar ficha o gestionar un PDF corporativo</small></span><span className="editor-chevron" aria-hidden="true">⌄</span></summary><div className="editor-disclosure-body">
    <p className="property-help">La ficha se genera automáticamente con los datos del inmueble o puedes subir una versión personalizada de tu empresa.</p>
