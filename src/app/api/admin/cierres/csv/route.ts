@@ -20,9 +20,10 @@ export async function GET(req:NextRequest){
  const query=new URL(req.url).searchParams;
  const period=resolveReportPeriod(query.get("periodo")||undefined);
  const from=new Date();from.setUTCHours(0,0,0,0);from.setUTCDate(from.getUTCDate()-(period-1));
+ const through=new Date();through.setUTCHours(0,0,0,0);through.setUTCDate(through.getUTCDate()+1);
  const selected=managesAllLeads(user)?query.get("agente")||"":user.userId;
  if(selected.length>100)return new Response("Solicitud inválida",{status:400});
- const where={...closingWhere(user),closedAt:{gte:from,lte:new Date()},...(selected?{agentId:selected}:{})};
+ const where={...closingWhere(user),closedAt:{gte:from,lt:through},...(selected?{agentId:selected}:{})};
  const data=await prisma.commercialClosing.findMany({where,orderBy:{closedAt:"desc"},
   select:{kind:true,closedAt:true,clientName:true,propertyRefCode:true,agentName:true,amount:true,
    commissionAmount:true,currency:true,status:true,voidReason:true,createdByName:true,createdAt:true}});
