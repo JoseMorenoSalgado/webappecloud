@@ -18,6 +18,7 @@ model Tenant {
   domains Domain[]
   properties Property[]
   leads Lead[]
+  closings CommercialClosing[]
   events VisitEvent[]
   pages SitePage[]
   admins AdminUser[]
@@ -50,6 +51,7 @@ model Property {
   published Boolean @default(false)
   photos Photo[]
   leads Lead[]
+  closings CommercialClosing[]
   assignedAgentId String?
   assignedAgent AdminUser? @relation("AgentProperties",fields:[assignedAgentId],references:[id],onDelete:SetNull)
   @@index([assignedAgentId])
@@ -86,6 +88,7 @@ model Lead {
   assignedAgent AdminUser? @relation("AgentLeads",fields:[assignedAgentId],references:[id],onDelete:SetNull)
   assignmentHistory LeadAssignmentHistory[]
   agendaEvents AgendaEvent[]
+  closing CommercialClosing?
   createdAt DateTime @default(now())
   @@index([tenantId,assignedAgentId,createdAt])
   @@index([tenantId,createdAt])
@@ -122,6 +125,7 @@ model AdminUser {
   sessions AdminSession[]
   assignedProperties Property[] @relation("AgentProperties")
   assignedLeads Lead[] @relation("AgentLeads")
+  closings CommercialClosing[] @relation("AgentClosings")
   createdAt DateTime @default(now())
   @@unique([tenantId,email])
   @@index([tenantId])
@@ -205,4 +209,38 @@ model AgendaEvent {
   updatedAt DateTime @updatedAt
   @@index([tenantId,startsAt])
   @@index([tenantId,leadId,startsAt])
+}
+
+/** A verified-by-staff commercial transaction is a separate ledger entry.
+ * A lead CRM status "cerrado" does NOT imply a completed sale or rental.
+ * Keep financial records when a lead/property is reassigned.
+ */
+model CommercialClosing {
+  id String @id @default(cuid())
+  tenantId String
+  tenant Tenant @relation(fields:[tenantId],references:[id],onDelete:Restrict)
+  leadId String @unique
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Restrict)
+  propertyId String
+  property Property @relation(fields:[propertyId],references:[id],onDelete:Restrict)
+  agentId String?
+  agent AdminUser? @relation("AgentClosings",fields:[agentId],references:[id],onDelete:SetNull)
+  agentName String
+  propertyRefCode String
+  clientName String
+  kind String
+  currency String @default("USD")
+  amount Decimal @db.Decimal(13,2)
+  commissionAmount Decimal @db.Decimal(13,2)
+  closedAt DateTime
+  notes String? @db.Text
+  status String @default("confirmado")
+  voidReason String? @db.Text
+  voidedAt DateTime?
+  voidedByName String?
+  createdByName String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([tenantId,closedAt])
+  @@index([tenantId,agentId,closedAt])
 }
