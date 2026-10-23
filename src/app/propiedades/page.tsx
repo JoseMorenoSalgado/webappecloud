@@ -5,7 +5,7 @@ import "./catalog-filters.css";
 import {getPublicContext} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {notFound} from "next/navigation";
-import {getCatalogPage,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
+import {getCatalogPage,getCatalogLocationSuggestions,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {PropertyCard} from "@/components/property-card";
@@ -41,6 +41,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const demoPage=Math.min(requestedPage,demoTotalPages);
  const result=demo?{properties:demoMatching.slice((demoPage-1)*CATALOG_PAGE_SIZE,demoPage*CATALOG_PAGE_SIZE),count:demoMatching.length,currentPage:demoPage,totalPages:demoTotalPages}:await getCatalogPage(tenant.id,f,requestedPage);
  const matching=result.properties;
+ const locations=demo?[...new Set(demoProperties.flatMap(p=>[p.city,p.neighborhood]).filter(Boolean))].slice(0,40):await getCatalogLocationSuggestions(tenant.id);
  const advancedActive=Boolean(ciudad||codigo||precioMin!==undefined||precioMax!==undefined);
  const filtersActive=Boolean(f.operacion||f.tipo||f.ubicacion||advancedActive||orden!=="recientes");
  const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v!==undefined&&v!=="").map(([k,v])=>[k,String(v)])),pagina:String(page)}).toString();
@@ -58,9 +59,10 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
     <div className="nexus-search-form catalog-primary-filters">
      <label>Operación<select name="operacion" defaultValue={f.operacion}><option value="">Venta o alquiler</option><option value="venta">En venta</option><option value="alquiler">En alquiler</option></select></label>
      <label>Tipo de propiedad<select name="tipo" defaultValue={f.tipo}><option value="">Todos los tipos</option><option value="Casa">Casa</option><option value="Apartamento">Apartamento</option><option value="Terreno">Terreno</option></select></label>
-     <label>Ciudad o zona<input name="ubicacion" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
+     <label>Ciudad o zona<input name="ubicacion" list="catalog-locations" autoComplete="off" defaultValue={f.ubicacion} maxLength={90} placeholder="Buscar ubicación"/></label>
      <label>Ordenar por<select name="orden" defaultValue={orden}><option value="recientes">Más recientes</option><option value="precio-asc">Menor precio</option><option value="precio-desc">Mayor precio</option></select></label>
     </div>
+    <datalist id="catalog-locations">{locations.map(place=><option key={place} value={place}/>)}</datalist>
     <details className="catalog-extra-filters" open={advancedActive}>
      <summary>Más filtros{advancedActive?" (activos)":""}</summary>
      <div className="catalog-extra-grid">
