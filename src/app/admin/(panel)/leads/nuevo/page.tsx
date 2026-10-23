@@ -5,11 +5,13 @@ import {requireRole} from "@/lib/auth";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {prisma} from "@/lib/prisma";
 import {managesAllLeads} from "@/lib/agent-scope";
+import {parseRoles} from "@/lib/roles";
 export const dynamic="force-dynamic";
 const errors:Record<string,string>={
  datos:"Revisa el nombre, teléfono y los campos del formulario.",
  correo:"Introduce un correo electrónico válido.",
  propiedad:"La propiedad seleccionada no pertenece a tu inmobiliaria.",
+ agente:"Selecciona un agente activo de esta inmobiliaria.",
  consentimiento:"Confirma que el cliente autorizó el seguimiento de su consulta.",
  permisos:"Tu usuario no tiene permisos de edición.",
  origen:"La solicitud se hizo desde un origen no autorizado.",
@@ -20,6 +22,8 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
  if(!await crmTablesReady())redirect("/admin/leads");
  const props=await prisma.property.findMany({where:{tenantId:admin.tenantId,...(!managesAllLeads(admin)?{assignedAgentId:admin.userId}:{})},select:{id:true,title:true,refCode:true},orderBy:{createdAt:"desc"},take:200});
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
+ const users=managesAllLeads(admin)?await prisma.adminUser.findMany({where:{tenantId:admin.tenantId,active:true},select:{id:true,name:true,role:true},orderBy:{name:"asc"}}):[];
+ const agents=users.filter(u=>parseRoles(u.role).includes("agente"));
  const q=await searchParams;
  return <>
   <div className="crm-detail-head"><Link href="/admin/leads" className="inline-link"><ArrowLeft size={16}/> Volver a prospectos</Link></div>
@@ -36,6 +40,7 @@ export default async function CreateLead({searchParams}:{searchParams:Promise<{e
      <label>Canal de entrada<select name="source" defaultValue="whatsapp"><option value="whatsapp">WhatsApp</option><option value="telefono">Llamada telefónica</option><option value="manual">Atención directa</option></select></label>
     </div>
     <label>Propiedad de interés<select name="propertyId" defaultValue="" required={!managesAllLeads(admin)}><option value="">{managesAllLeads(admin)?"Consulta general, sin propiedad específica":"Selecciona una de tus propiedades"}</option>{props.map(p=><option key={p.id} value={p.id}>{p.refCode} · {p.title}</option>)}</select></label>
+    {managesAllLeads(admin)&&<label>Responsable comercial<select name="assignedAgentId" defaultValue="auto"><option value="auto">Automático según el inmueble</option><option value="">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
     <label>Observaciones de la consulta<textarea name="message" maxLength={2000} placeholder="Ej.: Solicita precio y disponibilidad para visitar la propiedad."/></label>
    </div>
    <div className="property-form-section"><h2>Privacidad del contacto</h2>
