@@ -1,21 +1,21 @@
 import "server-only";
-import {access,readFile,writeFile,unlink} from "node:fs/promises";
+import {access,readFile,writeFile} from "node:fs/promises";
 import sharp from "sharp";
 import {prisma} from "@/lib/prisma";
 import {mediaFilePath,mediaVariantPath,type MediaVariant} from "@/lib/property-media";
 
 const variants:readonly MediaVariant[]=["card","thumb"];
 /** Manual tenant-limited maintenance task. Run one small batch per request. */
-export async function backfillPropertyThumbnails(tenantId:string,limit=5){
- const batchSize=Math.min(5,Math.max(1,Math.floor(limit)));
+export async function backfillPropertyThumbnails(tenantId:string,cursor?:string){
+ const batchSize=5;
  const properties=await prisma.photo.findMany({
   where:{property:{tenantId}},
   select:{id:true,url:true},
-  orderBy:{id:"asc"},take:batchSize*20
+  orderBy:{id:"asc"},take:batchSize,
+  ...(cursor?{cursor:{id:cursor},skip:1}:{})
  });
  let created=0,skipped=0,failed=0;
  for(const photo of properties){
-  if(created+failed>=batchSize)break;
   if(photo.url!=="/api/media/"+photo.id){skipped++;continue;}
   const pending:MediaVariant[]=[];
   for(const variant of variants){
@@ -35,9 +35,9 @@ export async function backfillPropertyThumbnails(tenantId:string,limit=5){
     created++;
    }catch(error){
     if((error as NodeJS.ErrnoException).code==="EEXIST")skipped++;
-    else {failed++;try{await unlink(target);}catch{}}
+    else failed++;
    }
   }
  }
- return {created,skipped,failed,scanned:properties.length,batchSize};
+ return {created,skipped,failed,scanned:properties.length,batchSize,nextCursor:properties.length===batchSize?properties[properties.length-1].id:null};
 }
