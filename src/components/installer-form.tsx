@@ -1,14 +1,15 @@
 "use client";
 import {useState,type FormEvent} from "react";
 import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
+import {SITE_TEMPLATES,type SiteTemplateKey} from "@/lib/site-template-registry";
 
 type Values={
  dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
- institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;
+ institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;
 };
 const defaults:Values={
  dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
- institution:"Nexus Real Estate",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:""
+ institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate"
 };
 export default function InstallerForm({domain}:{domain:string}){
  const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
@@ -63,6 +64,12 @@ export default function InstallerForm({domain}:{domain:string}){
     {input("institution","Nombre de la institución o empresa",{minLength:3})}
     {input("institutionEmail","Correo institucional",{type:"email",autoComplete:"email"})}
     <div className="wizard-domain"><span>Dominio detectado:</span> <strong>{domain}</strong></div>
+    <label className="wizard-field"><span>Plantilla inicial del sitio</span>
+     <select value={values.templateKey} className="wizard-db-select" onChange={e=>change("templateKey",e.target.value)}>
+      {SITE_TEMPLATES.map(t=><option value={t.key} key={t.key}>{t.label}</option>)}
+     </select>
+     <small>La plantilla puede cambiarse después desde Personalizar sitio. No elimina datos.</small>
+    </label>
     <h3>Cuenta administradora</h3>
     {input("adminName","Nombre del administrador",{minLength:2,autoComplete:"name"})}
     {input("adminEmail","Correo del administrador",{type:"email",autoComplete:"email"})}

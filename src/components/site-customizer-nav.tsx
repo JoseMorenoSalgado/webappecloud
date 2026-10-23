@@ -1,11 +1,12 @@
 import Link from "next/link";
-import {ExternalLink,FileText,ListTree,Palette} from "lucide-react";
+import {ExternalLink,FileText,ListTree,Palette,LayoutTemplate} from "lucide-react";
 
 /** A single navigation for all customization screens; never mix independent editors. */
-export function SiteCustomizerNav({current}:{current:"pages"|"menu"|"identity"}){
+export function SiteCustomizerNav({current}:{current:"pages"|"menu"|"identity"|"template"}){
  const links=[
   {key:"pages" as const,href:"/admin/personalizar/paginas",label:"Páginas",Icon:FileText},
   {key:"menu" as const,href:"/admin/personalizar/menu",label:"Menú principal",Icon:ListTree},
+  {key:"template" as const,href:"/admin/personalizar/plantilla",label:"Plantilla",Icon:LayoutTemplate},
   {key:"identity" as const,href:"/admin/personalizar/identidad",label:"Identidad visual",Icon:Palette}
  ];
  return <nav aria-label="Herramientas de personalización" className="cms-toolbar cms-toolbar-unified">
