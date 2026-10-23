@@ -5,12 +5,13 @@ import type {Prisma} from "@prisma/client";
 
 export const CATALOG_PAGE_SIZE=12;
 export type CatalogSort="recientes"|"precio-asc"|"precio-desc";
-export type CatalogFilters={operacion:string;tipo:string;ubicacion:string;orden?:CatalogSort};
+export type CatalogFilters={operacion:string;tipo:string;ubicacion:string;precioMin?:number;precioMax?:number;orden?:CatalogSort};
 export async function getCatalogPage(tenantId:string,filters:CatalogFilters,page:number){
  const where:Prisma.PropertyWhereInput={
   tenantId,published:true,
   ...(filters.operacion==="venta"||filters.operacion==="alquiler"?{operation:filters.operacion}:{}),
   ...(filters.tipo?{type:filters.tipo}:{}),
+  ...(filters.precioMin!==undefined||filters.precioMax!==undefined?{price:{...(filters.precioMin!==undefined?{gte:filters.precioMin}:{}),...(filters.precioMax!==undefined?{lte:filters.precioMax}:{})}}:{}),
   ...(filters.ubicacion?{OR:[
    {city:{contains:filters.ubicacion}},
    {neighborhood:{contains:filters.ubicacion}}
