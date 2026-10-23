@@ -114,8 +114,8 @@ jobs:
         run: node scripts/check-agenda.mjs
       - name: Probar notificaciones comerciales y agenda diaria/semanal en MariaDB
         run: node scripts/check-notifications.mjs
-      - name: Simular instalación anterior al registro de cierres
-        run: printf 'DROP TABLE IF EXISTS `CommercialClosing`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+      - name: Verificar tablas financieras en CI
+        run: npx prisma db push
       - name: Probar operaciones reales, comisiones y aislamiento en MariaDB
         run: node scripts/check-closings.mjs
       - name: Validar documentos PDF personalizados de propiedades
