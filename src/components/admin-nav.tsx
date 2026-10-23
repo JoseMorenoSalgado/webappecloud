@@ -2,7 +2,7 @@
 import Link from "next/link";
 import {useEffect,useState} from "react";
 import {usePathname} from "next/navigation";
-import {LayoutDashboard,Building2,UsersRound,Settings,Tags,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck,UserRound,X,Bell} from "lucide-react";
+import {LayoutDashboard,Building2,UsersRound,Settings,Tags,CalendarDays,ChartNoAxesCombined,Menu,ChevronDown,ShieldCheck,UserRound,X,Bell,HandCoins} from "lucide-react";
 
 const available=[
  {href:"/admin",label:"Inicio",Icon:LayoutDashboard},
@@ -10,6 +10,7 @@ const available=[
  {href:"/admin/leads",label:"Solicitudes / Leads",Icon:UsersRound},
  {href:"/admin/agenda",label:"Agenda comercial",Icon:CalendarDays},
  {href:"/admin/notificaciones",label:"Notificaciones",Icon:Bell},
+ {href:"/admin/cierres",label:"Ventas y alquileres",Icon:HandCoins},
  {href:"/admin/reportes",label:"Reportes",Icon:ChartNoAxesCombined},
  {href:"/admin/personalizar",label:"Personalizar",Icon:Settings}
 ];
@@ -24,7 +25,7 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
   return ()=>document.removeEventListener("keydown",closeOnEscape);
  },[mobileOpen]);
  const has=(r:string)=>roles.includes(r);
- const visible=available.filter(x=>has("admin")||has("editor")||(has("agente")&&["/admin","/admin/leads","/admin/agenda","/admin/notificaciones"].includes(x.href))||(has("lector")&&x.href==="/admin"));
+ const visible=available.filter(x=>has("admin")||has("editor")||(has("agente")&&["/admin","/admin/leads","/admin/agenda","/admin/notificaciones","/admin/cierres"].includes(x.href))||(has("lector")&&x.href==="/admin"));
  const items=(close:()=>void)=><>
   {visible.map(x=>{
    const selected=x.href==="/admin"?pathname===x.href:pathname===x.href||pathname.startsWith(x.href+"/");
