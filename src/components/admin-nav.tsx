@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import {useEffect,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {usePathname} from "next/navigation";
 import {
  LayoutDashboard,Building2,UsersRound,Settings,CalendarDays,
@@ -29,12 +29,26 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
 }){
  const pathname=usePathname();
  const [mobileOpen,setMobileOpen]=useState(false);
+ const menuTrigger=useRef<HTMLButtonElement>(null);
+ const closeButton=useRef<HTMLButtonElement>(null);
  useEffect(()=>{setMobileOpen(false);},[pathname]);
  useEffect(()=>{
   if(!mobileOpen)return;
-  const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setMobileOpen(false);};
+  // Mantener la vista detrás inmóvil y el cierre accesible por teclado.
+  const oldOverflow=document.body.style.overflow;
+  document.body.style.overflow="hidden";
+  closeButton.current?.focus();
+  const close=(event:KeyboardEvent)=>{
+   if(event.key==="Escape"){
+    setMobileOpen(false);
+    menuTrigger.current?.focus();
+   }
+  };
   document.addEventListener("keydown",close);
-  return ()=>document.removeEventListener("keydown",close);
+  return ()=>{
+   document.body.style.overflow=oldOverflow;
+   document.removeEventListener("keydown",close);
+  };
  },[mobileOpen]);
  const has=(r:string)=>roles.includes(r);
  const manager=has("admin")||has("editor");
@@ -72,13 +86,13 @@ export function AdminNav({role="admin",roles=[role],userId,notificationCount=0}:
    </Link>
   </nav>
   <div className="admin-nav-mobile">
-   <button type="button" className="admin-mobile-trigger" onClick={()=>setMobileOpen(v=>!v)} aria-expanded={mobileOpen} aria-controls="admin-mobile-drawer">
+   <button type="button" ref={menuTrigger} className="admin-mobile-trigger" onClick={()=>setMobileOpen(v=>!v)} aria-expanded={mobileOpen} aria-controls="admin-mobile-drawer">
     <Menu size={20}/> Menú <ChevronDown size={16}/>
    </button>
    {mobileOpen&&<>
     <button type="button" className="admin-mobile-overlay" onClick={()=>setMobileOpen(false)} aria-label="Cerrar navegación"/>
     <aside id="admin-mobile-drawer" className="admin-mobile-drawer" role="dialog" aria-modal="true" aria-label="Navegación del panel">
-     <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" onClick={()=>setMobileOpen(false)} aria-label="Cerrar menú"><X size={20}/></button></div>
+     <div className="admin-mobile-drawer-head"><strong>Navegación</strong><button type="button" ref={closeButton} onClick={()=>{setMobileOpen(false);menuTrigger.current?.focus();}} aria-label="Cerrar menú"><X size={20}/></button></div>
      <nav className="admin-nav admin-nav-mobile-list" aria-label="Navegación móvil">
       <span className="admin-nav-section-label">Trabajo diario</span>{entries(main,()=>setMobileOpen(false))}
       {tools.length>0&&<><span className="admin-nav-section-label">Más herramientas</span>{entries(tools,()=>setMobileOpen(false))}</>}

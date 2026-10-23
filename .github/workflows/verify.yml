@@ -72,6 +72,8 @@ jobs:
           printf 'DROP TABLE IF EXISTS `AgendaEvent`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
       - name: Verificar agrupación eficiente de métricas del dashboard
         run: npx tsx scripts/check-dashboard-metrics.ts
+      - name: Evitar regresiones CSS en menú móvil
+        run: node scripts/check-mobile-navigation.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
