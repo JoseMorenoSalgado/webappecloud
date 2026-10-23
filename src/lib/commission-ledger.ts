@@ -10,12 +10,12 @@ export function cents(raw:string):bigint{
  const negative=raw.startsWith("-");
  const clean=negative?raw.slice(1):raw;
  const [whole,part=""]=clean.split(".");
- const value=BigInt(whole)*100n+BigInt(part.padEnd(2,"0"));
+ const value=BigInt(whole)*BigInt(100)+BigInt(part.padEnd(2,"0"));
  return negative?-value:value;
 }
-export function money(value:bigint){return (value<0n?"-":"")+(value<0n?-value:value)/100n+"."+String((value<0n?-value:value)%100n).padStart(2,"0");}
+export function money(value:bigint){return (value<BigInt(0)?"-":"")+(value<BigInt(0)?-value:value)/BigInt(100)+"."+String((value<BigInt(0)?-value:value)%BigInt(100)).padStart(2,"0");}
 export function paymentStatus(due:bigint,paid:bigint){
- return due===0n?"sin-comision":paid===0n?"pendiente":paid>=due?"pagada":"parcial";
+ return due===BigInt(0)?"sin-comision":paid===BigInt(0)?"pendiente":paid>=due?"pagada":"parcial";
 }
 export type LedgerEntry={
  id:string;leadId:string;clientName:string;propertyRefCode:string;
@@ -36,17 +36,17 @@ export async function commissionLedger(user:AgentScope,{period="30",agentId,allP
  const closings=await prisma.commercialClosing.findMany({where,
   orderBy:[{closedAt:"desc"},{id:"asc"}],take:Math.max(1,Math.min(2000,limit)),
   include:{commissionPayments:{orderBy:[{paidAt:"desc"},{createdAt:"desc"}]}}});
- let total=0n,paid=0n,voided=0;
+ let total=BigInt(0),paid=BigInt(0),voided=0;
  const rows:LedgerEntry[]=closings.map(c=>{
   const commission=cents(c.commissionAmount.toFixed(2));
   const received=c.commissionPayments.filter(p=>p.status==="confirmado")
-   .reduce((sum,p)=>sum+cents(p.amount.toFixed(2)),0n);
+   .reduce((sum,p)=>sum+cents(p.amount.toFixed(2)),BigInt(0));
   const active=c.status==="confirmado";
   if(active){total+=commission;paid+=received;}else voided++;
   return {id:c.id,leadId:c.leadId,clientName:c.clientName,propertyRefCode:c.propertyRefCode,
    agentId:c.agentId,agentName:c.agentName,kind:c.kind,currency:c.currency,
    closedAt:c.closedAt,status:c.status,commission:money(commission),paid:money(received),
-   balance:money(active?(commission-received):0n),paymentStatus:active?paymentStatus(commission,received):"anulada",
+   balance:money(active?(commission-received):BigInt(0)),paymentStatus:active?paymentStatus(commission,received):"anulada",
    amount:c.amount.toFixed(2),payments:c.commissionPayments.map(p=>({
     id:p.id,amount:p.amount.toFixed(2),paidAt:p.paidAt,method:p.method,
     reference:p.reference,notes:p.notes,status:p.status,voidReason:p.voidReason,
