@@ -19,7 +19,7 @@ export default async function AgentDetail({params}:{params:Promise<{id:string}>}
   prisma.property.findMany({where:{tenantId:admin.tenantId,assignedAgentId:id},
    select:{id:true,refCode:true,title:true,city:true,published:true,slug:true},
    orderBy:{updatedAt:"desc"},take:100}),
-  prisma.lead.findMany({where:{tenantId:admin.tenantId,property:{is:{tenantId:admin.tenantId,assignedAgentId:id}}},
+  prisma.lead.findMany({where:{tenantId:admin.tenantId,assignedAgentId:id},
    select:{id:true,name:true,createdAt:true,property:{select:{refCode:true}}},
    orderBy:{createdAt:"desc"},take:15}),
   crmTablesReady()
@@ -31,7 +31,7 @@ export default async function AgentDetail({params}:{params:Promise<{id:string}>}
   <div className="agent-profile-summary">
    <div><UserRound size={18}/><span>Agente</span><strong>{agent.name}</strong></div>
    <div><Building2 size={18}/><span>Propiedades asignadas</span><strong>{properties.length}{properties.length===100?"+":""}</strong></div>
-   <div><UsersRound size={18}/><span>Prospectos asociados (recientes)</span><strong>{leads.length}{leads.length===15?"+":""}</strong></div>
+   <div><UsersRound size={18}/><span>Prospectos asignados (recientes)</span><strong>{leads.length}{leads.length===15?"+":""}</strong></div>
   </div>
   <div className="agent-profile-grid">
    <div className="admin-panel">
@@ -56,7 +56,7 @@ export default async function AgentDetail({params}:{params:Promise<{id:string}>}
    </div>
    <div className="admin-panel agent-profile-leads">
     <h2>Últimos prospectos asociados</h2>
-    <p className="property-help">Son contactos relacionados con inmuebles actualmente asignados a este agente. Las consultas generales permanecen bajo control del administrador.</p>
+    <p className="property-help">Son prospectos asignados directamente a este agente, incluso si se reasigna la propiedad o si la consulta es general.</p>
     {leads.length?<div className="agent-profile-items">{leads.map(l=><div key={l.id}>
       <div><strong>{l.name}</strong><small>{l.property?.refCode||"Consulta"} · {l.createdAt.toLocaleDateString("es-NI",{timeZone:"UTC"})}</small></div>
       {crmReady&&<Link href={"/admin/leads/"+encodeURIComponent(l.id)}>Ver ficha <ExternalLink size={14}/></Link>}
