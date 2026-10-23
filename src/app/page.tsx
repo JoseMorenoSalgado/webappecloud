@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {ArrowRight,ArrowUpRight,Building2,KeyRound,Search,ShieldCheck,CheckCircle2} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
+import {prisma} from "@/lib/prisma";
+import type {PublicProperty} from "@/lib/demo";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {PropertyCard} from "@/components/property-card";
 import {PublicFrame} from "@/components/public-frame";
@@ -13,15 +15,21 @@ const services=[
  {href:"/servicios#asesoria",Icon:ShieldCheck,title:"Acompañamiento",desc:"Información clara y atención directa para tomar decisiones con confianza."}
 ];
 export default async function Home(){
- const {tenant,properties,demo,settings,heroImage}=await getPublicContext();
+ const {tenant,properties:demoProperties,demo,settings,heroImage}=await getPublicContext({loadProperties:false});
  const published=demo?new Set(["home","propiedades","nosotros","servicios","contacto"]):
   new Set((await getPageDefinitions(tenant.id)).filter(p=>p.published).map(p=>p.id));
  const visible=(page:string)=>published.has(page);
+ const selected=demo?demoProperties:await (async()=>{
+  const select={id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,photos:{orderBy:{sortOrder:"asc" as const},take:1,select:{url:true}}};
+  const where={tenantId:tenant.id,published:true};
+  const featured=settings.featuredIds.length?await prisma.property.findMany({where:{...where,id:{in:settings.featuredIds}},select,take:3}):[];
+  const rows=featured.length?featured:await prisma.property.findMany({where,select,take:3,orderBy:{createdAt:"desc"}});
+  const ordered=featured.length?rows.sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):rows;
+  return ordered.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(photo=>photo.url)} satisfies PublicProperty));
+ })();
  const featuredIds=new Set(settings.featuredIds);
- const chosen=settings.featuredIds.length?
-  properties.filter(p=>featuredIds.has(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):
-  properties;
- const displayed=(chosen.length?chosen:properties).slice(0,3);
+ const chosen=demo&&settings.featuredIds.length?selected.filter(p=>featuredIds.has(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):selected;
+ const displayed=(chosen.length?chosen:selected).slice(0,3);
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">
    <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
