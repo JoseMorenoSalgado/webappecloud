@@ -45,14 +45,14 @@ export function AgendaCreateForm({leads,defaultLeadId}:{leads:LeadOption[];defau
  </form>;
 }
 
-export function AgendaRescheduleForm({id,startsAt,durationMinutes}:{id:string;startsAt:string;durationMinutes:number}){
+export function AgendaRescheduleForm({id,startsAt,durationMinutes,month}:{id:string;startsAt:string;durationMinutes:number;month:string}){
  const [local,setLocal]=useState("");
  const [error,setError]=useState("");
  const iso=useRef<HTMLInputElement>(null);
  useEffect(()=>{setLocal(localInput(startsAt));},[startsAt]);
  return <form method="post" action={"/api/admin/agenda/"+encodeURIComponent(id)} className="agenda-reschedule"
   onSubmit={e=>{const d=new Date(local);if(!local||!Number.isFinite(d.getTime())){e.preventDefault();setError("Fecha u hora inválida.");return;}if(iso.current)iso.current.value=d.toISOString();}}>
-  <input type="hidden" name="intent" value="reschedule"/><input name="startsAt" ref={iso} type="hidden"/>
+  <input type="hidden" name="intent" value="reschedule"/><input type="hidden" name="mes" value={month}/><input name="startsAt" ref={iso} type="hidden"/>
   <label>Reprogramar<input type="datetime-local" required value={local} onChange={e=>setLocal(e.target.value)}/></label>
   <label>Duración<select name="durationMinutes" defaultValue={durationMinutes}>{AGENDA_DURATIONS.map(n=><option key={n} value={n}>{n} min</option>)}</select></label>
   <button type="submit" className="btn wizard-back">Guardar nueva fecha</button>
