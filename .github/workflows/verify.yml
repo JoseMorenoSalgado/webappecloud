@@ -69,6 +69,7 @@ jobs:
         run: |
           printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
           printf 'DROP TABLE IF EXISTS `LeadCrm`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
+          printf 'DROP TABLE IF EXISTS `AgendaEvent`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
@@ -109,6 +110,8 @@ jobs:
         run: node scripts/check-crm.mjs
       - name: Validar perfiles y permisos de agentes en MariaDB
         run: node scripts/check-agent-access.mjs
+      - name: Probar agenda comercial y activación segura en MariaDB
+        run: node scripts/check-agenda.mjs
       - name: Validar documentos PDF personalizados de propiedades
         run: node scripts/check-custom-pdf.mjs
       - name: Verificar reportes comerciales y exportación segura CSV
@@ -219,6 +222,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Validar aislamiento comercial de agentes en PostgreSQL
         run: node scripts/check-agent-access.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar agenda comercial, estados y agentes en PostgreSQL
+        run: node scripts/check-agenda.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com
