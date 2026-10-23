@@ -13,10 +13,12 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const f={operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90)};
  const {tenant,properties,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"propiedades");
+ const normalizedLocation=f.ubicacion.toLocaleLowerCase();
+ const normalizedType=f.tipo.toLocaleLowerCase();
  const matching=properties.filter(p=>
   (!f.operacion||p.operation===f.operacion)&&
-  (!f.tipo||p.type.toLowerCase()===f.tipo.toLowerCase())&&
-  (!f.ubicacion||`${p.city} ${p.neighborhood}`.toLowerCase().includes(f.ubicacion.toLowerCase()))
+  (!f.tipo||p.type.toLowerCase()===normalizedType)&&
+  (!f.ubicacion||`${p.city} ${p.neighborhood}`.toLowerCase().includes(normalizedLocation))
  );
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido">
   <section className="nexus-inner-hero nexus-catalog-hero"><div className="container">
