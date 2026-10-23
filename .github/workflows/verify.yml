@@ -76,6 +76,8 @@ jobs:
         run: node scripts/check-mobile-navigation.mjs
       - name: Verificar formularios compactos de propiedades y seguimiento CRM
         run: node scripts/check-editor-ux.mjs
+      - name: Verificar UX y refactorización del personalizador
+        run: node scripts/check-customizer-refactor.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
