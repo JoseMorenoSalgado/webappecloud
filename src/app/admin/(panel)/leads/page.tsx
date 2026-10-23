@@ -10,7 +10,7 @@ import {parseRoles} from "@/lib/roles";
 import {CRM_STATUSES,crmStatusLabel,isCrmStatus,whatsappLeadUrl} from "@/lib/crm-status";
 
 export const dynamic="force-dynamic";
-type Search={q?:string;status?:string;agent?:string;page?:string;activated?:string;error?:string};
+type Search={q?:string;status?:string;agent?:string;followup?:string;page?:string;activated?:string;error?:string};
 const date=(x:Date)=>x.toLocaleDateString("es-NI",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"});
 export default async function AdminLeads({searchParams}:{searchParams:Promise<Search>}){
  const admin=await requireRole(["admin","editor","agente"]);
@@ -19,6 +19,9 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  const ready=await crmTablesReady();
  const q=(params.q||"").trim().slice(0,80);
  const status=params.status&&isCrmStatus(params.status)?params.status:"";
+ const followup=params.followup==="vencidos"||params.followup==="proximos"?params.followup:"";
+ const now=new Date();
+ const nextDay=new Date(now.getTime()+24*60*60*1000);
  const page=Math.min(10000,Math.max(1,Number.parseInt(params.page||"1",10)||1));
  if(!ready)return <>
   <div className="admin-heading"><div><h1>{realEstate?"Prospectos y seguimiento":"Consultas y seguimiento"}</h1><p>{realEstate?"Administra las consultas de tus posibles compradores y arrendatarios.":"Gestiona las solicitudes de información recibidas en tu sitio."}</p></div></div>
@@ -34,6 +37,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  const agents=team.filter(u=>parseRoles(u.role).includes("agente"));
  const agentFilter=params.agent==="none"?"none":agents.some(a=>a.id===params.agent)?params.agent||"":"";
  const filters:Prisma.LeadWhereInput[]=[];
+ if(followup)filters.push({crm:{is:{tenantId:admin.tenantId,status:{notIn:["cerrado","descartado"]},nextContactAt:followup==="vencidos"?{lt:now}:{gte:now,lt:nextDay}}}});
  if(agentFilter)filters.push({assignedAgentId:agentFilter==="none"?null:agentFilter});
  if(q)filters.push({OR:[
   {name:{contains:q}},{phone:{contains:q}},{email:{contains:q}},
@@ -52,8 +56,8 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
  ]);
  const counts=new Map(managed.map(x=>[x.status,x._count._all]));
  const newCount=allCount-managed.filter(x=>x.status!=="nuevo").reduce((n,x)=>n+x._count._all,0);
- const paramsFor=(p:number)=>{const u=new URLSearchParams();if(q)u.set("q",q);if(status)u.set("status",status);if(agentFilter)u.set("agent",agentFilter);u.set("page",String(p));return "/admin/leads?"+u.toString();};
- const hasFilters=Boolean(q||status||agentFilter);
+ const paramsFor=(p:number)=>{const u=new URLSearchParams();if(q)u.set("q",q);if(status)u.set("status",status);if(agentFilter)u.set("agent",agentFilter);if(followup)u.set("followup",followup);u.set("page",String(p));return "/admin/leads?"+u.toString();};
+ const hasFilters=Boolean(q||status||agentFilter||followup);
  const canEdit=admin.roles.some(r=>["admin","editor","agente"].includes(r));
  return <>
   <div className="admin-heading"><div><h1>{realEstate?"Prospectos y seguimiento":"Consultas y seguimiento"}</h1><p>{realEstate?"Organiza las consultas inmobiliarias, programa contactos y registra gestiones.":"Organiza las solicitudes de visitantes, programa respuestas y registra gestiones."}</p></div>{canEdit&&<Link href="/admin/leads/nuevo" className="btn btn-red"><UserPlus size={17}/>{realEstate?"Registrar prospecto":"Nueva consulta"}</Link>}</div>
@@ -72,6 +76,7 @@ export default async function AdminLeads({searchParams}:{searchParams:Promise<Se
     {CRM_STATUSES.map(s=><option value={s.value} key={s.value}>{s.label}</option>)}
    </select></label>
    {managesAllLeads(admin)&&<label><span>Responsable</span><select name="agent" defaultValue={agentFilter}><option value="">Todos los agentes</option><option value="none">Sin asignar</option>{agents.map(a=><option key={a.id} value={a.id}>{a.name}</option>)}</select></label>}
+   <label><span>Prioridad de seguimiento</span><select name="followup" defaultValue={followup}><option value="">Todos los seguimientos</option><option value="vencidos">Vencidos</option><option value="proximos">Próximas 24 horas</option></select></label>
    <div className="admin-filter-actions"><button className="btn btn-dark" type="submit"><Filter size={16}/> Aplicar</button>{hasFilters&&<Link href="/admin/leads" className="admin-clear-filters"><X size={15}/> Limpiar</Link>}</div>
   </form>
   <div className="property-result-heading"><strong>{total} resultados</strong><span>Página {page} de {Math.max(1,Math.ceil(total/12))}</span></div>
