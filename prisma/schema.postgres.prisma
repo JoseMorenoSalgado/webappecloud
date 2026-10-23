@@ -61,6 +61,8 @@ model Property {
   @@unique([tenantId,slug])
   @@unique([tenantId,refCode])
   @@index([tenantId,published,operation,type])
+  @@index([tenantId,published,createdAt,id])
+  @@index([tenantId,published,price,id])
 }
 model Photo {
   id String @id @default(cuid())
