@@ -35,12 +35,13 @@ export default async function Closings({searchParams}:{searchParams:Promise<{per
  const days=resolveReportPeriod(q.periodo);
  const from=new Date();from.setUTCHours(0,0,0,0);from.setUTCDate(from.getUTCDate()-(days-1));
  const today=new Date();
+ const through=new Date(today);through.setUTCHours(0,0,0,0);through.setUTCDate(through.getUTCDate()+1);
  const staff=all?await prisma.adminUser.findMany({where:{tenantId:user.tenantId},select:{id:true,name:true,active:true,role:true},orderBy:{name:"asc"}}):[];
  const agents=staff.filter(a=>parseRoles(a.role).includes("agente"));
  const selected=all&&agents.some(a=>a.id===q.agente)?q.agente:"";
  const kind=q.tipo==="venta"||q.tipo==="alquiler"?q.tipo:"";
  const state=q.estado==="anulado"?"anulado":q.estado==="todos"?"todos":"confirmado";
- const conditions={...closingWhere(user),closedAt:{gte:from,lte:today},
+ const conditions={...closingWhere(user),closedAt:{gte:from,lt:through},
   ...(selected?{agentId:selected}:{}),...(kind?{kind}:{}),
   ...(state==="todos"?{}:{status:state})};
  const [records,totals,count,leads]=await Promise.all([
