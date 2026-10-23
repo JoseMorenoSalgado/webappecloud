@@ -17,6 +17,27 @@ export default function UpdateManagerDemo() {
   const [status, setStatus] = useState("Simulación preparada. No hay conexión con el servidor de actualizaciones.");
   const [history, setHistory] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [snapshots, setSnapshots] = useState<{id: number; version: string; created: string}[]>([]);
+  const [nextSnapshotId, setNextSnapshotId] = useState(1);
+
+  function createSnapshot() {
+    if (busy) return;
+    const snapshot = { id: nextSnapshotId, version: installed, created: new Date().toLocaleString("es") };
+    setSnapshots(old => [snapshot, ...old]);
+    setNextSnapshotId(n => n + 1);
+    setHistory(h => [`Snapshot SIMULADO #${snapshot.id} creado para versión ${installed}`, ...h]);
+    setStatus("Punto de restauración simulado creado. No existe copia real en disco.");
+  }
+
+  function restoreSnapshot(id: number) {
+    if (busy) return;
+    const snapshot = snapshots.find(item => item.id === id);
+    if (!snapshot || !window.confirm("¿Restablecer únicamente el estado de esta simulación? No se restaurarán archivos ni datos reales.")) return;
+    setInstalled(snapshot.version);
+    setAvailable(snapshot.version !== sample.version);
+    setHistory(h => [`Restauración SIMULADA #${id} a versión ${snapshot.version}`, ...h]);
+    setStatus("Restauración simulada finalizada. No se modificó el servidor.");
+  }
 
   function simulate() {
     if (busy || !available) return;
@@ -25,7 +46,7 @@ export default function UpdateManagerDemo() {
     // Synchronous state transition: no real filesystem, network or database changes.
     setInstalled(sample.version);
     setAvailable(false);
-    setHistory(h => [`Simulación completada: ${sample.version} (sin cambios reales)`, ...h]);
+    setHistory(h => [`Simulación completada: ${sample.version} (sin cambios reales)`, `Snapshot SIMULADO #${snapshot.id} previo a la actualización`, ...h]);
     setStatus("Simulación finalizada. No se modificaron archivos, base de datos ni Passenger.");
     setBusy(false);
   }
@@ -50,8 +71,17 @@ export default function UpdateManagerDemo() {
       Actualizaciones automáticas (preferencia de demostración; no se guarda)
     </label>
     <p role="status" aria-live="polite" className="rounded bg-slate-100 p-3 text-sm text-slate-900">{status}</p>
+    <div className="rounded-lg border p-4">
+      <h2 className="text-lg font-semibold">Snapshots de seguridad (simulación)</h2>
+      <p className="my-2 text-sm">Los puntos de restauración son temporales y solo existen en esta pantalla. No son respaldos reales.</p>
+      <button type="button" onClick={createSnapshot} disabled={busy} className="rounded border px-4 py-2">Crear snapshot simulado</button>
+      {snapshots.length ? <ul className="mt-3 space-y-2">{snapshots.map(item => <li key={item.id} className="flex flex-wrap items-center justify-between gap-2">
+        <span>#{item.id} · v{item.version} · {item.created}</span>
+        <button type="button" onClick={() => restoreSnapshot(item.id)} className="rounded border px-3 py-1">Restaurar simulación</button>
+      </li>)}</ul> : <p className="mt-2 text-sm">Sin snapshots simulados.</p>}
+    </div>
     <h2 className="text-lg font-semibold">Historial simulado</h2>
     {history.length ? <ul className="list-disc pl-5">{history.map((item,i)=><li key={i}>{item}</li>)}</ul> : <p>Aún no hay eventos.</p>}
-    <button type="button" onClick={() => { setInstalled("1.0.0"); setAvailable(true); setHistory([]); setStatus("Simulación restablecida."); }} className="rounded border px-4 py-2">Restablecer simulación</button>
+    <button type="button" onClick={() => { setInstalled("1.0.0"); setAvailable(true); setHistory([]); setSnapshots([]); setNextSnapshotId(1); setStatus("Simulación restablecida."); }} className="rounded border px-4 py-2">Restablecer simulación</button>
   </section>;
 }
