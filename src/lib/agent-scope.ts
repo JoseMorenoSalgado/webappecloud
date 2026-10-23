@@ -5,12 +5,12 @@ export type AgentScope={tenantId:string;userId:string;roles:string[]};
 export function managesAllLeads(user:Pick<AgentScope,"roles">){
  return user.roles.includes("admin")||user.roles.includes("editor");
 }
-/** A commercial agent only sees leads on properties currently assigned to them.
- * Tenant scoping is enforced even when an agent ID is known.
+/** Prospect ownership is independent from property assignment.
+ * An agent only sees their personally assigned leads within their tenant.
  */
 export function leadWhere(user:AgentScope):Prisma.LeadWhereInput{
  return {tenantId:user.tenantId,...(!managesAllLeads(user)?{
-  property:{is:{tenantId:user.tenantId,assignedAgentId:user.userId}}
+  assignedAgentId:user.userId
  }:{})};
 }
 export function propertyWhere(user:AgentScope):Prisma.PropertyWhereInput{
