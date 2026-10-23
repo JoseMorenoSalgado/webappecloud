@@ -1,5 +1,13 @@
 import type {Metadata} from "next";
 import "./globals.css";
+import "./styles/legacy/admin-shell.css";
+import "./styles/legacy/real-estate-admin.css";
+import "./styles/templates/nexus-public.css";
+import "./styles/legacy/cms.css";
+import "./styles/templates/nexus-property.css";
+import "./styles/legacy/agent-admin.css";
+import "./styles/templates/nexus-property-cover.css";
+import "./styles/legacy/commercial-workflows.css";
 import "./admin-tidy.css";
 import "./home-tidy.css";
 import "./inventory-tidy.css";

@@ -78,6 +78,8 @@ jobs:
         run: node scripts/check-editor-ux.mjs
       - name: Verificar UX y refactorización del personalizador
         run: node scripts/check-customizer-refactor.mjs
+      - name: Verificar separación estable de estilos
+        run: node scripts/check-style-modules.mjs
       - name: Verificar TypeScript
         run: npx tsc --noEmit
       - name: Compilar Next.js
