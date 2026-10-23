@@ -1,7 +1,7 @@
 import "server-only";
 import type {Prisma} from "@prisma/client";
 import {leadWhere,type AgentScope} from "@/lib/agent-scope";
-import {AGENDA_TYPES,AGENDA_STATUSES} from "@/lib/agenda-constants";
+import {AGENDA_TYPES,AGENDA_STATUSES,type AgendaType,type AgendaStatus} from "@/lib/agenda-constants";
 export {AGENDA_TYPES,AGENDA_STATUSES,AGENDA_DURATIONS} from "@/lib/agenda-constants";
 
 export function isAgendaType(v:string):v is AgendaType{return AGENDA_TYPES.some(t=>t.value===v);}
