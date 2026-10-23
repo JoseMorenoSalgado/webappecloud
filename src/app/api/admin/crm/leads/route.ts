@@ -41,7 +41,17 @@ export async function POST(req:NextRequest){
    if(!property)return back("propiedad");
    if(property.assignedAgentId&&property.assignedAgent?.active&&property.assignedAgent.tenantId===admin.tenantId&&parseRoles(property.assignedAgent.role).includes("agente"))assignedAgentId=property.assignedAgentId;
   }
-  if(!managesAllLeads(admin))assignedAgentId=admin.userId;
+  if(managesAllLeads(admin)){
+   const choice=form.get("assignedAgentId");
+   if(typeof choice==="string"&&choice!=="auto"){
+    if(choice.length>100)return back("agente");
+    if(choice){
+     const selected=await prisma.adminUser.findFirst({where:{id:choice,tenantId:admin.tenantId,active:true},select:{role:true}});
+     if(!selected||!parseRoles(selected.role).includes("agente"))return back("agente");
+    }
+    assignedAgentId=choice||null;
+   }
+  }else assignedAgentId=admin.userId;
   const lead=await prisma.lead.create({data:{
    tenantId:admin.tenantId,propertyId:propertyId||null,assignedAgentId,name,phone,email:email||null,
    message:message||null,source,consent:true
