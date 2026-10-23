@@ -152,6 +152,8 @@ jobs:
         run: node scripts/check-independent-pages.mjs
       - name: Comprobar vistas previas y experiencia CMS mejorada
         run: node scripts/check-cms-ux.mjs
+      - name: Probar selección de plantillas, contenido y aislamiento en MariaDB
+        run: node scripts/check-template-selection.mjs
       - name: Reproducir instalación MariaDB heredada y comprobar recuperación sin pérdida de datos
         run: node scripts/check-legacy-db.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
@@ -272,6 +274,12 @@ jobs:
           ADMIN_PASSWORD: long-postgres-test-password-2026
       - name: Probar comisiones y reportes PDF en PostgreSQL
         run: node scripts/check-commissions.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3003
+          ADMIN_EMAIL: admin-postgres@example.com
+          ADMIN_PASSWORD: long-postgres-test-password-2026
+      - name: Probar plantillas Educación y Servicios en PostgreSQL
+        run: node scripts/check-template-selection.mjs
         env:
           TEST_ORIGIN: http://localhost:3003
           ADMIN_EMAIL: admin-postgres@example.com

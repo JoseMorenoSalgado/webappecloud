@@ -1,0 +1,73 @@
+import assert from "node:assert/strict";
+import {execFileSync} from "node:child_process";
+const origin=process.env.TEST_ORIGIN||"http://localhost:3000";
+assert.equal(new URL(origin).hostname,"localhost","Never test template switches in production.");
+const email=process.env.ADMIN_EMAIL,password=process.env.ADMIN_PASSWORD;
+assert.ok(email&&password,"Credentials for CI required");
+const form=new FormData();form.set("email",email);form.set("password",password);
+const login=await fetch(origin+"/api/admin/session",{method:"POST",headers:{Origin:origin},body:form,redirect:"manual"});
+assert.equal(login.status,303,"Admin test login failed");
+const cookie=login.headers.getSetCookie().find(s=>s.startsWith("webappecloud_session="))?.split(";")[0];
+assert.ok(cookie,"No admin session");
+const get=async(path,authenticated=false)=>fetch(origin+path,{headers:authenticated?{Cookie:cookie}:{},redirect:"manual"});
+const post=async(values)=>fetch(origin+"/api/admin/site-template",{
+ method:"POST",headers:{Origin:origin,Cookie:cookie},body:new URLSearchParams(values),redirect:"manual"
+});
+const select=async templateKey=>{
+ const r=await post({intent:"select",templateKey});
+ assert.equal(r.status,303,"Template select redirect");
+ assert.match(r.headers.get("location")||"",/saved=1/);
+};
+const original=await get("/");
+assert.equal(original.status,200);
+assert.ok((await original.text()).includes("nexus-hero"),"Legacy site must remain real-estate by default");
+const adminStart=await get("/admin/personalizar/plantilla",true);
+assert.equal(adminStart.status,200);
+const markup=await adminStart.text();
+for(const key of ["real-estate","education","services"])assert.ok(markup.includes('value="'+key+'"'),"Missing template "+key);
+await select("education");
+const school=await get("/");assert.equal(school.status,200);
+let html=await school.text();
+assert.match(html,/Aprender abre nuevas oportunidades/);
+assert.match(html,/Programas de formación/);
+assert.ok(!html.includes('href="/propiedades"'),"Education must not link to catalog");
+const about=await get("/nosotros");assert.equal(about.status,200);
+assert.match(await about.text(),/Comprometidos con tu aprendizaje/);
+const offerings=await get("/servicios");assert.equal(offerings.status,200);
+assert.match(await offerings.text(),/PROGRAMAS EDUCATIVOS/);
+const contact=await get("/contacto");assert.equal(contact.status,200);
+assert.match(await contact.text(),/Enviar consulta/);
+assert.equal((await get("/propiedades")).status,404);
+const dash=await get("/admin",true);assert.equal(dash.status,200);
+const adminHtml=await dash.text();
+assert.match(adminHtml,/Consultas recientes/);
+assert.ok(!adminHtml.includes('href="/admin/propiedades"'),"Generic dashboard must not show property tools");
+const edit=await get("/admin/personalizar/paginas/home",true);
+assert.ok([303,307,308].includes(edit.status),"Generic template must redirect old sector editor");
+assert.match(edit.headers.get("location")||"",/personalizar\/plantilla/);
+const menu=await get("/admin/personalizar/menu",true);assert.equal(menu.status,200);
+const menuHtml=await menu.text();
+assert.ok(menuHtml.includes("Programas"));
+assert.ok(!menuHtml.includes("Propiedades</button>"),"Incompatible menu must be hidden");
+const newText="Educación personalizada para tus objetivos";
+const settings={intent:"content",templateKey:"education",eyebrow:"APRENDER JUNTOS",headline:newText,
+ description:"Explora programas de aprendizaje diseñados para nuevas oportunidades.",actionLabel:"Conocer programas",
+ aboutTitle:"Aprendemos con propósito",aboutText:"Formación con acompañamiento y proyectos prácticos.",
+ contactTitle:"Solicitar información académica",contactText:"Nuestro equipo te ayudará a elegir un programa."};
+for(let i=0;i<3;i++){settings["cardTitle"+i]="Programa "+(i+1);settings["cardDescription"+i]="Descripción clara y completa del programa "+(i+1);}
+const saved=await post(settings);assert.equal(saved.status,303);assert.match(saved.headers.get("location")||"",/saved=1/);
+assert.match(await (await get("/")).text(),/Educación personalizada para tus objetivos/);
+await select("services");
+assert.match(await (await get("/")).text(),/Servicios profesionales para tus proyectos/);
+assert.ok(!(await (await get("/")).text()).includes(newText),"Unrelated template cannot inherit education content");
+await select("education");
+assert.match(await (await get("/")).text(),/Educación personalizada para tus objetivos/);
+const invalid=await post({intent:"select",templateKey:"unknown"});
+assert.equal(invalid.status,303);assert.match(invalid.headers.get("location")||"",/error=datos/);
+assert.match(await (await get("/")).text(),/Educación personalizada para tus objetivos/);
+await select("real-estate");
+assert.ok((await (await get("/")).text()).includes("nexus-hero"),"Restore existing first client");
+assert.equal((await get("/propiedades")).status,200,"Real-estate catalog must return");
+const hostCode=execFileSync("curl",["-sS","-o","/dev/null","-w","%{http_code}","-H","Host: other-tenant.invalid",origin+"/"],{encoding:"utf8"}).trim();
+assert.equal(hostCode,"404","Other tenant host must remain isolated");
+console.log("Template switching: education, services, real-estate legacy, per-template content, public navigation and host isolation passed.");
