@@ -1,6 +1,6 @@
 "use client";
 import {useState,type FormEvent} from "react";
-export function ContactForm({propertyId}:{propertyId?:string}){
+export function ContactForm({propertyId,messagePlaceholder="¿Qué propiedad te interesa?"}:{propertyId?:string;messagePlaceholder?:string}){
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState("");
  async function submit(e:FormEvent<HTMLFormElement>){
    e.preventDefault();setBusy(true);setNotice("");
@@ -16,7 +16,7 @@ export function ContactForm({propertyId}:{propertyId?:string}){
  return <form className="contact-form" onSubmit={submit}>
   <input name="name" placeholder="Nombre completo" minLength={2} maxLength={120} required/>
   <div className="form-row"><input name="phone" placeholder="Teléfono / WhatsApp" minLength={7} maxLength={30} required/><input name="email" type="email" placeholder="Correo electrónico" maxLength={180}/></div>
-  <textarea name="message" placeholder="¿Qué propiedad te interesa?" maxLength={2000} rows={4}/>
+  <textarea name="message" placeholder={messagePlaceholder} maxLength={2000} rows={4}/>
   <label className="consent"><input type="checkbox" name="consent" value="yes" required/> Autorizo que me contacten para responder esta consulta.</label>
   <input name="website" tabIndex={-1} autoComplete="off" className="honeypot" aria-hidden="true"/>
   <button className="btn btn-red" disabled={busy}>{busy?"Enviando...":"Enviar consulta →"}</button><p aria-live="polite" className="form-notice">{notice}</p>

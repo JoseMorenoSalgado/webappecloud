@@ -2,6 +2,7 @@ import "server-only";
 import {notFound} from "next/navigation";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
+import {getSiteTemplate} from "@/lib/site-template-store";
 
 export type SiteMenuItem={id:string;label:string;href:string};
 export type PageDefinition={id:string;slug:string;title:string;href:string;published:boolean;builtIn:boolean;summary:string};
@@ -13,6 +14,12 @@ const staticPages=[
  {id:"contacto",slug:"contacto",title:"Contacto",href:"/contacto"}
 ] as const;
 export const DEFAULT_SITE_MENU:SiteMenuItem[]=staticPages.map(p=>({id:p.id,label:p.title,href:p.href}));
+export function defaultMenuForTemplate(key:string):SiteMenuItem[]{
+ if(key==="real-estate")return [...DEFAULT_SITE_MENU];
+ return staticPages.filter(p=>p.id!=="propiedades").map(p=>({
+  id:p.id,label:p.id==="servicios"&&key==="education"?"Programas":p.title,href:p.href
+ }));
+}
 export const CUSTOM_PAGE_PREFIX="pagina-";
 export const MENU_SLUG="site-navigation";
 const customSlug=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -25,12 +32,14 @@ export function textBlocks(raw:unknown):{summary:string;body:string}{
   body:typeof obj.body==="string"?obj.body.slice(0,12000):""};
 }
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
+ const template=await getSiteTemplate(tenantId);
+ const enabledPages=template.key==="real-estate"?staticPages:staticPages.filter(p=>p.id!=="propiedades");
  const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
- const builtins:PageDefinition[]=staticPages.map(p=>({
-  ...p,published:p.id==="home"?true:(lookup.get(p.slug)?.published??true),
+ const builtins:PageDefinition[]=enabledPages.map(p=>({
+  ...p,title:p.id==="servicios"&&template.key==="education"?"Programas":p.title,published:p.id==="home"?true:(lookup.get(p.slug)?.published??true),
   builtIn:true,summary:""
  }));
  const extras=rows.filter(r=>r.slug.startsWith(CUSTOM_PAGE_PREFIX)).map(r=>{
@@ -57,23 +66,44 @@ export function normalizedMenu(value:unknown,pages:PageDefinition[]):SiteMenuIte
  return result;
 }
 export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[]):Promise<SiteMenuItem[]>{
- const pages=existingPages||await getPageDefinitions(tenantId);
- const stored=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}});
- if(!stored)return normalizedMenu(DEFAULT_SITE_MENU,pages);
- const blocks=stored.blocks;
- const items=blocks&&typeof blocks==="object"&&!Array.isArray(blocks)
-  ?(blocks as {items?:unknown}).items:null;
- return normalizedMenu(items,pages);
+ const [pages,template,stored]=await Promise.all([
+  existingPages||getPageDefinitions(tenantId),getSiteTemplate(tenantId),
+  prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
+ ]);
+ const defaults=()=>normalizedMenu(defaultMenuForTemplate(template.key),pages);
+ if(!stored)return defaults();
+ const raw=stored.blocks&&typeof stored.blocks==="object"&&!Array.isArray(stored.blocks)
+  ?stored.blocks as {items?:unknown;byTemplate?:unknown}:null;
+ const byTemplate=raw?.byTemplate&&typeof raw.byTemplate==="object"&&!Array.isArray(raw.byTemplate)
+  ?raw.byTemplate as Record<string,unknown>:{};
+ const hasSelected=Object.hasOwn(byTemplate,template.key);
+ // An existing customer with only legacy menu settings belongs to real-estate.
+ const chosen=hasSelected?byTemplate[template.key]:template.key==="real-estate"?raw?.items:null;
+ if(chosen===null||chosen===undefined)return defaults();
+ return normalizedMenu(chosen,pages);
 }
 export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
  const pages=await getPageDefinitions(tenantId);
  const parsed=normalizedMenu(items,pages);
  if(parsed.length!==items.length)throw new Error("MENU_INVALID");
  if(parsed.length>25)throw new Error("MENU_LIMIT");
+ const currentTemplate=await getSiteTemplate(tenantId);
+ const existing=await prisma.sitePage.findUnique({
+  where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}
+ });
+ const currentBlocks=existing?.blocks&&typeof existing.blocks==="object"&&!Array.isArray(existing.blocks)
+  ?existing.blocks as Record<string,unknown>:{};
+ const previous=currentBlocks.byTemplate&&typeof currentBlocks.byTemplate==="object"&&!Array.isArray(currentBlocks.byTemplate)
+  ?currentBlocks.byTemplate as Record<string,unknown>:{};
+ const byTemplate={...previous,[currentTemplate.key]:parsed};
+ const updated={
+  items:currentTemplate.key==="real-estate"?parsed:(currentBlocks.items??DEFAULT_SITE_MENU),
+  byTemplate
+ };
  await prisma.sitePage.upsert({
   where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},
-  create:{tenantId,slug:MENU_SLUG,title:"Menú principal",blocks:{items:parsed} as Prisma.InputJsonValue,published:true},
-  update:{blocks:{items:parsed} as Prisma.InputJsonValue,published:true,title:"Menú principal"}
+  create:{tenantId,slug:MENU_SLUG,title:"Menú principal",blocks:updated as Prisma.InputJsonValue,published:true},
+  update:{blocks:updated as Prisma.InputJsonValue,published:true,title:"Menú principal"}
  });
 }
 export async function assertPagePublished(tenantId:string,isDemo:boolean,id:string){

@@ -6,10 +6,11 @@ import {Menu,ArrowUpRight} from "lucide-react";
 import {SiteBrand} from "@/components/site-brand";
 import {sitePresentation} from "@/lib/site-presentation";
 import {type SiteMenuItem} from "@/lib/site-pages";
+import {type SiteTemplateKey} from "@/lib/site-template-registry";
 export {SiteBrand as Brand} from "@/components/site-brand";
-export function SiteNav({tenant,links}:{tenant:PublicTenant;links:SiteMenuItem[]}){
+export function SiteNav({tenant,links,templateKey="real-estate"}:{tenant:PublicTenant;links:SiteMenuItem[];templateKey?:SiteTemplateKey}){
  const path=usePathname();
- const presentation=sitePresentation(tenant);
+ const presentation=sitePresentation(tenant,templateKey);
  const items=()=>links.map(link=>{
   const selected=link.href==="/"?path==="/":path===link.href||path.startsWith(link.href+"/");
   return <Link key={link.href} href={link.href} aria-current={selected?"page":undefined}>{link.label}</Link>;

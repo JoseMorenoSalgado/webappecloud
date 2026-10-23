@@ -1,11 +1,12 @@
 import {type PublicTenant} from "@/lib/demo";
+import {type SiteTemplateKey} from "@/lib/site-template-registry";
 
 /**
  * This is presentation-only separation, not yet a tenant-selectable CMS theme.
  * Existing NEXUS pages keep their approved labels and fallback image.
  */
-export function sitePresentation(tenant:PublicTenant){
- const nexus=tenant.name.trim().toLowerCase()==="nexus real estate";
+export function sitePresentation(tenant:PublicTenant,templateKey:SiteTemplateKey="real-estate"){
+ const nexus=templateKey==="real-estate"&&tenant.name.trim().toLowerCase()==="nexus real estate";
  return nexus?{
   variant:"nexus" as const,
   name:"NEXUS",subtitle:"REAL ESTATE",fallbackLogo:"/brand/nexus-icon.webp",

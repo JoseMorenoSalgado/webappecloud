@@ -2,9 +2,10 @@ import Link from "next/link";
 import {ArrowUpRight,Mail,MapPin,MessageCircle} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
 import {type SiteMenuItem} from "@/lib/site-pages";
+import {type SiteTemplateKey} from "@/lib/site-template-registry";
 import {sitePresentation} from "@/lib/site-presentation";
-export function SiteFooter({tenant,links}:{tenant:PublicTenant;links:SiteMenuItem[]}){
- const presentation=sitePresentation(tenant);
+export function SiteFooter({tenant,links,templateKey="real-estate"}:{tenant:PublicTenant;links:SiteMenuItem[];templateKey?:SiteTemplateKey}){
+ const presentation=sitePresentation(tenant,templateKey);
  return <footer className="nexus-footer">
   <div className="container nexus-footer-top">
    <div className="nexus-footer-intro">
