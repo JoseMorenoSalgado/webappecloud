@@ -34,7 +34,7 @@ export async function getPublicContext():Promise<{tenant:PublicTenant;properties
    notFound();
  }
  const [props,settings,heroImage,customLogo]=await Promise.all([
-  prisma.property.findMany({where:{tenantId:d.tenantId,published:true},include:{photos:{orderBy:{sortOrder:"asc"}}},orderBy:{createdAt:"desc"}}),
+  prisma.property.findMany({where:{tenantId:d.tenantId,published:true},select:{id:true,slug:true,refCode:true,title:true,description:true,city:true,neighborhood:true,type:true,operation:true,price:true,bedrooms:true,bathrooms:true,areaM2:true,featured:true,photos:{orderBy:{sortOrder:"asc"},select:{url:true}}},orderBy:{createdAt:"desc"}}),
   getSiteSettings(d.tenantId),hasSiteAsset(d.tenantId,"hero"),hasSiteAsset(d.tenantId,"logo")
  ]);
  const prioritized=[...props].sort((a,b)=>{
