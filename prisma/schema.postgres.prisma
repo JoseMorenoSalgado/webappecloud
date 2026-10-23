@@ -83,7 +83,11 @@ model Lead {
   consent Boolean @default(false)
   crm LeadCrm?
   notes LeadNote[]
+  assignedAgentId String?
+  assignedAgent AdminUser? @relation("AgentLeads",fields:[assignedAgentId],references:[id],onDelete:SetNull)
+  assignmentHistory LeadAssignmentHistory[]
   createdAt DateTime @default(now())
+  @@index([tenantId,assignedAgentId,createdAt])
   @@index([tenantId,createdAt])
 }
 model VisitEvent {
@@ -117,6 +121,7 @@ model AdminUser {
   active Boolean @default(true)
   sessions AdminSession[]
   assignedProperties Property[] @relation("AgentProperties")
+  assignedLeads Lead[] @relation("AgentLeads")
   createdAt DateTime @default(now())
   @@unique([tenantId,email])
   @@index([tenantId])
@@ -158,6 +163,23 @@ model LeadNote {
   lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
   authorName String
   body String @db.Text
+  createdAt DateTime @default(now())
+  @@index([tenantId,leadId,createdAt])
+}
+
+/** Immutable snapshots of changes in the prospect's responsible agent.
+ * Names are saved to preserve the audit trail after an account is removed.
+ */
+model LeadAssignmentHistory {
+  id String @id @default(cuid())
+  tenantId String
+  leadId String
+  lead Lead @relation(fields:[leadId],references:[id],onDelete:Cascade)
+  fromAgentId String?
+  fromAgentName String?
+  toAgentId String?
+  toAgentName String?
+  changedByName String
   createdAt DateTime @default(now())
   @@index([tenantId,leadId,createdAt])
 }
