@@ -39,8 +39,8 @@ export function validateSignedPackage(
   if (url.protocol !== "https:" || url.hostname !== allowedHost || url.port || url.username || url.password || url.hash) {
     throw new Error("Untrusted package URL");
   }
-  if (typeof p.signature !== "string" || !/^[A-Za-z0-9+/]{86}==$/.test(p.signature)) {
-    // Base64 Ed25519 signatures are exactly 88 characters with == padding.
+  if (typeof p.signature !== "string" || !/^[A-Za-z0-9+/]{86}=$/.test(p.signature)) {
+    // Base64 Ed25519 signatures are exactly 88 characters with = padding.
     throw new Error("Invalid signature encoding");
   }
   const signed: SignedPackage = {
