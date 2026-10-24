@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/nexusrea/apps/nexus/current
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /bin/cp -a . "$DEPLOYPATH/"
