@@ -2,7 +2,7 @@ import "server-only";
 import type { UpdateChannel, UpdateManifest, UpdateRelease } from "./types";
 
 const MAX_MANIFEST_BYTES = 128 * 1024;
-const VERSION = /^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/;
+const VERSION = new RegExp(String.raw`^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`);
 
 function compareVersions(a: string, b: string): number {
   const parse = (s: string) => s.split("-")[0].split(".").map(Number);
@@ -17,7 +17,7 @@ export async function checkForUpdates(currentVersion: string, channel: UpdateCha
   const endpoint = process.env.WEBAPPECLOUD_UPDATE_MANIFEST_URL;
   if (!endpoint) throw new Error("Update service not configured");
   const url = new URL(endpoint);
-  if (url.protocol !== "https:" || url.username || url.password) throw new Error("HTTPS update endpoint required");
+  if (url.protocol !== "https:" || url.username || url.password || url.port || url.hostname !== "updates.elearningcloud.io" || url.pathname !== "/manifest.json") throw new Error("Untrusted update endpoint");
   const response = await fetch(url, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(7000), headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error("Update service unavailable");
   if (Number(response.headers.get("content-length") || 0) > MAX_MANIFEST_BYTES) throw new Error("Manifest too large");
