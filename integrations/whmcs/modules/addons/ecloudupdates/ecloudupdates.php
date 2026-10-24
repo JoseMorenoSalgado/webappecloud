@@ -20,7 +20,7 @@ function ecloudupdates_config()
 function ecloudupdates_activate()
 {
     try {
-        $schema = \\WHMCS\\Database\\Capsule::schema();
+        $schema = \WHMCS\Database\Capsule::schema();
         if (!$schema->hasTable('mod_ecloudupdates_releases')) {
             $schema->create('mod_ecloudupdates_releases', function ($table) {
                 $table->increments('id');
@@ -35,7 +35,7 @@ function ecloudupdates_activate()
             });
         }
         return ['status' => 'success', 'description' => 'Tablas del gestor de versiones preparadas.'];
-    } catch (\\Throwable $e) {
+    } catch (\Throwable $e) {
         logActivity('Elearning Cloud Update Manager activation failed');
         return ['status' => 'error', 'description' => 'No se pudo preparar la base de datos del módulo.'];
     }
@@ -49,7 +49,7 @@ function ecloudupdates_deactivate()
 
 function ecloudupdates_output($vars)
 {
-    $rows = \\WHMCS\\Database\\Capsule::table('mod_ecloudupdates_releases')
+    $rows = \WHMCS\Database\Capsule::table('mod_ecloudupdates_releases')
         ->orderBy('id', 'desc')->limit(100)->get();
     echo '<div class="container-fluid"><h2>Elearning Cloud Update Manager</h2>';
     echo '<p>Gestión interna de versiones. La distribución de paquetes todavía no está habilitada.</p>';
