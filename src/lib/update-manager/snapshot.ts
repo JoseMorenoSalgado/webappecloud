@@ -16,7 +16,7 @@ export type SnapshotManifest = {
 
 const HEX_SHA256 = /^[a-f0-9]{64}$/;
 const ID = /^[a-zA-Z0-9_-]{8,80}$/;
-const VERSION = /^\\d+\\.\\d+\\.\\d+(?:-[a-zA-Z0-9.-]+)?$/;
+const VERSION = new RegExp(String.raw`^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$`);
 
 /** Reject absolute paths, traversal and public URLs in backup metadata. */
 export function validRelativeSnapshotPath(path: unknown): path is string {
