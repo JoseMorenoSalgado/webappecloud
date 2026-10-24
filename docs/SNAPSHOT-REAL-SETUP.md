@@ -20,3 +20,7 @@ No ejecutar este script desde una ruta pública ni exponerlo como endpoint HTTP.
 - El bloqueo `.snapshot.lock` impide dos procesos simultáneos, pero una ejecución abortada puede dejar un bloqueo que requiere inspección manual.
 - La lista de directorios no incluye por defecto archivos de configuración, secretos ni el código desplegado. La recuperación completa requiere un artefacto de release verificable y la configuración del servidor por separado.
 - Probar la exportación, los hashes, el almacenamiento y la recuperación en staging antes de producción.
+
+## Verificar un snapshot (sin restaurar)
+
+Ejecutar `node scripts/verify-snapshot.mjs snap_ID` con `WEBAPPECLOUD_SNAPSHOT_DIR` configurado. El verificador lee cada archivo de forma secuencial, confirma tamaño y SHA-256, y falla si detecta corrupción, enlaces simbólicos o rutas inválidas. **No modifica la base de datos ni el sitio**. La verificación de hashes no sustituye una restauración de prueba ni una firma criptográfica del manifiesto.
