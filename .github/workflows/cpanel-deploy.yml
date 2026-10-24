@@ -1,0 +1,61 @@
+name: Build for cPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cpanel-production
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+      - name: Package standalone
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f .next/standalone/server.js
+          mkdir -p dist
+          cp -a .next/standalone/. dist/
+          mkdir -p dist/.next
+          cp -a .next/static dist/.next/static
+          if [ -d public ]; then cp -a public dist/public; fi
+          tar -czf cpanel-release.tar.gz -C dist .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cpanel-release
+          path: cpanel-release.tar.gz
+          retention-days: 7
+      - name: Deploy over SSH (when configured)
+        if: ${{ vars.CPANEL_DEPLOY_ENABLED == 'true' }}
+        env:
+          HOST: ${{ secrets.CPANEL_SSH_HOST }}
+          USER: ${{ secrets.CPANEL_SSH_USER }}
+          KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          HOSTKEY: ${{ secrets.CPANEL_SSH_KNOWN_HOSTS }}
+          ROOT: ${{ vars.CPANEL_APP_ROOT }}
+        run: |
+          set -euo pipefail
+          test -n "$HOST" && test -n "$USER" && test -n "$KEY" && test -n "$HOSTKEY" && test -n "$ROOT"
+          mkdir -m 700 -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$HOSTKEY" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          scp -o StrictHostKeyChecking=yes cpanel-release.tar.gz "$USER@$HOST:~/cpanel-release.tar.gz"
+          ssh -o StrictHostKeyChecking=yes "$USER@$HOST" "APP_ROOT='$ROOT' ARTIFACT=\$HOME/cpanel-release.tar.gz bash '$ROOT/scripts/cpanel-deploy.sh'"
