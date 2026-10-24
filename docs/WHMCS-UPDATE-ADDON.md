@@ -23,3 +23,9 @@ Primera fase: módulo administrativo WHMCS y endpoint de consulta de versiones. 
 El addon usa el token CSRF del panel administrativo WHMCS para guardar borradores y publicarlos. Configurar `ECLOUD_UPDATE_MANIFEST_FILE` como ruta absoluta a un archivo privado en un directorio existente y escribible por el proceso PHP de WHMCS. El servicio HTTPS de manifiestos debe leer ese mismo archivo. La publicación solo transmite metadatos; **no distribuye ZIP ni instala código**. Si falla la escritura del manifiesto, la base puede quedar con una versión marcada como publicada: resolver la configuración y volver a publicar antes de anunciar disponibilidad.
 
 Antes de producción: probar compatibilidad de las funciones de token con la versión exacta de WHMCS, verificar permisos del directorio y comprobar que el servidor público lea el JSON actualizado. No permitir publicación desde usuarios no autorizados.
+
+## Seguridad de paquetes (base implementada)
+
+`src/lib/update-manager/package-security.ts` valida un descriptor de paquete firmado con Ed25519 y compara SHA-256 de los bytes descargados. El formato firmado es `webappecloud-update-v1`, versión, canal, URL y SHA-256 separados por saltos de línea. La clave pública se instala en cada CMS y la clave privada **nunca** se distribuye a los clientes. Se incluye `package-security.test.ts` con casos de firma válida, manipulación y hash incorrecto. Ejecución sugerida en el repositorio con dependencias instaladas: `npx tsx --test src/lib/update-manager/package-security.test.ts`.
+
+**No conectar todavía descargas ni instalación**: falta publicar descriptores firmados desde WHMCS, implementar autenticación por instalación, limitar tamaño y redirecciones de descargas, verificar rutas del ZIP y probar el rollback. La verificación criptográfica por sí sola no ejecuta actualizaciones.
