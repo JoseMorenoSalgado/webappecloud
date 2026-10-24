@@ -2,6 +2,7 @@ import {hasDatabaseConfig} from "@/lib/server-config";
 import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
+import {selectFallbackLeadAgent} from "@/lib/lead-autoassignment";
 import {tenantFromHost} from "@/lib/tenant";
 const missingColumn=(error:unknown)=>!!(error&&typeof error==="object"&&"code" in error&&error.code==="P2022");
 export async function POST(req:NextRequest){
@@ -32,6 +33,10 @@ export async function POST(req:NextRequest){
     propertyId=p.id;
     console.warn("[web] Agent column unavailable; inquiry will be stored without assignment");
    }
+  }
+  if(hasAgentColumn&&!assignedAgentId){
+   try{assignedAgentId=await selectFallbackLeadAgent(tenant.tenantId);}
+   catch(error){console.warn("[web] Automatic assignment unavailable; keeping inquiry unassigned",error instanceof Error?error.name:"unknown");}
   }
   const data={tenantId:tenant.tenantId,propertyId,name,phone,email:email||null,message:message||null,source:"web",consent:true};
   try{
