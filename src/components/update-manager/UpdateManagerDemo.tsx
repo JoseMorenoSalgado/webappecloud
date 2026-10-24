@@ -44,6 +44,9 @@ export default function UpdateManagerDemo() {
     setBusy(true);
     setStatus("Simulando validación, respaldo e instalación…");
     // Synchronous state transition: no real filesystem, network or database changes.
+    const snapshot = { id: nextSnapshotId, version: installed, created: new Date().toLocaleString("es") };
+    setSnapshots(old => [snapshot, ...old]);
+    setNextSnapshotId(n => n + 1);
     setInstalled(sample.version);
     setAvailable(false);
     setHistory(h => [`Simulación completada: ${sample.version} (sin cambios reales)`, `Snapshot SIMULADO #${snapshot.id} previo a la actualización`, ...h]);
