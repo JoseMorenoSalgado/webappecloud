@@ -72,6 +72,7 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  if(has("admin")){
   if(realEstate)tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
+  tools.push({href:"/admin/actualizaciones",label:"Actualizaciones (simulación)",Icon:ShieldCheck});
  }
  if(realEstate&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
