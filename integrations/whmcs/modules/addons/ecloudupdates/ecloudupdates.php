@@ -100,7 +100,7 @@ function ecloudupdates_output($vars)
                 $category = (string) ($_POST['category'] ?? '');
                 $title = trim((string) ($_POST['title'] ?? ''));
                 $notes = trim((string) ($_POST['notes'] ?? ''));
-                if (!preg_match('/^\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?$/D', $version) ||
+                if (!preg_match('/^[0-9]+[.][0-9]+[.][0-9]+(?:-[0-9A-Za-z.-]+)?$/D', $version) ||
                     !in_array($channel, ['stable', 'beta'], true) ||
                     !in_array($category, ['security', 'bugfix', 'performance', 'feature'], true) ||
                     $title === '' || strlen($title) > 190 || strlen($notes) > 4000) {
@@ -116,8 +116,14 @@ function ecloudupdates_output($vars)
             } elseif ($action === 'publish') {
                 $id = filter_var($_POST['release_id'] ?? null, FILTER_VALIDATE_INT);
                 if (!$id || !$db->where('id', $id)->exists()) throw new \InvalidArgumentException('Versión no encontrada');
+                $previous = $db->where('id', $id)->first();
                 $db->where('id', $id)->update(['published' => 1, 'updated_at' => date('Y-m-d H:i:s')]);
-                ecloudupdates_write_manifest();
+                try {
+                    ecloudupdates_write_manifest();
+                } catch (\Throwable $publishError) {
+                    $db->where('id', $id)->update(['published' => (int) $previous->published, 'updated_at' => $previous->updated_at]);
+                    throw $publishError;
+                }
                 logActivity('ECloud Update Manager: release published id=' . $id);
                 $message = 'Versión publicada en el manifiesto.';
             } else {
