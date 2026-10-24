@@ -1,0 +1,6 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/nexusrea/apps/nexus/current
+    - /bin/mkdir -p "$DEPLOYPATH"
+    - /usr/bin/rsync -a --exclude='.git/' --exclude='.env' --exclude='.env.*' --exclude='node_modules/' --exclude='.next/' --exclude='uploads/' --exclude='storage/' --exclude='logs/' ./ "$DEPLOYPATH/"
