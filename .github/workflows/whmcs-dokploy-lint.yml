@@ -64,7 +64,7 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
