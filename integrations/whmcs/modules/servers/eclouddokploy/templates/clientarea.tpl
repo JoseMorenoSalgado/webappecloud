@@ -134,15 +134,15 @@
         <div class="ecd-setup-top">
           <div>
             <p class="ecd-kicker">Elearning Cloud · Inicio rápido</p>
-            <h3 id="ecd-setup-title">Instala tu aplicación en 3 pasos</h3>
-            <p class="ecd-intro">Importa tu código y nosotros preparamos el proyecto, el servidor y la base de datos.</p>
+            <h3 id="ecd-setup-title">Publica tu sitio web en minutos</h3>
+            <p class="ecd-intro">Pega el enlace de GitHub y pulsa instalar. Elearning Cloud prepara la infraestructura automáticamente, sin entrar a Dokploy.</p>
           </div>
           <span class="ecd-chip">{if $ecSetupConfigured}Configuración guardada{elseif $ecSetupCanInstall}Lista para configurar{else}Disponible próximamente{/if}</span>
         </div>
         <div class="ecd-steps" aria-label="Pasos de instalación">
-          <div class="ecd-step-pill"><b>1</b>GitHub</div>
-          <div class="ecd-step-pill"><b>2</b>Configuración</div>
-          <div class="ecd-step-pill"><b>3</b>Desplegar</div>
+          <div class="ecd-step-pill"><b>1</b>Tu repositorio</div>
+          <div class="ecd-step-pill"><b>2</b>Autoajustes</div>
+          <div class="ecd-step-pill"><b>3</b>Publicar</div>
         </div>
         {if $ecSetupConfigured}
           <div class="ecd-state ecd-setup-saved">
@@ -176,15 +176,15 @@
             <input type="hidden" name="token" value="{$token|escape:'html'}">
             <input type="hidden" name="ec_setup_token" value="{$ecSetupToken|escape:'html'}">
             <details class="ecd-setup-section" open>
-              <summary>1. Importar repositorio GitHub</summary>
+              <summary>1. ¿Dónde está tu proyecto?</summary>
               <div class="ecd-setup-grid">
                 <label class="ecd-setup-label ecd-setup-wide">
                   URL del repositorio público
                   <input class="ecd-setup-input" data-ecd-git name="ec_setup_git" type="url" placeholder="https://github.com/usuario/proyecto" required maxlength="255" autocomplete="off" spellcheck="false">
-                  <span class="ecd-setup-hint">Pega la dirección HTTPS de GitHub. No necesitas entrar a Dokploy ni compartir un token.</span>
+                  <span class="ecd-setup-hint">Solo pega el enlace público de GitHub. No necesitas saber de servidores, Docker ni claves API.</span>
                 </label>
                 <label class="ecd-setup-label">
-                  Rama
+                  Rama (opcional)
                   <input class="ecd-setup-input" data-ecd-branch name="ec_setup_branch" type="text" value="main" required maxlength="100" pattern="[A-Za-z0-9._/-]+" autocapitalize="none" spellcheck="false">
                   <span class="ecd-setup-hint">Por ejemplo, main o production.</span>
                 </label>
@@ -199,8 +199,8 @@
                 <span data-ecd-detection class="ecd-setup-detect-result" role="status" aria-live="polite">Opcional. También puedes elegirlo manualmente.</span>
               </div>
             </details>
-            <details class="ecd-setup-section" open>
-              <summary>2. Ajustar el despliegue</summary>
+            <details class="ecd-setup-section">
+              <summary>2. Configuración avanzada (opcional)</summary>
               <div class="ecd-setup-grid">
                 <label class="ecd-setup-label">
                   Tipo de proyecto
@@ -225,7 +225,7 @@
               </div>
             </details>
             <details class="ecd-setup-section" open>
-              <summary>3. Confirmar e instalar</summary>
+              <summary>3. Publicar mi sitio</summary>
               <div class="ecd-setup-review">
                 <div class="ecd-review-box"><small>Dominio del servicio</small><strong>{$ecSetupDomain|escape:'html'}</strong></div>
                 <div class="ecd-review-box"><small>Base de datos incluida</small><strong>{$ecSetupDbMode|escape:'html'}</strong></div>
@@ -237,7 +237,7 @@
                 <input type="checkbox" name="ec_setup_confirm" value="yes" required>
                 <span>Confirmo que tengo derecho a desplegar este repositorio y que las variables proporcionadas pertenecen a mi proyecto.</span>
               </label>
-              <button type="submit" class="ecd-setup-cta">Instalar mi aplicación</button>
+              <button type="submit" class="ecd-setup-cta">Publicar automáticamente</button>
             </details>
           </form>
         {else}
@@ -319,9 +319,18 @@
       </header>
       {if !$ecMailLinked}
         <div class="ecd-state">
-          <strong>Correo pendiente de vinculación</strong>
-          <p>Para utilizar esta sección, contrata o vincula un servicio de correo cPanel activo para el mismo dominio. Se factura por separado de App Ecloud.</p>
-          <p style="margin-top:10px"><a href="submitticket.php">Solicitar activación de correo</a></p>
+          {if $ecMailAutoLink}
+            <strong>Tu correo corporativo está disponible</strong>
+            <p>Encontramos automáticamente el hosting de correo {$ecMailAutoAccount|escape:'html'} en tu cuenta.</p>
+            <div class="ecd-actions">
+              <a class="ecd-action" href="{$ecMailAutoLink|escape:'html'}">Administrar correo en WHMCS</a>
+            </div>
+            <p class="ecd-smallprint">El correo está alojado en cPanel y se administra con el mismo inicio de sesión WHMCS.</p>
+          {else}
+            <strong>Agrega correo corporativo a tu web</strong>
+            <p>Si contratas un servicio cPanel para este dominio, se enlazará automáticamente a esta ficha. Sin configuraciones de acceso adicionales.</p>
+            <p style="margin-top:10px"><a href="submitticket.php">Solicitar correo corporativo</a></p>
+          {/if}
         </div>
       {elseif !$ecMailAvailable}
         <div class="alert alert-info" role="status">{$ecMailNotice|escape:'html'}</div>
