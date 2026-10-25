@@ -838,6 +838,34 @@ function eclouddokploy_EmailAction(array $params): string
     return eclouddokploy_email_action($params);
 }
 
+/**
+ * Administrator-only recovery path for an existing active pilot service.
+ * In WHMCS use the product's admin provisioning button once. This does not
+ * contact Dokploy or create resources, only reserves a tenant-safe service row.
+ */
+function eclouddokploy_AdminCustomButtonArray(): array
+{
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') !== '1'
+        || getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') return [];
+    return ['Preparar instalador del cliente' => 'PrepareInstaller'];
+}
+
+function eclouddokploy_PrepareInstaller(array $params): string
+{
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') !== '1'
+        || getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') {
+        return 'Instalador de clientes desactivado.';
+    }
+    try {
+        return eclouddokploy_setup_reserve(
+            $params, eclouddokploy_resolve_route($params),
+            (string) ($params['configoption5'] ?? 'none')
+        );
+    } catch (Throwable $e) {
+        return 'No se pudo preparar este servicio para el instalador.';
+    }
+}
+
 /** First guided install: use only the hosting service's pinned server/domain. */
 function eclouddokploy_InstallApp(array $params): string
 {
