@@ -380,6 +380,26 @@ check(eclouddokploy_auto_product_mode(['configoption6'=>'legado']) === 'legado',
 check(!eclouddokploy_auto_enabled(['configoption6'=>'legado']), 'legacy product does not auto-reserve');
 check(!eclouddokploy_auto_enabled(['configoption6'=>'not-a-mode']), 'unknown mode fails closed');
 check(eclouddokploy_auto_enabled(['configoption6'=>'guiado']), 'auto setup enabled by product settings');
+check(eclouddokploy_auto_enabled(['configoption6'=>'pedido']), 'optional paid-order mode enabled');
+check(eclouddokploy_auto_product_mode(['configoption6'=>'pedido']) === 'pedido', 'checkout deploy explicitly selected');
+check(eclouddokploy_order_source([]) === null, 'no repository: just reserve account');
+$checkout = eclouddokploy_order_source([
+    'customfields'=>[
+        'Repositorio GitHub'=>'https://github.com/example/webapp.git',
+        'Rama GitHub'=>'production',
+        'Tipo de proyecto'=>'nextjs',
+    ],
+]);
+check(is_array($checkout) && $checkout['ec_setup_git'] === 'https://github.com/example/webapp.git'
+    && $checkout['ec_setup_branch'] === 'production'
+    && $checkout['ec_setup_preset'] === 'nextjs', 'checkout source passes validated wizard settings');
+check(eclouddokploy_order_source(['customfields'=>['Repositorio GitHub'=>'']]) === null,
+    'empty optional checkout GitHub field never causes deploy');
+check(eclouddokploy_order_auto_install(['configoption6'=>'guiado'],[]) === 'success',
+    'guided mode does not create any remote resources at checkout');
+check(eclouddokploy_order_auto_install(['configoption6'=>'pedido'],[]) === 'success',
+    'paid-order mode without repo remains guided');
+
 check(in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'install action registered without manual environment flags');
 check(str_contains(eclouddokploy_install_from_wizard(['configoption6'=>'legado']), 'no está habilitada'), 'legacy product denied by install wizard');
 $_SESSION['uid'] = 0;
