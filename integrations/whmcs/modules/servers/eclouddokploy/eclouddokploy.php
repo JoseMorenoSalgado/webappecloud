@@ -18,6 +18,8 @@ require_once __DIR__ . '/lib/ProjectIsolation.php';
 require_once __DIR__ . '/lib/CpanelMail.php';
 require_once __DIR__ . '/lib/EmailOperations.php';
 require_once __DIR__ . '/lib/SelfService.php';
+require_once __DIR__ . '/lib/AutomaticSetup.php';
+require_once __DIR__ . '/lib/AutoMail.php';
 
 use WHMCS\Database\Capsule;
 
@@ -49,6 +51,12 @@ function eclouddokploy_ConfigOptions(): array
             'Options' => 'mariadb,mysql,postgres,external,none',
             'Default' => 'mariadb',
             'Description' => 'MariaDB, MySQL, PostgreSQL, existente o sin base de datos.',
+        ],
+        'Instalación automática' => [
+            'Type' => 'dropdown',
+            'Options' => 'guiado,legado',
+            'Default' => 'guiado',
+            'Description' => 'guiado: WHMCS reserva automáticamente la cuenta y el cliente importa GitHub. Sin SSH, Environment ID ni claves maestras manuales. legado: modo anterior de pruebas.',
         ],
     ];
 }
@@ -125,15 +133,15 @@ function eclouddokploy_CreateAccount(array $params): string
 {
     // Opt-in account reservation: purchase activates the hosting subscription,
     // the customer then imports THEIR code from the Lagom installation wizard.
-    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1'
-        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1') {
+    if (eclouddokploy_auto_enabled($params)) {
         try {
             $route = eclouddokploy_resolve_route($params);
             return eclouddokploy_setup_reserve(
                 $params, $route, (string) ($params['configoption5'] ?? 'none')
             );
         } catch (Throwable $e) {
-            return 'No se pudo preparar el servicio para la instalación asistida.';
+            // Never leak server tokens or internal paths to WHMCS staff.
+            return 'No se pudo preparar automáticamente el servicio. Comprueba el servidor asignado y la capacidad disponible.';
         }
     }
     if (getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') {
@@ -628,6 +636,8 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployHistory' => [],
         'ecDokployLiveNotice' => '',
         'ecMailLinked' => false,
+        'ecMailAutoLink' => '',
+        'ecMailAutoAccount' => '',
         'ecMailAvailable' => false,
         'ecMailCanWrite' => false,
         'ecMailCanDelete' => false,
@@ -677,9 +687,21 @@ function eclouddokploy_ClientArea(array $params): array
             'none' => 'Sin base de datos',
         ];
         $view['ecDokployDbMode'] = $modes[$dbMode] ?? 'Sin confirmar';
-        $view['ecSetupEnabled'] = getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1';
+        $view['ecSetupEnabled'] = eclouddokploy_auto_enabled($params);
         $view['ecSetupDomain'] = $domain;
         $view['ecSetupDbMode'] = $view['ecDokployDbMode'];
+
+        // First visit after an earlier module installation? Prepare the
+        // account automatically without creating ANY Dokploy resources.
+        if ($view['ecSetupEnabled'] && $active) {
+            try {
+                eclouddokploy_auto_reserve_existing($params, $clientId, $domain);
+            } catch (Throwable $e) {
+                // Display an informative pending state instead of leaking errors.
+                $view['ecDokployLiveNotice'] =
+                    'No se pudo preparar automáticamente la aplicación. Contacta con soporte.';
+            }
+        }
 
         if (!Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) {
             $public = ['Sin instalación registrada', 'Este servicio aún no tiene un despliegue registrado en Dokploy.'];
@@ -706,8 +728,7 @@ function eclouddokploy_ClientArea(array $params): array
                 $public = eclouddokploy_public_state((string) $record->state);
                 if ($view['ecSetupEnabled']
                     && in_array((string) $record->state, ['awaiting_setup', 'new'], true)) {
-                    $view['ecSetupCanInstall'] = $active
-                        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1';
+                    $view['ecSetupCanInstall'] = $active;
                     $view['ecSetupToken'] = eclouddokploy_setup_csrf($serviceId);
                 }
                 if ($view['ecSetupEnabled']
@@ -766,6 +787,13 @@ function eclouddokploy_ClientArea(array $params): array
         // Both WHMCS services must be active, with the same owner and domain.
         if ($active && eclouddokploy_valid_domain($domain)) {
             try {
+                // Zero-configuration link to an already purchased cPanel mail
+                // service. Does not need an API token or administrator map.
+                $foundMail = eclouddokploy_auto_cpanel_mail($clientId, $domain);
+                if ($foundMail !== null) {
+                    $view['ecMailAutoLink'] = 'clientarea.php?action=productdetails&id=' . (int) $foundMail['service_id'];
+                    $view['ecMailAutoAccount'] = $foundMail['domain'];
+                }
                 $binding = eclouddokploy_email_binding($serviceId, $clientId, $domain);
                 if ($binding !== null) {
                     $view['ecMailLinked'] = true;
@@ -816,10 +844,8 @@ function eclouddokploy_ClientAreaAllowedFunctions(): array
     if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1') {
         $actions[] = 'Redeploy';
     }
-    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1'
-        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1') {
-        $actions[] = 'InstallApp';
-    }
+    // Action itself checks this specific product and its WHMCS owner.
+    $actions[] = 'InstallApp';
     if (getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS') === '1'
         && getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES') === '1') {
         $actions[] = 'EmailAction';
@@ -845,16 +871,15 @@ function eclouddokploy_EmailAction(array $params): string
  */
 function eclouddokploy_AdminCustomButtonArray(): array
 {
-    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') !== '1'
-        || getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') return [];
-    return ['Preparar instalador del cliente' => 'PrepareInstaller'];
+    // No manual action is needed: CreateAccount + the client's first visit
+    // prepare all eligible accounts automatically.
+    return [];
 }
 
 function eclouddokploy_PrepareInstaller(array $params): string
 {
-    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') !== '1'
-        || getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') {
-        return 'Instalador de clientes desactivado.';
+    if (!eclouddokploy_auto_enabled($params)) {
+        return 'El producto no utiliza el instalador guiado.';
     }
     try {
         return eclouddokploy_setup_reserve(
