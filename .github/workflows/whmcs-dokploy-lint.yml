@@ -24,6 +24,8 @@ jobs:
           find integrations/whmcs/modules/servers/eclouddokploy -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Run offline contract checks
         run: php integrations/whmcs/modules/servers/eclouddokploy/tests/validate.php
+      - name: Verify one-time automatic encryption seed (mock WHMCS runtime)
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/automatic_seed_mock.php
       - name: Verify HTTPS handshake, auth and read-only Dokploy contract (mock)
         shell: bash
         run: |
