@@ -70,3 +70,27 @@ En producto WHMCS, módulo `eclouddokploy`, «Instalación automática» `guiado
 ## Verificaciones obligatorias
 
 Las pruebas automáticas verifican formularios HTML escapados, sesión admin, cliente/proveedor, GitHub seguro, escritura de borrador cifrado, creación del proyecto y su entorno con un mock HTTPS, instalación en el mismo entorno, rechazo de facturas impagas, doble instalación y credenciales no expuestas. Aun así, antes de uso productivo faltan pruebas reales con WHMCS y Dokploy v0.30.9, la MariaDB, DNS, TLS, permisos de cPanel, backups y recuperación.
+
+
+## Corrección del error «La creación del proyecto está pendiente o requiere revisión»
+
+En versiones anteriores, el aprovisionamiento dejaba algunos servicios en estado `new`, que el creador de proyectos no procesaba, aunque aún no hubiera enviado `project.create`. Otra causa posible es que Dokploy haya recibido `project.create` o `environment.create`, pero WHMCS no haya recibido o guardado el ID (estados `creating_project` y `creating_environment`).
+
+La nueva versión ejecuta una conciliación **de solo lectura y con el mismo bloqueo MySQL por servicio**:
+
+1. Comprueba cliente, primera factura `Paid`, dominio, producto, grupo/VPS asignado y huella de ruta.
+2. Lee `GET /api/project.all` en Dokploy y busca el **nombre exacto** `ec-client-{CLIENT_ID}-service-{SERVICE_ID}`. Verifica formato de ID, descripción (si está disponible) y unicidad. Rechaza nombres ambiguos o distintos. Nunca busca por prefijo ni reutiliza `WebAppECloud` o proyectos de otros clientes.
+3. Si el proyecto existe y no está registrado en WHMCS, guarda su `projectId`; luego lee `GET /api/environment.byProjectId?projectId=...` y adopta **solo** el entorno `production` de ese proyecto.
+4. Si estado `new` o `awaiting_setup` y no existe proyecto, puede crearlo por primera vez. Si el estado ya era `creating_project` pero no aparece en la lectura remota, **no** repite el POST; devuelve una advertencia que exige revisión de logs. Equivalente para `creating_environment` cuando no aparece `production`.
+5. Si hay duplicados, descripción incompatible, cambio de VPS o proyecto remoto desconocido, aborta sin mutar recursos.
+
+### Recuperación del pedido #324
+
+- **No elimines el servicio, no cambies su servidor WHMCS App1 ni borres proyectos en Dokploy.**
+- Haz respaldo del módulo y base de datos WHMCS; instala el ZIP actualizado en `modules/servers/eclouddokploy/`.
+- Comprueba que la **primera factura de ese pedido** está en `Paid`.
+- Abre la ficha del servicio del cliente (no solo la del pedido) → **Comandos del módulo → Crear / verificar proyecto Dokploy**. El comando consulta Dokploy y recupera el proyecto si ya existe. No uses «Instalar aplicación del cliente» hasta que el proyecto/production estén listos.
+- En Dokploy → Projects, busca `ec-client-{CLIENT_ID}-service-{SERVICE_ID}`. Los identificadores de cliente y servicio están en la ficha de WHMCS; **no es necesariamente el número de pedido 324**.
+- Si permanece el aviso `No encontramos el proyecto pendiente en Dokploy`, la recuperación automatizada se niega a crear un duplicado sin confirmar el resultado de la solicitud anterior. Comprueba el registro de auditoría de Dokploy y solicita conciliación técnica. **No modifiques `state` directamente en SQL**.
+
+El ZIP se valida con `tests/paid_project_creation_mock.php` y un servidor HTTPS Dokploy simulado. Las pruebas no prueban que el proyecto remoto del usuario exista ni sustituyen inspeccionar sus logs.
