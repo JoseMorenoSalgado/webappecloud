@@ -113,13 +113,131 @@ namespace {
     assertion($other['environment_id'] !== $row['environment_id'],
         'different services never share production environment');
 
+    // Interrupted project.create: the remote project does exist. Reconcile
+    // only that project's exact name; do not make a second POST.
     $unfinished = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][410];
     $unfinished['state'] = 'creating_project';
+    $unfinished['project_id'] = null;
+    $unfinished['environment_id'] = null;
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][410] = $unfinished;
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 410, 25, $fingerprint)
-            !== 'success',
-        'ambiguous operation cannot be automatically retried'
+            === 'success',
+        'project.create lost response safely recovered by exact project.all match'
     );
-    echo "WHMCS paid account project+environment mock contracts passed\n";
+    assertion(
+        count($api->get('project.all', [])) === count($projects2) + 1,
+        'lost response recovery did not create duplicate project'
+    );
+
+    // Interrupted environment.create: recover the environment, no new write.
+    $existingEnv = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][411];
+    $existingEnv['state'] = 'creating_environment';
+    $existingEnv['environment_id'] = null;
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][411] = $existingEnv;
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 411, 25, $fingerprint)
+            === 'success',
+        'environment.create lost response safely recovered by project-scoped production read'
+    );
+    assertion(
+        \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][411]['environment_id']
+            === $other['environment_id'],
+        'recovered exact prior production environment identifier'
+    );
+
+    // Previous WHMCS modules could leave state="new" even though a valid
+    // service was reserved: this MUST be treated as a fresh create state.
+    foreach ([412, 413, 414, 415] as $sid) {
+        \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][$sid] = [
+            'service_id'=>$sid,'owner_client_id'=>25,'route_fingerprint'=>$fingerprint,
+            'state'=>'new','project_id'=>null,'environment_id'=>null,
+        ];
+    }
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 412, 25, $fingerprint)
+            === 'success',
+        'legacy state new now creates project and production environment'
+    );
+
+    // In creating_project with nothing remote, a second POST is unsafe:
+    // preserve state; explain how support must reconcile.
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][413]['state'] =
+        'creating_project';
+    $projectCount = count($api->get('project.all', []));
+    $noRemote = eclouddokploy_prepare_private_project_locked(
+        $api, 413, 25, $fingerprint
+    );
+    assertion(str_contains($noRemote, 'No encontramos el proyecto pendiente'),
+        'unknown outcome remains blocked when project list has no exact match');
+    assertion(count($api->get('project.all', [])) === $projectCount,
+        'unknown project creation did not issue another project.create');
+
+    // Dokploy accepted project.create but the HTTP response was lost.
+    $precreated = $api->post('project.create',
+        eclouddokploy_project_create_payload(25, 414)
+    );
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][414]['state'] =
+        'creating_project';
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 414, 25, $fingerprint)
+            === 'success',
+        'previously created exact service project recovered from read-only API'
+    );
+    assertion(
+        \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][414]['project_id']
+            === $precreated['projectId'],
+        'existing remote project ID preserved after reconciliation'
+    );
+
+    // Dokploy accepted project.create without producing an environment.
+    // Preserve the uncertain environment state and never POST automatically.
+    $p415 = $api->post('project.create',
+        eclouddokploy_project_create_payload(25, 415)
+    );
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][415]['state'] =
+        'creating_environment';
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][415]['project_id'] =
+        $p415['projectId'];
+    assertion(str_contains(
+        eclouddokploy_prepare_private_project_locked($api, 415, 25, $fingerprint),
+        'entorno production no aparece'),
+        'uncertain environment POST never retried without confirming remote ID'
+    );
+    $createdEnv = $api->post('environment.create', [
+        'name'=>'production', 'projectId'=>$p415['projectId']
+    ]);
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 415, 25, $fingerprint)
+            === 'success',
+        'pending environment safely adopted after it appears remotely'
+    );
+    assertion(
+        \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][415]['environment_id']
+            === $createdEnv['environmentId'],
+        'reconciled production ID saved'
+    );
+
+    // Pure read-only selector refuses duplicates, mismatched binding and
+    // invalid identifiers even if the project name is exactly the same.
+    $name = eclouddokploy_project_name(25, 999);
+    foreach ([
+        [['name'=>$name, 'projectId'=>'one123'],
+         ['name'=>$name, 'projectId'=>'two456']],
+        [['name'=>$name, 'projectId'=>'valid-123',
+          'description'=>'Another WHMCS service']],
+        [['name'=>$name, 'projectId'=>'!bad!']],
+    ] as $listing) {
+        try {
+            eclouddokploy_find_exact_service_project($listing, 25, 999);
+            throw new \RuntimeException('TEST_UNSAFE_PROJECT_WAS_ADOPTED');
+        } catch (\RuntimeException $e) {
+            assertion($e->getMessage() !== 'TEST_UNSAFE_PROJECT_WAS_ADOPTED',
+                'unsafe project adoption rejected');
+        }
+    }
+    assertion(eclouddokploy_find_exact_service_project(
+        [['name'=>'unrelated', 'projectId'=>'valid-123']], 25, 999
+    ) === null, 'unrelated project cannot be adopted');
+    echo "WHMCS paid account creation and safe reconciliation mock contracts passed\n";
 }
