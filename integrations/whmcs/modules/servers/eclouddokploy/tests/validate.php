@@ -522,4 +522,77 @@ check(eclouddokploy_auto_mail_choose([
     ['service_id'=>111, 'domain'=>'empresa.com'],
 ], 'app.empresa.com')['service_id'] === 114, 'most specific email service preferred');
 
+
+// WHMCS Admin Services Tab + custom support actions, without client impersonation.
+$adminButtons = eclouddokploy_AdminCustomButtonArray();
+check(($adminButtons['Crear / verificar proyecto Dokploy'] ?? '') === 'AdminCreateProject',
+    'admin can create the client's isolated project from service details');
+check(($adminButtons['Instalar aplicación del cliente'] ?? '') === 'AdminInstallApp',
+    'admin can install the application for the customer from service details');
+$adminFixture = [
+    'serviceid'=>310, 'userid'=>25, 'pid'=>12, 'serverid'=>1,
+    'configoption6'=>'guiado', 'domain'=>'app.example.com',
+];
+unset($_SESSION['adminid']);
+check(!eclouddokploy_admin_authorized($adminFixture), 'non-admin cannot access support flow');
+check(str_contains(eclouddokploy_AdminCreateProject($adminFixture), 'administrativa'),
+    'support project creator rejects missing admin session');
+check(str_contains(eclouddokploy_AdminInstallApp($adminFixture), 'servicio debe estar activo'),
+    'support deployment rejects missing admin session');
+$deniedAdminTab = eclouddokploy_AdminServicesTabFields($adminFixture);
+check(count($deniedAdminTab) === 1, 'admin service HTML not exposed to clients');
+$_SESSION['adminid'] = 5;
+check(eclouddokploy_admin_authorized($adminFixture), 'WHMCS admin session authorized');
+check(!eclouddokploy_admin_authorized($adminFixture + ['serviceid'=>0]), 'explicit service owner required');
+check(!eclouddokploy_admin_authorized(array_replace($adminFixture, ['configoption6'=>'legado'])),
+    'legacy server products cannot be installed from assisted wizard');
+$adminData = eclouddokploy_admin_validate_fields([
+    0=>'https://github.com/example/customer-app.git',
+    1=>'production', 2=>'/apps/frontend/',
+    3=>'nextjs', 4=>'3000', 5=>'PUBLIC_FLAG=yes',
+]);
+check($adminData['git_url'] === 'https://github.com/example/customer-app.git',
+    'support form preserves distinct customer repo');
+check($adminData['root_path'] === '/apps/frontend', 'support root path normalized');
+check($adminData['preset'] === 'nextjs' && $adminData['port'] === 3000,
+    'support build preset and port validated');
+check(eclouddokploy_admin_validate_fields([0=>'']) === null,
+    'blank admin source cannot accidentally deploy sample product repository');
+foreach ([
+    [0=>'https://evil.example/foreign/repo',1=>'main',2=>'/',3=>'nextjs',4=>3000],
+    [0=>'https://github.com/client/repo?key=secret',1=>'main',2=>'/',3=>'nextjs',4=>3000],
+    [0=>'https://github.com/client/repo',1=>'main',2=>'/../../private',3=>'nextjs',4=>3000],
+    [0=>'https://github.com/client/repo',1=>'main',2=>'/',3=>'bad-mode',4=>3000],
+    [0=>'https://github.com/client/repo',1=>'main',2=>'/',3=>'nextjs',4=>21],
+] as $wrong) {
+    try {
+        eclouddokploy_admin_validate_fields($wrong);
+        throw new RuntimeException('Test failed: unsafe admin project options accepted');
+    } catch (InvalidArgumentException $e) {
+        check(true, 'unsafe support form input blocked');
+    }
+}
+check(eclouddokploy_admin_editable_state(null), 'admin can stage Git before provisioning');
+check(eclouddokploy_admin_editable_state((object)['state'=>'environment_ready']),
+    'admin can stage Git after empty Dokploy project creation');
+check(!eclouddokploy_admin_editable_state((object)['state'=>'deployment_requested']),
+    'admin cannot overwrite Git after deployment requested');
+check(!eclouddokploy_admin_editable_state((object)['state'=>'creating_app']),
+    'admin cannot alter code during ambiguous remote writes');
+check(eclouddokploy_admin_html('<img src=x onerror=alert(1)>')
+    === '&lt;img src=x onerror=alert(1)&gt;', 'support field output HTML-escaped');
+$option = eclouddokploy_admin_select('3','nextjs',
+    ['nextjs'=>'Next.js','bad" onfocus="alert(1)'=>'Injected'],false);
+check(!str_contains($option, '<script') && str_contains($option,'&quot;'),
+    'support dropdown escapes unsafe input');
+$preparedAdmin = eclouddokploy_admin_draft_to_setup([
+    'git_url'=>'https://github.com/example/customer-app.git',
+    'branch'=>'main','root_path'=>'/',
+    'preset'=>'nextjs','port'=>3000,
+    'env_ciphertext'=>null,'env_nonce'=>null,
+], str_repeat('ab',32), 310);
+check($preparedAdmin['env'] === [] && $preparedAdmin['preset'] === 'nextjs',
+    'admin source readies same secure GitHub install flow without draft secrets');
+unset($_SESSION['adminid']);
+
 echo "Dokploy provisioning validations passed\n";
