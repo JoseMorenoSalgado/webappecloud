@@ -36,6 +36,7 @@ jobs:
           install -m 0644 "$src/lib/ProjectIsolation.php" package/eclouddokploy/lib/ProjectIsolation.php
           install -m 0644 "$src/lib/CpanelMail.php" package/eclouddokploy/lib/CpanelMail.php
           install -m 0644 "$src/lib/EmailOperations.php" package/eclouddokploy/lib/EmailOperations.php
+          install -m 0644 "$src/lib/SelfService.php" package/eclouddokploy/lib/SelfService.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
@@ -57,6 +58,12 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    Correo corporativo es otro servicio WHMCS cPanel activo para el mismo cliente.
    Para su gestión, vincula ambos servicios con archivo privado API Token
    y habilita primero consultas de correo en staging.
+   IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
+   App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
+   Requiere ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=1 y habilitar
+   ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1 SOLO EN STAGING.
+   Los secretos de variables de entorno se cifran usando sodium y
+   ECLOUD_DOKPLOY_PASSWORD_SEED (conservar su valor para restauración).
    No pegues tokens en tickets, capturas o repositorios.
 5) Deja APAGADO hasta validar el VPS real:
    ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0
