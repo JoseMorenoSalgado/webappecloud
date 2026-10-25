@@ -2,17 +2,17 @@
 
 ## Contexto
 
-El WHMCS de Elearning Cloud ya utiliza **Lagom** como tema del área de clientes y dispone de un módulo propio de aprovisionamiento de cuentas cPanel en WHM.
+El WHMCS de Elearning Cloud ya utiliza **Lagom** como tema del área de clientes, dispone de un módulo propio de aprovisionamiento de cuentas cPanel en WHM **y ya tiene productos/paquetes de correo empresarial creados y vinculados a cPanel**.
 
-**No crear una segunda cuenta cPanel por cliente, no modificar el módulo de aprovisionamiento ni sustituir Lagom.** El addon `ecloudhosting` únicamente proporciona funciones de autoservicio de buzones y DNS para las cuentas YA creadas por el módulo existente.
+**No crear productos, paquetes ni una segunda cuenta cPanel por cliente; no modificar el módulo de aprovisionamiento ni sustituir Lagom.** El addon `ecloudhosting` únicamente proporciona funciones de autoservicio de buzones y DNS para las cuentas YA creadas por el módulo existente.
 
 ## Integración con el producto existente
 
-1. El módulo personalizado de WHMCS sigue creando, suspendiendo y administrando la cuenta cPanel Mail & DNS en WHM.
+1. Los productos de correo existentes continúan con su precio, facturación, límites, upgrade/downgrade y el módulo de cPanel actualmente asignado. Ese módulo sigue creando, suspendiendo y administrando las cuentas cPanel en WHM.
 2. WHMCS registra en `tblhosting` el ID de servicio, propietario, dominio, estado y nombre de usuario de cPanel. Confirmar en la integración real **cómo almacena esos datos el módulo personalizado**; el prototipo actualmente exige correspondencia exacta entre esos campos y el mapeo privado.
-3. El addon `ecloudhosting` consulta únicamente los servicios activos del cliente autenticado; no expone cuentas de terceros.
+3. El addon `ecloudhosting` consulta únicamente los servicios activos del cliente autenticado, sin crear órdenes ni servicios nuevos; no expone cuentas de terceros. Se vinculará a los IDs reales de los productos de correo ya contratados.
 4. Para operaciones de correo/DNS, el addon utiliza un **token de UAPI específico de esa cuenta**, nunca el token root WHM y nunca credenciales en el navegador.
-5. El cliente entra en `index.php?m=ecloudhosting`; los enlaces del portal podrían incorporarse al detalle del servicio del módulo personalizado después de revisar su plantilla y ruta de control.
+5. El cliente entra en `index.php?m=ecloudhosting`; tras revisar cómo presenta el producto de correo el tema Lagom, se añadirá un enlace **Administrar correo y DNS** dentro del detalle del servicio ya contratado, sin reemplazar botones nativos del módulo.
 6. El producto Dokploy es independiente: el dominio público apunta al VPS, mientras las cuentas MX y el servidor de correo permanecen en cPanel.
 
 ## Adaptación visual Lagom
@@ -25,7 +25,7 @@ Las mejoras visuales están encapsuladas bajo `.ec-portal` para no sobrescribir 
 
 ## Información pendiente para integración exacta
 
-Se requiere el **nombre del módulo personalizado** instalado en `modules/servers/<nombre>/` de WHMCS (sin credenciales), y su contrato de creación/identificación de servicios: cómo asigna `tblhosting.username`, `domain` y `serverid`.
+Se requiere el **nombre técnico del módulo personalizado o cPanel usado por los productos de correo** (sin credenciales), los **IDs de los productos WHMCS de correo** y su contrato de identificación de servicios: cómo asigna `tblhosting.username`, `domain` y `serverid`. Usar estos datos para vincular productos existentes, nunca para crearlos de nuevo.
 
 Sin ese dato no debemos asumir que los tokens UAPI están disponibles ni automatizar la asociación de cuentas. Mientras tanto el prototipo emplea un mapeo administrativo privado, con las operaciones de escritura apagadas por defecto.
 
