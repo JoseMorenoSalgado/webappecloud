@@ -4,12 +4,12 @@
 
 ## Recorrido del cliente
 
-1. Compra y paga su producto «App Ecloud» en WHMCS. El módulo reserva una plaza en el VPS de su grupo (por ejemplo, diez clientes por servidor) sin desplegar código predeterminado.
+1. Compra y paga su producto «App Ecloud» en WHMCS. Tras verificar la **primera factura pagada**, el módulo reserva una plaza (hasta 10 por VPS) y **crea inmediatamente el proyecto Dokploy privado y su entorno `production`**, aunque el cliente aún no tenga repositorio GitHub. El nombre será `ec-client-{ID_CLIENTE}-service-{ID_SERVICIO}`.
 2. En «Mis servicios → App Ecloud → Administrar» encuentra el asistente «Instala tu aplicación en 3 pasos».
 3. Solo **pega la URL HTTPS de su repositorio público de GitHub**. La rama y la carpeta raíz tienen valores predeterminados, y la detección de Next.js es opcional; no necesita conocimientos de Dokploy.
 4. Para la mayoría, basta la configuración automática (Next.js/Node.js con **Nixpacks, sin Dockerfile**). Rama, carpeta, puerto, Dockerfile y variables se encuentran en una sección avanzada que puede dejar cerrada.
 5. Confirma el dominio de su servicio y la base de datos incluida en su plan; pulsa «Instalar mi aplicación».
-6. WHMCS crea un proyecto y entorno Dokploy privado, la base de datos contratada, la aplicación, Git, build, variables, dominio HTTPS y **solicita** el despliegue.
+6. Al recibir GitHub, WHMCS **reutiliza el proyecto y entorno ya creados**, instala la base de datos contratada, la aplicación, Git, build, variables, dominio HTTPS y **solicita** el despliegue; no crea un segundo proyecto.
 7. Consulta progreso y, si el administrador habilita las lecturas, registros de despliegues recientes. Los buzones cPanel continúan en la misma ficha como servicio separado.
 
 **No se incluyen aún:** OAuth ni repositorios privados, lista automática de repositorios de una cuenta GitHub, deploy automático en cada push, dominios temporales DNS propios, previews por rama o comprobación integral de salud del sitio. No anunciarlos como disponibles.
@@ -18,7 +18,7 @@
 
 **No hay que crear variables PHP ni usar terminal.** En WHMCS, configura una sola vez el servidor Dokploy con hostname y API key, y el producto App Ecloud con **«Instalación automática» = `guiado`**. Para comprobarlo antes de ofrecerlo a clientes, utiliza productos/servicios de staging.
 
-En **Productos/Servicios → App Ecloud → Module Settings → Automation Settings**, elige **«Automatically setup the product as soon as the first payment is received»**. WHMCS ejecutará CreateAccount al confirmar el pago y reservará una plaza de su grupo de servidores. NO aconsejamos instalar antes del pago.
+En **Productos/Servicios → App Ecloud → Module Settings → Automation Settings**, elige **«Automatically setup the product as soon as the first payment is received»**. WHMCS ejecutará CreateAccount al confirmar el pago, reservará la plaza y creará el proyecto y el entorno Dokploy. **Verde significa que ambos identificadores quedaron guardados**, no que la web ya esté publicada. NO aconsejamos instalar antes del pago.
 
 La primera vez que un cliente instale un proyecto, el módulo genera **automáticamente** su clave maestra aleatoria y la guarda cifrada en `mod_ecloud_dokploy_runtime`, mediante el servicio Crypt de WHMCS/Laravel. Nunca envía ni muestra la clave en pantalla. Si ya existe un `ECLOUD_DOKPLOY_PASSWORD_SEED` configurado para instalaciones antiguas, lo conserva como prioridad para evitar cambiar las contraseñas históricas.
 
@@ -35,12 +35,12 @@ Mantén desactivadas las acciones experimentales de redespliegue directo y CRUD 
 - El producto App Ecloud selecciona dicho grupo y el motor de base de datos (MariaDB, MySQL, Postgres, externo o ninguno).
 - **Instalación automática (`configoption6`):** `guiado` (predeterminado) prepara cuenta automáticamente y muestra el importador al cliente; `pedido` (opción avanzada) permite además desplegar tras el primer pago si el cliente proporcionó un repositorio público en el formulario de compra; `legado` conserva el flujo antiguo.
 - Para `pedido`, crea un campo personalizado de producto en WHMCS (Product Custom Field) llamado exactamente **`Repositorio GitHub`**, visible durante el pedido y con valor de URL pública HTTPS. Opcional: campo `Rama GitHub` (por defecto main), `Tipo de proyecto` (auto, nextjs, nodejs o dockerfile). El módulo consulta las opciones `$params['customfields']`, que proporciona WHMCS.
-- **Seguridad de pago:** el módulo comprueba que el servicio pertenece al cliente, busca su pedido e identifica la **primera factura con estado Paid** antes de cualquier creación remota desde `pedido`. Si no existe una factura de pago verificable, solo reserva la cuenta; no despliega. El cliente podrá completar el asistente cuando su servicio figure activo.
+- **Seguridad de pago:** `guiado` y `pedido` comprueban que el servicio pertenece al cliente y verifican la **primera factura en estado `Paid`** antes de crear proyecto o entorno en Dokploy. Si no existe factura pagada verificable, el módulo solo registra la reserva y devuelve una indicación explícita de pago pendiente, **no un falso éxito verde**. Con `pedido`, si el cliente proporcionó GitHub válido, también se configura y solicita el despliegue.
 - Elegir en WHMCS `Automatically setup the product as soon as the first payment is received`. La opción `as soon as an order is placed` no es apropiada para servicios de pago.
 - WHMCS debe conocer el dominio FQDN del sitio en su ficha de servicio. Solo ese dominio se instala; el cliente no puede sustituirlo mediante POST.
 - Configurar DNS A/AAAA al VPS/proxy correcto; Let's Encrypt depende de DNS correcto.
-- En la compra, CreateAccount devuelve success cuando reservó la plaza, NO porque el sitio ya esté publicado. El estado del módulo aparece «Preparada para instalar» hasta que el usuario despliegue.
-- Si el servicio **ya estaba activo** antes de instalar la actualización, WHMCS prepara su reserva cuando el propietario abre «App Ecloud». No hay botón ni comando administrativo por cuenta.
+- En la compra, **CreateAccount devuelve success solo cuando el proyecto y entorno de Dokploy existen y sus IDs están guardados en WHMCS**. El estado será «Proyecto Dokploy creado» hasta que el cliente despliegue su aplicación. Ni crear el proyecto ni solicitar deploy significa que el sitio responda correctamente; DNS, certificados y salud requieren verificación.
+- Si un servicio **ya estaba activo** antes de instalar la actualización, como el pedido de prueba 324, el módulo puede tener una reserva sin proyecto. Por compatibilidad, se añadió una acción administrativa de una sola vez: **«Conciliar proyecto antiguo»** en el servicio WHMCS. Tras verificar su primera factura pagada, crea el proyecto y el entorno (sin instalar código, ni crear otro servicio). Si la factura no está `Paid`, muestra la causa. Los pedidos nuevos no requieren este paso.
 
 ## Seguridad y manejo de errores
 
@@ -75,3 +75,11 @@ Documentación:
 - https://vercel.com/docs/git
 - https://docs.dokploy.com/docs/api/application
 - https://developers.whmcs.com/provisioning-modules/client-area-output/
+
+## Diagnóstico: WHMCS muestra verde, pero Dokploy no muestra ningún proyecto
+
+En la versión anterior, CreateAccount devolvía éxito solo después de crear una reserva `awaiting_setup`; Dokploy podía seguir sin proyecto. Esta discrepancia está corregida: para un pedido pagado, el módulo llama a `project.create`, consulta/crea su `production` y guarda los identificadores antes de devolver `success`.
+
+Para los servicios antiguos que recibieron verde antes de actualizar, instala el nuevo ZIP **STAGING**, revisa que el módulo del producto esté en `guiado` o `pedido` y verifica que la primera factura esté pagada. En la ficha del servicio WHMCS usa **«Conciliar proyecto antiguo»**. En Dokploy > Projects deberá aparecer `ec-client-{CLIENT_ID}-service-{SERVICE_ID}`. No se debe crear manualmente otro proyecto con un nombre distinto, pues rompería la vinculación persistente.
+
+La acción es segura ante reintentos: si se guardó `environment_ready` retorna éxito y reutiliza el proyecto. Si se perdió una respuesta después de `project.create` o `environment.create`, el estado `creating_*` bloquea escrituras repetidas y exige conciliación de un administrador antes de reanudar.
