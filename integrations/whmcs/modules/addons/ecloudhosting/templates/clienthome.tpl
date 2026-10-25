@@ -1,7 +1,7 @@
 {* WHMCS client portal: readable, responsive and scoped. No API tokens are rendered. *}
 <style>
 {literal}
-.ec-portal{--ec-navy:#173258;--ec-text:#202d40;--ec-muted:#4c5d72;--ec-border:#d9e0e9;--ec-surface:#f5f7fa;--ec-blue:#1358a8;color:var(--ec-text);font-size:15px;line-height:1.55;max-width:1160px;margin:0 auto 48px}
+.ec-portal{--ec-navy:var(--text-heading-color,#173258);--ec-text:var(--text-color,#202d40);--ec-muted:var(--text-muted,#4c5d72);--ec-border:var(--border-color,#d9e0e9);--ec-surface:var(--body-bg,#f5f7fa);--ec-blue:var(--primary,#1358a8);color:var(--ec-text);font-family:inherit;font-size:15px;line-height:1.55;max-width:1160px;margin:0 auto 48px}
 .ec-portal *{box-sizing:border-box}
 .ec-portal .ec-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--ec-border);padding:12px 0 22px;margin-bottom:22px}
 .ec-portal .ec-eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;color:var(--ec-muted);margin:0 0 4px}
@@ -11,43 +11,43 @@
 .ec-portal .ec-lead{font-size:15px;color:var(--ec-muted);margin:0}
 .ec-portal .ec-domain-picker{display:flex;align-items:end;gap:10px;flex-wrap:wrap}
 .ec-portal label{font-size:14px;font-weight:650;color:var(--ec-text);display:block;margin-bottom:6px}
-.ec-portal input,.ec-portal select{font-size:16px;min-height:44px;border:1px solid #acb9c8;border-radius:8px;max-width:100%;background:#fff;color:#1f2937;padding:9px 12px}
+.ec-portal input,.ec-portal select{font-size:16px;min-height:44px;border:1px solid #acb9c8;border-radius:8px;max-width:100%;background:var(--input-bg,#fff);color:var(--ec-text);padding:9px 12px}
 .ec-portal .form-control{height:auto}
 .ec-portal .ec-domain-picker select{min-width:210px}
-.ec-portal .ec-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:8px;padding:10px 17px;text-decoration:none;font-weight:700;font-size:14px;line-height:1.25;border:1px solid #1556a1;background:#1556a1;color:#fff;cursor:pointer}
-.ec-portal .ec-button:hover,.ec-portal .ec-button:focus{background:#0d3c78;color:#fff;text-decoration:none}
-.ec-portal .ec-button-secondary{background:#fff;border-color:#bdc9d7;color:#20436a}
-.ec-portal .ec-button-secondary:hover,.ec-portal .ec-button-secondary:focus{background:#edf3fb;color:#173258}
+.ec-portal .ec-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;border-radius:8px;padding:10px 17px;text-decoration:none;font-weight:700;font-size:14px;line-height:1.25;border:1px solid var(--ec-blue);background:var(--ec-blue);color:#fff;cursor:pointer}
+.ec-portal .ec-button:hover,.ec-portal .ec-button:focus{filter:brightness(.9);color:#fff;text-decoration:none}
+.ec-portal .ec-button-secondary{background:var(--ec-surface);border-color:var(--ec-border);color:var(--ec-text)}
+.ec-portal .ec-button-secondary:hover,.ec-portal .ec-button-secondary:focus{background:var(--ec-surface);color:var(--ec-text)}
 .ec-portal .ec-navigation{display:flex;gap:10px;margin:12px 0 22px;flex-wrap:wrap}
-.ec-portal .ec-navigation a{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ec-border);background:#fff;color:#1b456f;border-radius:9px;padding:10px 17px;min-height:44px;font-weight:700;text-decoration:none}
-.ec-portal .ec-navigation a:hover,.ec-portal .ec-navigation a:focus{background:#f0f5fc;color:#173258}
-.ec-portal .ec-panel{border:1px solid var(--ec-border);border-radius:13px;background:#fff;margin-bottom:22px;overflow:hidden;box-shadow:0 2px 9px rgba(26,43,69,.04)}
+.ec-portal .ec-navigation a{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ec-border);background:#fff;color:var(--ec-blue);border-radius:9px;padding:10px 17px;min-height:44px;font-weight:700;text-decoration:none}
+.ec-portal .ec-navigation a:hover,.ec-portal .ec-navigation a:focus{background:var(--ec-surface);color:var(--ec-text)}
+.ec-portal .ec-panel{border:1px solid var(--ec-border);border-radius:13px;background:var(--panel-bg,#fff);margin-bottom:22px;overflow:hidden;box-shadow:0 2px 9px rgba(26,43,69,.04)}
 .ec-portal .ec-panel-header{padding:20px 23px;border-bottom:1px solid var(--ec-border);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .ec-portal .ec-panel-body{padding:22px 23px}
-.ec-portal .ec-counter{font-weight:700;font-size:13px;color:#214c7f;border:1px solid #c6d6e9;border-radius:20px;padding:5px 11px;background:#f1f6fc}
+.ec-portal .ec-counter{font-weight:700;font-size:13px;color:var(--ec-blue);border:1px solid var(--ec-border);border-radius:20px;padding:5px 11px;background:var(--ec-surface)}
 .ec-portal .ec-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:20px}
 .ec-portal .ec-stat{background:var(--ec-surface);border:1px solid var(--ec-border);padding:15px;border-radius:10px}
 .ec-portal .ec-stat strong{display:block;color:var(--ec-navy);font-size:19px;overflow-wrap:anywhere}
 .ec-portal .ec-stat span{font-size:13px;color:var(--ec-muted)}
 .ec-portal .ec-mail-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}
-.ec-portal .ec-mail-card{border:1px solid var(--ec-border);border-radius:10px;padding:16px;background:#fff;min-width:0}
+.ec-portal .ec-mail-card{border:1px solid var(--ec-border);border-radius:10px;padding:16px;background:var(--panel-bg,#fff);min-width:0}
 .ec-portal .ec-mail-card strong{display:block;font-size:15px;overflow-wrap:anywhere;color:var(--ec-navy)}
 .ec-portal .ec-mail-card span{display:block;margin-top:6px;font-size:13px;color:var(--ec-muted)}
-.ec-portal .ec-subpanel{background:#f8fafc;border:1px solid var(--ec-border);border-radius:11px;padding:20px;margin-top:20px}
+.ec-portal .ec-subpanel{background:var(--ec-surface);border:1px solid var(--ec-border);border-radius:11px;padding:20px;margin-top:20px}
 .ec-portal .ec-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .ec-portal .ec-field{min-width:0;margin-bottom:16px}
 .ec-portal .ec-field input,.ec-portal .ec-field select{width:100%}
 .ec-portal .ec-help{color:var(--ec-muted);font-size:13px;margin:8px 0 0}
-.ec-portal .ec-alert{border-left:4px solid #98acc7;border-radius:8px;background:#f3f6fa;padding:12px 15px;margin:12px 0 18px;color:#283c53}
+.ec-portal .ec-alert{border-left:4px solid #98acc7;border-radius:8px;background:#f3f6fa;padding:12px 15px;margin:12px 0 18px;color:var(--ec-text)}
 .ec-portal .ec-alert-error{border-left-color:#b42318;background:#fff5f4;color:#851b16}
 .ec-portal .ec-alert-success{border-left-color:#238449;background:#f0f9f3;color:#155d34}
 .ec-portal .ec-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--ec-border);border-radius:9px}
 .ec-portal .ec-table{width:100%;border-collapse:collapse;margin:0;min-width:550px;font-size:14px}
-.ec-portal .ec-table th{background:#f3f6fa;color:#243b58;text-align:left;font-weight:750;font-size:13px;white-space:nowrap}
+.ec-portal .ec-table th{background:var(--ec-surface);color:var(--ec-text);text-align:left;font-weight:750;font-size:13px;white-space:nowrap}
 .ec-portal .ec-table th,.ec-portal .ec-table td{padding:13px 14px;border-bottom:1px solid #e8edf3;vertical-align:top}
 .ec-portal .ec-table tr:last-child td{border-bottom:0}
 .ec-portal .ec-break{overflow-wrap:anywhere;word-break:break-word}
-.ec-portal .ec-tag{font-size:12px;font-weight:700;padding:4px 9px;border:1px solid var(--ec-border);border-radius:6px;background:#f4f6f9;white-space:nowrap}
+.ec-portal .ec-tag{font-size:12px;font-weight:700;padding:4px 9px;border:1px solid var(--ec-border);border-radius:6px;background:var(--ec-surface);white-space:nowrap}
 .ec-portal .ec-muted{color:var(--ec-muted)}
 .ec-portal a:focus-visible,.ec-portal button:focus-visible,.ec-portal input:focus-visible,.ec-portal select:focus-visible{outline:3px solid #5aa3ee;outline-offset:2px}
 @media(max-width:720px){.ec-portal{font-size:15px}.ec-portal h1{font-size:25px}.ec-portal .ec-header{align-items:stretch}.ec-portal .ec-domain-picker,.ec-portal .ec-domain-picker label,.ec-portal .ec-domain-picker select{width:100%}.ec-portal .ec-domain-picker .ec-button{width:100%}.ec-portal .ec-grid{grid-template-columns:1fr}.ec-portal .ec-stats{grid-template-columns:1fr 1fr}.ec-portal .ec-panel-header,.ec-portal .ec-panel-body{padding:17px}.ec-portal .ec-navigation a{flex:1;min-width:120px}.ec-portal .ec-mail-grid{grid-template-columns:1fr}.ec-portal .ec-button{width:100%}}
