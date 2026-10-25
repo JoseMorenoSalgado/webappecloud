@@ -65,9 +65,9 @@ $clientArea = eclouddokploy_ClientArea([
     'pid' => 12,
     'domain' => 'example.com',
 ]);
-check($clientArea['tabOverviewModuleOutputTemplate'] === 'templates/clientarea.tpl', 'native WHMCS overview template');
-check($clientArea['templateVariables']['ecDokployAuthorized'] === false, 'unauthenticated visitor denied');
-check(!array_key_exists('password', $clientArea['templateVariables']), 'no secrets in template variables');
+check($clientArea['templatefile'] === 'templates/clientarea', 'native WHMCS module template');
+check($clientArea['vars']['ecDokployAuthorized'] === false, 'unauthenticated visitor denied');
+check(!array_key_exists('password', $clientArea['vars']), 'no secrets in template variables');
 
 
 $running = eclouddokploy_application_status('running');
