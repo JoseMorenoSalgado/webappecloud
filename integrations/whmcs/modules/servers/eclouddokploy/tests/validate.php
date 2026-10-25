@@ -258,4 +258,48 @@ check(str_contains(eclouddokploy_safe_connection_error(new RuntimeException('Dok
 $privateMarker = 'SENSITIVE_TOKEN_DO_NOT_SHOW';
 check(!str_contains(eclouddokploy_safe_connection_error(new RuntimeException('server returned ' . $privateMarker)), $privateMarker), 'no secret echoed from remote messages');
 
+
+// Dedicated project per service: even one customer with two services is isolated.
+$a = eclouddokploy_project_create_payload(25, 310);
+$b = eclouddokploy_project_create_payload(25, 311);
+$c = eclouddokploy_project_create_payload(26, 312);
+check($a['name'] === 'ec-client-25-service-310', 'deterministic private project name');
+check($a['name'] !== $b['name'] && $a['name'] !== $c['name'], 'no project collision across clients or services');
+check(eclouddokploy_find_production_environment([
+    ['name' => 'production', 'projectId' => 'project-310', 'environmentId' => 'env-310']
+], 'project-310') === 'env-310', 'private environment adopted from own project');
+check(eclouddokploy_find_production_environment([], 'project-310') === null, 'empty environment list triggers new private environment');
+try {
+    eclouddokploy_find_production_environment([
+        ['name' => 'production', 'projectId' => 'project-311', 'environmentId' => 'env-311']
+    ], 'project-310');
+    throw new RuntimeException('Test failed: cross-tenant environment adopted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: cross-tenant environment adopted', 'cross-tenant environment refused');
+}
+try {
+    eclouddokploy_find_production_environment([
+        ['name' => 'production', 'projectId' => 'project-310', 'environmentId' => 'env-310'],
+        ['name' => 'production', 'projectId' => 'project-310', 'environmentId' => 'env-extra'],
+    ], 'project-310');
+    throw new RuntimeException('Test failed: ambiguous duplicate environment adopted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: ambiguous duplicate environment adopted', 'duplicate production environments refused');
+}
+check(eclouddokploy_service_isolation_valid(25, 'project-310', 'env-310', 25), 'owner project and environment match');
+check(!eclouddokploy_service_isolation_valid(25, 'project-310', 'env-310', 26), 'other owner denied');
+check(!eclouddokploy_service_isolation_valid(25, null, 'env-310', 25), 'old shared project cannot be auto-adopted');
+check(!eclouddokploy_service_isolation_valid(25, 'project-310', null, 25), 'missing private environment denied');
+check(eclouddokploy_app_environment_matches([
+    'applicationId' => 'app-310', 'environmentId' => 'env-310'
+], 'app-310', 'env-310'), 'app belongs to own private environment');
+check(!eclouddokploy_app_environment_matches([
+    'applicationId' => 'app-310', 'environmentId' => 'env-311'
+], 'app-310', 'env-310'), 'other private environment denied');
+check(!eclouddokploy_app_environment_matches([
+    'applicationId' => 'app-310'
+], 'app-310', 'env-310'), 'unknown app environment denied');
+check(eclouddokploy_public_state('creating_project')[0] === 'Creando proyecto privado', 'project provisioning status visible');
+check(eclouddokploy_public_state('environment_ready')[0] === 'Entorno privado configurado', 'isolated environment status visible');
+
 echo "Dokploy provisioning validations passed\n";
