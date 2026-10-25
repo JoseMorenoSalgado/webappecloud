@@ -329,3 +329,115 @@ function eclouddokploy_create_locked(
     }
     return 'Estado de aprovisionamiento no reconocido. Revisar el registro del servicio.';
 }
+
+
+/**
+ * Public-facing service status: labels describe provisioning progress only.
+ * A deployment request does NOT prove that the website is healthy or online.
+ */
+function eclouddokploy_public_state(string $state): array
+{
+    $map = [
+        'new' => ['Pendiente de instalación', 'Estamos preparando los recursos de tu aplicación.'],
+        'creating_db' => ['Configurando base de datos', 'Se está solicitando la creación de la base de datos.'],
+        'db_created' => ['Base de datos registrada', 'La base de datos está pendiente de inicio.'],
+        'deploying_db' => ['Iniciando base de datos', 'El servidor está preparando el motor de base de datos.'],
+        'db_deployed' => ['Preparando aplicación', 'La base de datos fue solicitada; falta configurar la aplicación.'],
+        'creating_app' => ['Creando aplicación', 'Se está solicitando el entorno de ejecución.'],
+        'app_created' => ['Aplicación registrada', 'Falta completar la configuración.'],
+        'configuring_app' => ['Configurando aplicación', 'Se están configurando Git y el entorno.'],
+        'app_configured' => ['Aplicación configurada', 'El dominio aún no está preparado.'],
+        'creating_domain' => ['Configurando dominio', 'Se está preparando el dominio de la aplicación.'],
+        'domain_created' => ['Dominio configurado', 'El despliegue aún no ha sido solicitado.'],
+        'requesting_deploy' => ['Solicitando despliegue', 'La plataforma está recibiendo la solicitud de despliegue.'],
+        'deployment_requested' => ['Despliegue solicitado', 'La aplicación está pendiente de verificar su instalación y disponibilidad.'],
+    ];
+    return $map[$state] ?? ['Revisión técnica', 'Nuestro equipo debe revisar el estado de instalación.'];
+}
+
+/**
+ * Rendered natively within this Dokploy product's WHMCS service detail page.
+ * Lagom keeps its own service navigation, billing and client authentication.
+ * No Dokploy secrets or destructive/redeploy actions are sent to the browser.
+ */
+function eclouddokploy_ClientArea(array $params): array
+{
+    $serviceId = (int) ($params['serviceid'] ?? 0);
+    $ownerId = (int) ($params['userid'] ?? 0);
+    $clientId = (int) ($_SESSION['uid'] ?? 0);
+    $domain = strtolower(rtrim(trim((string) ($params['domain'] ?? '')), '.'));
+    $gitUrl = trim((string) ($params['configoption2'] ?? ''));
+    $branch = trim((string) ($params['configoption3'] ?? ''));
+    $dbMode = trim((string) ($params['configoption5'] ?? ''));
+    $public = eclouddokploy_public_state('unverified');
+    $view = [
+        'ecDokployAuthorized' => false,
+        'ecDokployServiceId' => 0,
+        'ecDokployDomain' => '',
+        'ecDokploySiteUrl' => '',
+        'ecDokployGitUrl' => '',
+        'ecDokployBranch' => '',
+        'ecDokployDbMode' => '',
+        'ecDokployState' => $public[0],
+        'ecDokployDescription' => $public[1],
+        'ecDokployProvisioned' => false,
+    ];
+    if ($serviceId < 1 || $clientId < 1 || $ownerId !== $clientId) {
+        return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+    }
+    try {
+        // Additional ownership/service binding in the WHMCS database.
+        $hosting = Capsule::table('tblhosting')
+            ->where('id', $serviceId)
+            ->where('userid', $clientId)
+            ->first(['id', 'domain', 'packageid', 'domainstatus']);
+        if (!$hosting || (int) $hosting->packageid !== (int) ($params['pid'] ?? 0)) {
+            return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+        }
+        if (strtolower(rtrim((string) $hosting->domain, '.')) !== $domain) {
+            return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+        }
+        $view['ecDokployAuthorized'] = true;
+        $view['ecDokployServiceId'] = $serviceId;
+        if (eclouddokploy_valid_domain($domain)) {
+            $view['ecDokployDomain'] = $domain;
+            $view['ecDokploySiteUrl'] = 'https://' . $domain;
+        }
+        if (eclouddokploy_valid_git($gitUrl, $branch)) {
+            $view['ecDokployGitUrl'] = $gitUrl;
+            $view['ecDokployBranch'] = $branch;
+        }
+        $modes = [
+            'mariadb' => 'MariaDB', 'mysql' => 'MySQL',
+            'postgres' => 'PostgreSQL', 'external' => 'Base de datos externa',
+            'none' => 'Sin base de datos',
+        ];
+        $view['ecDokployDbMode'] = $modes[$dbMode] ?? 'Sin confirmar';
+
+        if (!Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) {
+            $public = ['Sin instalación registrada', 'Este servicio aún no tiene un despliegue registrado en Dokploy.'];
+        } else {
+            $record = Capsule::table('mod_ecloud_dokploy_services')
+                ->where('service_id', $serviceId)
+                ->first(['state', 'application_id']);
+            if ($record) {
+                $public = eclouddokploy_public_state((string) $record->state);
+                $view['ecDokployProvisioned'] =
+                    (string) $record->state === 'deployment_requested'
+                    && !empty($record->application_id);
+            } else {
+                $public = ['Sin instalación registrada', 'Este servicio aún no tiene un despliegue registrado en Dokploy.'];
+            }
+        }
+        if ((string) $hosting->domainstatus !== 'Active' &&
+            (string) $hosting->domainstatus !== 'Pending') {
+            $public = ['Servicio ' . (string) $hosting->domainstatus, 'La gestión de este servicio está limitada por su estado en WHMCS.'];
+        }
+        $view['ecDokployState'] = $public[0];
+        $view['ecDokployDescription'] = $public[1];
+    } catch (Throwable $e) {
+        // Fail closed, avoiding application/database secrets in output or logs.
+        $view['ecDokployAuthorized'] = false;
+    }
+    return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+}
