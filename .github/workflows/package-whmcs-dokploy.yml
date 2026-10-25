@@ -96,7 +96,11 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    La publicacion real aun necesita DNS/SSL y verificacion de salud.
 8) Mantener desactivados los cambios de correo y el redespliegue directo
    hasta validar estas acciones por separado en staging.
-9) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
+9) Cliente: vista Lagom rediseñada con navegacion Estado/Aplicacion/Correo,
+   GitHub como campo principal y opciones tecnicas desplegables.
+   Soporte: dos recorridos claros, campos accesibles y panel responsive.
+   Diseño: docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md.
+10) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
 
 Modulo de aprovisionamiento: NO aparece en Modulos adicionales.
 NO activar en produccion sin respaldo y pruebas.
