@@ -132,3 +132,27 @@ Las cuentas de correo del cliente mantienen su módulo cPanel actual sin modific
 
 La nueva acción usa WHMCS ClientAreaAllowedFunctions para quedar limitada a su propia ficha. La función no permite editar repositorios, borrar bases ni cambiar configuraciones del servidor. La prueba CI de PHP comprueba los controles locales, pero **no** equivale a una prueba real de la integración.
 
+
+## Diagnóstico seguro desde el servidor WHMCS (solo lectura)
+
+Preparado: `modules/servers/eclouddokploy/tests/remote_readonly.php`.
+
+**Objetivo:** comprobar desde el propio servidor de WHMCS que la conexión HTTPS/certificado, el token privado y los endpoints `project.all`, `application.one` y `deployment.all` de Dokploy responden como espera el módulo, **sin desplegar, crear o eliminar ningún recurso**.
+
+Prerequisitos: disponer en el entorno del PHP CLI de WHMCS, y no en el navegador, de:
+
+- `ECLOUD_DOKPLOY_URL`: dominio HTTPS del Dokploy de prueba, mediante reverse proxy confiable.
+- `ECLOUD_DOKPLOY_API_KEY`: token privado **del entorno autorizado** con acceso a consulta.
+- Opcional `ECLOUD_DOKPLOY_TEST_APPLICATION_ID`: ID de una aplicación **de prueba**, para confirmar su estado e historial.
+
+**No publiques ningún token en el chat, tickets, capturas, línea de comandos o repositorio.** Mantén secretos en el entorno privado de WHMCS o en un almacén de secretos del servidor, accesible al proceso CLI autorizado.
+
+Ejecuta desde la terminal **del servidor que aloja WHMCS**, solo después de configurar el entorno privado:
+
+```bash
+php /ruta/a/whmcs/modules/servers/eclouddokploy/tests/remote_readonly.php
+```
+
+El comando solo imprime JSON con `status`, `code` y comprobaciones resumidas; nunca el token, nombres de aplicaciones o respuesta bruta. La salida `status=pass` indica conectividad/API básica, **no** confirma que un aprovisionamiento/SSL/SQL/despliegue real funcione. `status=not_run` indica credenciales no configuradas; `fail` indica problema de conexión o contrato.
+
+La prueba de escritura de extremo a extremo queda pendiente de disponer de un **proyecto/environment de staging** en tu VPS y una aplicación temporal controlada. No ejecutarla sobre cuentas de clientes. Las banderas `ECLOUD_DOKPLOY_ENABLE_PROVISIONING` y `ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY` deben permanecer en `0` durante este diagnóstico.
