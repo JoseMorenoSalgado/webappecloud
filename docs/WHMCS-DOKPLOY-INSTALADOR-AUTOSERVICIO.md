@@ -36,6 +36,7 @@ Mantener por defecto deshabilitado redespliegue, lecturas de correo y cambios a 
 - WHMCS debe conocer el dominio FQDN del sitio en su ficha de servicio. Solo ese dominio se instala; el cliente no puede sustituirlo mediante POST.
 - Configurar DNS A/AAAA al VPS/proxy correcto; Let's Encrypt depende de DNS correcto.
 - En la compra, CreateAccount devuelve success cuando reservó la plaza, NO porque el sitio ya esté publicado. El estado del módulo aparece «Preparada para instalar» hasta que el usuario despliegue.
+- Para un servicio de pruebas **que ya está marcado Active** y antes no tenía la reserva, se agregó un botón del administrador WHMCS llamado «Preparar instalador del cliente» en la ficha del servicio. Este botón solo crea la reserva, y es idempotente: no despliega ni duplica recursos. Usarlo en staging tras instalar el módulo actualizado y activar los flags. El cliente después abre la ficha en Lagom y verá el asistente.
 
 ## Seguridad y manejo de errores
 
