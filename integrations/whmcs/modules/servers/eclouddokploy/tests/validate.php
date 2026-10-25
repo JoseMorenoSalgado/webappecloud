@@ -240,4 +240,22 @@ check(!eclouddokploy_valid_server_hostname('dokploy.example.net:3000'), 'reject 
 check(!eclouddokploy_valid_server_hostname('bad/hostname'), 'reject path injection in WHMCS hostname');
 check(eclouddokploy_TestConnection(['serverhostname'=>'https://bad.example','serverpassword'=>'x'])['success'] === false, 'invalid WHMCS server connection fails locally');
 
+// WHMCS TestConnection must return specific safe errors, never raw tokens.
+$cases = [
+    ['Dokploy read failed: project.all (HTTP 401).', 'HTTP 401'],
+    ['Dokploy read failed: project.all (HTTP 403).', 'HTTP 403'],
+    ['Dokploy read failed: project.all (HTTP 404).', 'HTTP 404'],
+    ['Dokploy read failed: project.all (HTTP 502).', 'HTTP 502'],
+    ['Dokploy transport failed (cURL 6).', 'Error DNS'],
+    ['Dokploy transport failed (cURL 7).', 'Error de red'],
+    ['Dokploy transport failed (cURL 28).', 'Tiempo de espera'],
+    ['Dokploy transport failed (cURL 60).', 'Certificado HTTPS'],
+];
+foreach ($cases as $case) {
+    check(str_contains(eclouddokploy_safe_connection_error(new RuntimeException($case[0])), $case[1]), 'specific nonsecret diagnostic ' . $case[1]);
+}
+check(str_contains(eclouddokploy_safe_connection_error(new RuntimeException('Dokploy API key is missing.')), 'API key'), 'missing token diagnosis');
+$privateMarker = 'SENSITIVE_TOKEN_DO_NOT_SHOW';
+check(!str_contains(eclouddokploy_safe_connection_error(new RuntimeException('server returned ' . $privateMarker)), $privateMarker), 'no secret echoed from remote messages');
+
 echo "Dokploy provisioning validations passed\n";
