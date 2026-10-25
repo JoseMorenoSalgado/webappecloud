@@ -156,6 +156,18 @@
             <div class="ecd-review-box"><small>Carpeta / Puerto</small><strong>{$ecSetupRoot|escape:'html'} · {$ecSetupPort|escape:'html'}</strong></div>
           </div>
           <p class="ecd-setup-note">Si el despliegue ya comenzó, consulta su estado arriba. La instalación y sus recursos no se duplican cuando se actualiza la página.</p>
+          {if $ecSetupCanInstall}
+            <form method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
+              <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
+              <input type="hidden" name="modop" value="custom">
+              <input type="hidden" name="a" value="InstallApp">
+              <input type="hidden" name="token" value="{$token|escape:'html'}">
+              <input type="hidden" name="ec_setup_token" value="{$ecSetupToken|escape:'html'}">
+              <input type="hidden" name="ec_setup_confirm" value="yes">
+              <p class="ecd-setup-note">La configuración está guardada, pero todavía no se ha iniciado la creación de recursos remotos. Puedes reintentar con las mismas opciones.</p>
+              <button type="submit" class="ecd-setup-cta">Reintentar instalación guardada</button>
+            </form>
+          {/if}
         {elseif $ecSetupCanInstall}
           <form id="ecd-install-wizard" method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
             <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
