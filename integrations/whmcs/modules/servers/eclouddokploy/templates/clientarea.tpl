@@ -615,9 +615,99 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
 
 <script>
 {literal}
+/* Progressive enhancement only: WHMCS remains the authority on validation. */
 (function () {
-  const wrap = document.querySelector('.ec-dokploy');
-  const form = wrap && wrap.querySelector('#ecd-install-wizard');
+  'use strict';
+  const widget = document.querySelector('.ec-dokploy');
+  if (!widget) return;
+
+  const forms = widget.querySelectorAll('[data-ecd-submit-form]');
+  forms.forEach(function (form) {
+    let submitted = false;
+    const sendButton = form.querySelector('[data-ecd-submit]');
+    const message = form.querySelector('[data-ecd-submit-notice]');
+
+    form.addEventListener('submit', function (event) {
+      if (submitted) {
+        event.preventDefault();
+        return;
+      }
+      if (form.id === 'ecd-install-wizard') {
+        const summary = form.querySelector('[data-ecd-form-error]');
+        const repo = form.querySelector('[data-ecd-git]');
+        const repoError = form.querySelector('[data-ecd-repo-error]');
+        const advanced = form.querySelector('[data-ecd-advanced]');
+        const branch = form.querySelector('[data-ecd-branch]');
+        const root = form.querySelector('[data-ecd-root]');
+        const confirm = form.querySelector('[data-ecd-confirm]');
+        const source = repo.value.trim();
+        const validRepo = /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?\/?$/.test(source);
+        const validBranch = /^[A-Za-z0-9._/-]{1,100}$/.test(branch.value.trim())
+          && !branch.value.includes('..');
+        const validRoot = /^\/(?:[A-Za-z0-9_.-]+\/?)*$/.test(root.value.trim())
+          && !root.value.split('/').some(function (p) { return p === '.' || p === '..'; });
+
+        if (repoError) repoError.textContent = '';
+        if (summary) summary.textContent = '';
+        repo.removeAttribute('aria-invalid');
+
+        let problem = '';
+        let invalid = null;
+        if (!validRepo) {
+          problem = 'Pega un enlace público completo, por ejemplo: https://github.com/usuario/proyecto';
+          invalid = repo;
+          repo.setAttribute('aria-invalid', 'true');
+          if (repoError) repoError.textContent = problem;
+        } else if (!validBranch || !validRoot) {
+          problem = 'Revisa la rama y la carpeta. Usa una rama válida y una carpeta que empiece por /.';
+          invalid = !validBranch ? branch : root;
+          if (advanced) advanced.open = true;
+        } else {
+          const invalidField = Array.from(form.querySelectorAll('input,select,textarea')).find(function (field) {
+            return !field.checkValidity();
+          });
+          if (invalidField) {
+            invalid = invalidField;
+            problem = invalidField === confirm
+              ? 'Confirma que tienes autorización para publicar este repositorio.'
+              : 'Revisa el campo señalado; su valor no es válido.';
+            if (advanced && advanced.contains(invalidField)) advanced.open = true;
+          }
+        }
+        if (invalid) {
+          event.preventDefault();
+          if (summary) {
+            summary.textContent = problem;
+            summary.focus();
+          }
+          invalid.focus();
+          return;
+        }
+        repo.value = source;
+      }
+      submitted = true;
+      if (sendButton) {
+        sendButton.disabled = true;
+        sendButton.setAttribute('aria-busy', 'true');
+        sendButton.textContent = 'Solicitando instalación…';
+      }
+      if (message) message.textContent = 'Solicitud enviada. El sistema comprobará el servicio y preparará los recursos.';
+    });
+
+    // When returning to a page via browser back/forward cache, restore button.
+    window.addEventListener('pageshow', function (event) {
+      if (!event.persisted || !submitted) return;
+      submitted = false;
+      if (sendButton) {
+        sendButton.disabled = false;
+        sendButton.removeAttribute('aria-busy');
+        sendButton.textContent = form.id === 'ecd-install-wizard'
+          ? 'Instalar mi aplicación' : 'Continuar instalación guardada';
+      }
+    });
+  });
+
+  const form = widget.querySelector('#ecd-install-wizard');
   if (!form) return;
   const git = form.querySelector('[data-ecd-git]');
   const branch = form.querySelector('[data-ecd-branch]');
@@ -625,48 +715,73 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
   const preset = form.querySelector('[data-ecd-preset]');
   const button = form.querySelector('[data-ecd-scan]');
   const status = form.querySelector('[data-ecd-detection]');
+  const advanced = form.querySelector('[data-ecd-advanced]');
+  const error = form.querySelector('[data-ecd-repo-error]');
+  git.addEventListener('input', function () {
+    git.removeAttribute('aria-invalid');
+    if (error) error.textContent = '';
+  });
+  git.addEventListener('blur', function () {
+    const url = git.value.trim();
+    if (!url) return;
+    if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\.git)?\/?$/.test(url)) {
+      git.setAttribute('aria-invalid', 'true');
+      if (error) error.textContent = 'Usa https://github.com/usuario/proyecto (repositorio público).';
+    }
+  });
+
   if (!button) return;
   button.addEventListener('click', async function () {
     const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(git.value.trim());
     const currentBranch = branch.value.trim();
     const path = root.value.trim().replace(/^\/+|\/+$/g, '');
     if (!match || !/^[A-Za-z0-9._/-]{1,100}$/.test(currentBranch)
-        || path.split('/').some(function(p){return p==='..'||p==='.';})
-        || !/^[A-Za-z0-9_.\/-]*$/.test(path)) {
-      status.textContent = 'Introduce una URL de GitHub, rama y carpeta válidas.';
+        || !/^[A-Za-z0-9_.\/-]*$/.test(path)
+        || path.split('/').some(function(p) { return p === '..' || p === '.'; })) {
+      status.textContent = 'Introduce una URL pública de GitHub, rama y carpeta válidas.';
+      if (!match) {
+        git.setAttribute('aria-invalid', 'true');
+        if (error) error.textContent = 'Comprueba la URL: debe empezar por https://github.com/';
+        git.focus();
+      } else if (advanced) {
+        advanced.open = true;
+      }
       return;
     }
     button.disabled = true;
-    status.textContent = 'Buscando package.json público en GitHub…';
+    button.textContent = 'Identificando…';
+    status.textContent = 'Consultando package.json en GitHub público…';
     const base = 'https://api.github.com/repos/' + encodeURIComponent(match[1])
       + '/' + encodeURIComponent(match[2]) + '/contents/'
       + (path ? path.split('/').map(encodeURIComponent).join('/') + '/' : '');
     try {
       const resp = await fetch(base + 'package.json?ref=' + encodeURIComponent(currentBranch), {
         headers: {'Accept':'application/vnd.github+json'},
-        credentials:'omit', redirect:'error'
+        credentials: 'omit', redirect: 'error'
       });
-      if (resp.ok) {
-        const info = await resp.json();
-        const encoded = (info.content || '').replace(/\s+/g, '');
-        const pkg = JSON.parse(decodeURIComponent(Array.prototype.map.call(atob(encoded), function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join('')));
-        const deps = Object.assign({}, pkg.dependencies || {}, pkg.devDependencies || {});
-        if (Object.prototype.hasOwnProperty.call(deps, 'next')) {
-          preset.value = 'nextjs';
-          status.textContent = 'Next.js detectado. Configuración automática lista.';
-        } else {
-          preset.value = 'nodejs';
-          status.textContent = 'Proyecto Node.js detectado. Configuración automática lista.';
-        }
+      if (!resp.ok) throw new Error('No package.json');
+      const info = await resp.json();
+      const encoded = (info.content || '').replace(/\s+/g, '');
+      if (encoded.length > 65536) throw new Error('File too large');
+      const binary = atob(encoded);
+      const escaped = Array.prototype.map.call(binary, function (c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('');
+      const pkg = JSON.parse(decodeURIComponent(escaped));
+      const deps = Object.assign({}, pkg.dependencies || {}, pkg.devDependencies || {});
+      if (Object.prototype.hasOwnProperty.call(deps, 'next')) {
+        preset.value = 'nextjs';
+        status.textContent = 'Next.js detectado. Usaremos Nixpacks sin Dockerfile.';
       } else {
-        status.textContent = 'No se encontró package.json. Elige Dockerfile si tu repositorio lo incluye.';
+        preset.value = 'nodejs';
+        status.textContent = 'Proyecto JavaScript detectado. Puedes instalarlo con Node.js.';
       }
-    } catch (e) {
-      status.textContent = 'No se pudo consultar GitHub. Elige el tipo de proyecto manualmente.';
+    } catch (_) {
+      status.textContent = 'No se pudo identificar automáticamente. Elige Next.js, Node.js o Dockerfile en Configuración avanzada.';
+      if (advanced) advanced.open = true;
     } finally {
       button.disabled = false;
+      button.textContent = 'Identificar framework';
     }
   });
 })();
