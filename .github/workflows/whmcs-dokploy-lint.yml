@@ -100,9 +100,10 @@ jobs:
           Seleccionar el modulo eclouddokploy en los ajustes del producto.
           Cada servicio genera su propio proyecto y entorno Dokploy.
           Este modulo NO figura en Modulos adicionales; es un modulo de servidor.
-          Correo corporativo: vincula un segundo servicio WHMCS cPanel activo,
-          usa un token UAPI por cuenta en un archivo privado fuera de public_html.
-          Funciones correo desactivadas hasta habilitar en staging.
+          Correo corporativo: el cliente ve automaticamente su servicio cPanel
+          activo para el mismo dominio y puede abrirlo desde App Ecloud.
+          Operaciones avanzadas UAPI en la ficha requieren token privado
+          y siguen desactivadas hasta validarlas en staging.
           Instalacion guiada activada desde Module Settings (guiado/pedido/legado).
           Modo pedido: si el cliente facilita Repositorio GitHub como campo
           personalizado durante la compra, el despliegue se solicita al aprovisionar.
@@ -114,7 +115,8 @@ jobs:
           No soporta GitHub privado OAuth ni dominio gratuito automatizado.
           No activar creacion automatica de servicios ni redespliegues en produccion.
           API keys y secretos solo en el entorno privado del servidor WHMCS.
-          Guias: docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub.
+          Guia actual: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md en GitHub.
+          Ajustar WHMCS Producto > Modulo: aprovisionar tras primer pago.
           PR: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
           EOF
           cd dist
