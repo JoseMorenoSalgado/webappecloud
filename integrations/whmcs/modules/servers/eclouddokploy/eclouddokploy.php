@@ -391,7 +391,7 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployLiveNotice' => '',
     ];
     if ($serviceId < 1 || $clientId < 1 || $ownerId !== $clientId) {
-        return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+        return ['templatefile' => 'templates/clientarea', 'vars' => $view];
     }
     try {
         // Additional ownership/service binding in the WHMCS database.
@@ -400,10 +400,10 @@ function eclouddokploy_ClientArea(array $params): array
             ->where('userid', $clientId)
             ->first(['id', 'domain', 'packageid', 'domainstatus']);
         if (!$hosting || (int) $hosting->packageid !== (int) ($params['pid'] ?? 0)) {
-            return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+            return ['templatefile' => 'templates/clientarea', 'vars' => $view];
         }
         if (strtolower(rtrim((string) $hosting->domain, '.')) !== $domain) {
-            return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+            return ['templatefile' => 'templates/clientarea', 'vars' => $view];
         }
         $view['ecDokployAuthorized'] = true;
         $view['ecDokployServiceId'] = $serviceId;
@@ -470,7 +470,7 @@ function eclouddokploy_ClientArea(array $params): array
         // Fail closed, avoiding application/database secrets in output or logs.
         $view['ecDokployAuthorized'] = false;
     }
-    return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+    return ['templatefile' => 'templates/clientarea', 'vars' => $view];
 }
 
 
