@@ -60,18 +60,22 @@ function ecloudhosting_owned_services(int $clientId, array $map): array
 {
     if ($clientId <= 0) return [];
     $list = Capsule::table('tblhosting')->where('userid', $clientId)
-        ->where('domainstatus', 'Active')->select(['id', 'domain', 'username', 'userid'])->get();
+        ->where('domainstatus', 'Active')->select(['id', 'packageid', 'domain', 'username', 'userid'])->get();
     $result = [];
     foreach ($list as $service) {
         $sid = (string) $service->id;
         $cfg = $map[$sid] ?? null;
         if (!is_array($cfg)) continue;
+        // Bind the portal only to the existing WHMCS email product for this service.
+        $expectedPackageId = filter_var($cfg['package_id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$expectedPackageId || $expectedPackageId !== (int) $service->packageid) continue;
         $domain = strtolower(rtrim((string) $service->domain, '.'));
         if ($domain !== strtolower(rtrim((string) ($cfg['domain'] ?? ''), '.'))) continue;
         if ((string) $service->username !== (string) ($cfg['username'] ?? '')) continue;
         if (!ecloudhosting_domain_valid($domain)) continue;
         $result[$sid] = [
             'service_id' => (int) $service->id,
+            'package_id' => (int) $service->packageid,
             'domain' => $domain,
             'host' => (string) ($cfg['host'] ?? ''),
             'username' => (string) ($cfg['username'] ?? ''),
