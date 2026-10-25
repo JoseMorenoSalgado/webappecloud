@@ -57,3 +57,32 @@ jobs:
           if grep -q 'wrong-token' "$TEMP_DIR/denied.txt"; then
             echo 'Diagnostic leaked auth secret'; exit 1
           fi
+      - name: Package WHMCS Dokploy module for staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="integrations/whmcs/modules/servers/eclouddokploy"
+          mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
+          cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" dist/eclouddokploy/lib/
+          cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
+          cat > dist/LEEME-INSTALACION.txt <<'EOF'
+          MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
+          Copiar eclouddokploy a <WHMCS_ROOT>/modules/servers/
+          En WHMCS, crear un producto de prueba separado de los paquetes cPanel.
+          Seleccionar el modulo eclouddokploy en los ajustes del producto.
+          No activar creacion automatica de servicios ni redespliegues en produccion.
+          API keys y secretos solo en el entorno privado del servidor WHMCS.
+          Guias: docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub.
+          PR: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
+          EOF
+          cd dist
+          zip -qr ../eclouddokploy-whmcs-staging.zip eclouddokploy LEEME-INSTALACION.txt
+          unzip -t ../eclouddokploy-whmcs-staging.zip
+      - name: Publish downloadable staging ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclouddokploy-whmcs-staging
+          path: eclouddokploy-whmcs-staging.zip
+          if-no-files-found: error
+          retention-days: 30
