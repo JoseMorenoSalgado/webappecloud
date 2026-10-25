@@ -64,13 +64,15 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
           Copiar eclouddokploy a <WHMCS_ROOT>/modules/servers/
           En WHMCS, crear un producto de prueba separado de los paquetes cPanel.
           Seleccionar el modulo eclouddokploy en los ajustes del producto.
+          Cada servicio genera su propio proyecto y entorno Dokploy.
+          Este modulo NO figura en Modulos adicionales; es un modulo de servidor.
           No activar creacion automatica de servicios ni redespliegues en produccion.
           API keys y secretos solo en el entorno privado del servidor WHMCS.
           Guias: docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub.
