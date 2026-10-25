@@ -100,4 +100,29 @@ check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' 
 $_SESSION['uid'] = 456;
 check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' => 123]), 'no autorizada'), 'reject other WHMCS user');
 
+
+// Match the documented field requirements for Dokploy database.create.
+foreach (['mariadb', 'mysql', 'postgres'] as $mode) {
+    $payload = eclouddokploy_database_payload(
+        $mode, 'env-test', 'db-test', 'dbtest', 'dbuser', 'db-password', 'root-password'
+    );
+    foreach (['name', 'environmentId', 'databaseName', 'databaseUser', 'databasePassword', 'dockerImage'] as $required) {
+        check(isset($payload[$required]), $mode . ' required field: ' . $required);
+    }
+    check(str_starts_with($payload['dockerImage'], $mode . ':'), $mode . ' image pinned');
+    check($mode !== 'postgres' || !isset($payload['databaseRootPassword']), 'no PG root password');
+    check($mode === 'postgres' || $payload['databaseRootPassword'] === 'root-password', 'SQL root password');
+}
+try {
+    eclouddokploy_database_payload('mongodb', 'env', 'app', 'db', 'user', 'pass', 'root');
+    throw new RuntimeException('Test failed: unsupported engine accepted');
+} catch (InvalidArgumentException $e) {
+    check(true, 'unsupported SQL engine denied');
+}
+$buildPayload = eclouddokploy_dockerfile_payload('app-id-123');
+foreach (['applicationId', 'buildType', 'dockerfile', 'dockerContextPath', 'dockerBuildStage', 'herokuVersion', 'railpackVersion'] as $field) {
+    check(array_key_exists($field, $buildPayload), 'required buildType schema field: ' . $field);
+}
+check($buildPayload['buildType'] === 'dockerfile', 'Dockerfile build');
+
 echo "Dokploy provisioning validations passed\n";
