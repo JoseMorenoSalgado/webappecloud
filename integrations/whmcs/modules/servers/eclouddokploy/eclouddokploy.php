@@ -882,9 +882,28 @@ function eclouddokploy_EmailAction(array $params): string
  */
 function eclouddokploy_AdminCustomButtonArray(): array
 {
-    // No manual action is needed: CreateAccount + the client's first visit
-    // prepare all eligible accounts automatically.
-    return [];
+    // Normal new paid orders run automatically through CreateAccount.
+    // This one-time recovery action exists ONLY for pre-update subscriptions
+    // already marked Active which did not get a Dokploy project.
+    return ['Conciliar proyecto antiguo' => 'ReconcileProject'];
+}
+
+/** Recover a pre-upgrade paid WHMCS service without deploying application code. */
+function eclouddokploy_ReconcileProject(array $params): string
+{
+    if (!eclouddokploy_auto_enabled($params)) {
+        return 'El producto no usa el aprovisionamiento automático de proyectos.';
+    }
+    try {
+        $route = eclouddokploy_resolve_route($params);
+        $reserved = eclouddokploy_setup_reserve(
+            $params, $route, (string) ($params['configoption5'] ?? 'none')
+        );
+        if ($reserved !== 'success') return $reserved;
+        return eclouddokploy_order_prepare_project($params, $route);
+    } catch (Throwable $e) {
+        return 'No se pudo completar la conciliación del proyecto. Verifica la primera factura y el estado del servidor.';
+    }
 }
 
 function eclouddokploy_PrepareInstaller(array $params): string
