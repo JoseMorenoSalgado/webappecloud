@@ -52,4 +52,21 @@ try {
     check($e->getMessage() !== 'Test failed: accepted multiline secret', 'reject env injection');
 }
 unlink($externalMap);
+
+// The independent product overview is scoped and read-only in this pilot.
+$clientState = eclouddokploy_public_state('deployment_requested');
+check($clientState[0] === 'Despliegue solicitado', 'deployment is not labeled online');
+$unknownState = eclouddokploy_public_state('unexpected-state');
+check($unknownState[0] === 'Revisión técnica', 'unknown state fails closed');
+$_SESSION['uid'] = 0;
+$clientArea = eclouddokploy_ClientArea([
+    'serviceid' => 123,
+    'userid' => 123,
+    'pid' => 12,
+    'domain' => 'example.com',
+]);
+check($clientArea['tabOverviewModuleOutputTemplate'] === 'templates/clientarea.tpl', 'native WHMCS overview template');
+check($clientArea['templateVariables']['ecDokployAuthorized'] === false, 'unauthenticated visitor denied');
+check(!array_key_exists('password', $clientArea['templateVariables']), 'no secrets in template variables');
+
 echo "Dokploy provisioning validations passed\n";
