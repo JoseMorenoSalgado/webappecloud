@@ -6,27 +6,27 @@
 
 1. Compra y paga su producto «App Ecloud» en WHMCS. El módulo reserva una plaza en el VPS de su grupo (por ejemplo, diez clientes por servidor) sin desplegar código predeterminado.
 2. En «Mis servicios → App Ecloud → Administrar» encuentra el asistente «Instala tu aplicación en 3 pasos».
-3. Pega la URL HTTPS de un **repositorio público de GitHub**, selecciona rama y carpeta raíz (por defecto /). Puede pulsar «Detectar proyecto»; el navegador examina el package.json público sin API keys.
-4. Selecciona Next.js o Node.js (**Nixpacks; no necesita Dockerfile**) o Dockerfile como opción avanzada. Elige puerto y agrega variables CLAVE=valor opcionales.
+3. Solo **pega la URL HTTPS de su repositorio público de GitHub**. La rama y la carpeta raíz tienen valores predeterminados, y la detección de Next.js es opcional; no necesita conocimientos de Dokploy.
+4. Para la mayoría, basta la configuración automática (Next.js/Node.js con **Nixpacks, sin Dockerfile**). Rama, carpeta, puerto, Dockerfile y variables se encuentran en una sección avanzada que puede dejar cerrada.
 5. Confirma el dominio de su servicio y la base de datos incluida en su plan; pulsa «Instalar mi aplicación».
 6. WHMCS crea un proyecto y entorno Dokploy privado, la base de datos contratada, la aplicación, Git, build, variables, dominio HTTPS y **solicita** el despliegue.
 7. Consulta progreso y, si el administrador habilita las lecturas, registros de despliegues recientes. Los buzones cPanel continúan en la misma ficha como servicio separado.
 
 **No se incluyen aún:** OAuth ni repositorios privados, lista automática de repositorios de una cuenta GitHub, deploy automático en cada push, dominios temporales DNS propios, previews por rama o comprobación integral de salud del sitio. No anunciarlos como disponibles.
 
-## Activación EXCLUSIVAMENTE en entorno de staging
+## Configuración desde WHMCS, sin SSH (primero en staging)
 
-En el proceso PHP de WHMCS configurar:
+**No hay que crear variables PHP ni usar terminal.** En WHMCS, configura una sola vez el servidor Dokploy con hostname y API key, y el producto App Ecloud con **«Instalación automática» = `guiado`**. Para comprobarlo antes de ofrecerlo a clientes, utiliza productos/servicios de staging.
 
-- ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=1
-- ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1
-- ECLOUD_DOKPLOY_PASSWORD_SEED=(cadena de 64 caracteres hexadecimales)
+En **Productos/Servicios → App Ecloud → Module Settings → Automation Settings**, elige **«Automatically setup the product as soon as the first payment is received»**. WHMCS ejecutará CreateAccount al confirmar el pago y reservará una plaza de su grupo de servidores. NO aconsejamos instalar antes del pago.
 
-Generar la seed dentro de un servidor seguro con: openssl rand -hex 32.
+La primera vez que un cliente instale un proyecto, el módulo genera **automáticamente** su clave maestra aleatoria y la guarda cifrada en `mod_ecloud_dokploy_runtime`, mediante el servicio Crypt de WHMCS/Laravel. Nunca envía ni muestra la clave en pantalla. Si ya existe un `ECLOUD_DOKPLOY_PASSWORD_SEED` configurado para instalaciones antiguas, lo conserva como prioridad para evitar cambiar las contraseñas históricas.
 
-Requiere PHP 8.2+, extensiones cURL y Sodium. Guardar y respaldar cifrada la seed: es necesaria para derivar contraseñas de SQL y descifrar variables. La ejecución del módulo obtiene estas variables del PHP-FPM/Apache de WHMCS, **no** de sesiones de terminal SSH.
+**Respaldos necesarios:** base de datos WHMCS (incluye clave cifrada) **y material criptográfico de la instalación WHMCS**. Restaurar la base de datos sin el mismo material criptográfico puede impedir recuperar secretos y contraseñas de las aplicaciones. No regeneres la clave maestra después de desplegar clientes.
 
-Mantener por defecto deshabilitado redespliegue, lecturas de correo y cambios a buzones hasta probar cada acción por separado.
+Requisitos: WHMCS con cifrado Crypt inicializado, PHP 8.2+, ext-curl y ext-sodium. Si la inicialización de Crypt no está disponible, el módulo rechaza la instalación en vez de guardar secretos en claro.
+
+Mantén desactivadas las acciones experimentales de redespliegue directo y CRUD de correo hasta su validación real. La ficha del cliente muestra el asistente de instalación por defecto, incluso para un servicio piloto previo que esté `Active` y no tenga una reserva: el registro se prepara automáticamente durante su primera visita.
 
 ## Instalación y productos WHMCS
 
@@ -36,7 +36,7 @@ Mantener por defecto deshabilitado redespliegue, lecturas de correo y cambios a 
 - WHMCS debe conocer el dominio FQDN del sitio en su ficha de servicio. Solo ese dominio se instala; el cliente no puede sustituirlo mediante POST.
 - Configurar DNS A/AAAA al VPS/proxy correcto; Let's Encrypt depende de DNS correcto.
 - En la compra, CreateAccount devuelve success cuando reservó la plaza, NO porque el sitio ya esté publicado. El estado del módulo aparece «Preparada para instalar» hasta que el usuario despliegue.
-- Para un servicio de pruebas **que ya está marcado Active** y antes no tenía la reserva, se agregó un botón del administrador WHMCS llamado «Preparar instalador del cliente» en la ficha del servicio. Este botón solo crea la reserva, y es idempotente: no despliega ni duplica recursos. Usarlo en staging tras instalar el módulo actualizado y activar los flags. El cliente después abre la ficha en Lagom y verá el asistente.
+- Si el servicio **ya estaba activo** antes de instalar la actualización, WHMCS prepara su reserva cuando el propietario abre «App Ecloud». No hay botón ni comando administrativo por cuenta.
 
 ## Seguridad y manejo de errores
 
