@@ -125,4 +125,87 @@ foreach (['applicationId', 'buildType', 'dockerfile', 'dockerContextPath', 'dock
 }
 check($buildPayload['buildType'] === 'dockerfile', 'Dockerfile build');
 
+
+// Multiple Dokploy control planes and/or remote nodes are pinned by WHMCS server ID.
+$routeFile = tempnam(sys_get_temp_dir(), 'ecloud-dokploy-routes-');
+chmod($routeFile, 0600);
+$serverMap = [
+    'servers' => [
+        '11' => [
+            'url' => 'https://dokploy-a.example.net',
+            'api_key' => 'private-key-A',
+            'environment_id' => 'env_a_001',
+            'remote_server_id' => null,
+        ],
+        '12' => [
+            'url' => 'https://dokploy-b.example.net',
+            'api_key' => 'private-key-B',
+            'environment_id' => 'env_b_001',
+            'remote_server_id' => 'remote_b_001',
+        ],
+        '13' => [
+            'url' => 'https://dokploy-b.example.net',
+            'api_key' => 'private-key-B',
+            'environment_id' => 'env_b_001',
+            'remote_server_id' => 'remote_c_001',
+        ],
+    ],
+];
+file_put_contents($routeFile, json_encode($serverMap, JSON_THROW_ON_ERROR));
+putenv('ECLOUD_DOKPLOY_SERVER_MAP_FILE=' . $routeFile);
+$first = eclouddokploy_resolve_route(['serverid' => 11, 'configoption1' => 'wrong-product-env']);
+$second = eclouddokploy_resolve_route(['serverid' => 12, 'configoption1' => 'wrong-product-env']);
+$third = eclouddokploy_resolve_route(['serverid' => 13]);
+check($first['url'] === 'https://dokploy-a.example.net', 'WHMCS server routes to first control plane');
+check($second['url'] === 'https://dokploy-b.example.net', 'WHMCS server routes to second control plane');
+check($second['environment_id'] === 'env_b_001', 'per-control-plane environment selection');
+check($second['remote_server_id'] === 'remote_b_001', 'remote node mapping');
+check($first['fingerprint'] !== $second['fingerprint'], 'control planes have distinct binding');
+check($second['fingerprint'] !== $third['fingerprint'], 'remote nodes have distinct binding even on same control plane');
+check(eclouddokploy_route_matches($second['fingerprint'], $second), 'correct route accepted');
+check(!eclouddokploy_route_matches(null, $second), 'legacy service cannot silently migrate');
+check(!eclouddokploy_route_matches($first['fingerprint'], $second), 'service cannot move to another control plane');
+check(!eclouddokploy_route_matches($third['fingerprint'], $second), 'service cannot move between remote nodes');
+check(!eclouddokploy_route_matches(str_repeat('0', 64), $second), 'forged route rejected');
+
+$databaseNode = eclouddokploy_database_payload(
+    'mysql', $second['environment_id'], 'db-test', 'dbtest',
+    'dbuser', 'pass', 'root', $second['remote_server_id']
+);
+$applicationNode = eclouddokploy_application_create_payload(
+    $second['environment_id'], 'app-test', $second['remote_server_id']
+);
+check($databaseNode['serverId'] === $applicationNode['serverId'], 'SQL and app deploy to same Dokploy node');
+check(!array_key_exists('serverId', eclouddokploy_application_create_payload('env-test', 'app-test', '')), 'default local node omits serverId');
+
+try {
+    eclouddokploy_resolve_route(['serverid' => 999]);
+    throw new RuntimeException('Test failed: unknown WHMCS server was accepted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: unknown WHMCS server was accepted', 'unknown server fails closed');
+}
+try {
+    eclouddokploy_resolve_route(['serverid' => 0]);
+    throw new RuntimeException('Test failed: unassigned server accepted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: unassigned server accepted', 'WHMCS server assignment required');
+}
+chmod($routeFile, 0644);
+try {
+    eclouddokploy_resolve_route(['serverid' => 11]);
+    throw new RuntimeException('Test failed: world-readable route file accepted');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: world-readable route file accepted', 'route file permission enforcement');
+}
+chmod($routeFile, 0600);
+unlink($routeFile);
+putenv('ECLOUD_DOKPLOY_SERVER_MAP_FILE');
+putenv('ECLOUD_DOKPLOY_ALLOW_LEGACY_SINGLE=0');
+try {
+    eclouddokploy_resolve_route(['serverid' => 11]);
+    throw new RuntimeException('Test failed: global credentials silently used on assigned server');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: global credentials silently used on assigned server', 'do not silently route WHMCS servers to global Dokploy instance');
+}
+
 echo "Dokploy provisioning validations passed\n";
