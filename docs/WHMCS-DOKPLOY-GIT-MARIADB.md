@@ -156,3 +156,20 @@ php /ruta/a/whmcs/modules/servers/eclouddokploy/tests/remote_readonly.php
 El comando solo imprime JSON con `status`, `code` y comprobaciones resumidas; nunca el token, nombres de aplicaciones o respuesta bruta. La salida `status=pass` indica conectividad/API básica, **no** confirma que un aprovisionamiento/SSL/SQL/despliegue real funcione. `status=not_run` indica credenciales no configuradas; `fail` indica problema de conexión o contrato.
 
 La prueba de escritura de extremo a extremo queda pendiente de disponer de un **proyecto/environment de staging** en tu VPS y una aplicación temporal controlada. No ejecutarla sobre cuentas de clientes. Las banderas `ECLOUD_DOKPLOY_ENABLE_PROVISIONING` y `ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY` deben permanecer en `0` durante este diagnóstico.
+
+## Matriz de pruebas automatizadas (GitHub Actions)
+
+El workflow `.github/workflows/whmcs-dokploy-lint.yml` ejecuta:
+
+| Prueba | Qué valida | Modifica Dokploy real |
+|---|---|---|
+| PHP lint | Sintaxis de los archivos PHP del módulo | No |
+| Casos de validación | Dominios, URLs Git, secretos por servicio, rechazo de accesos sin sesión y CSRF | No |
+| Contratos API de base de datos | Campos requeridos para MariaDB, MySQL y PostgreSQL; imágenes fijadas por versión | No |
+| Contrato Dockerfile | Campos obligatorios en application.saveBuildType | No |
+| HTTPS local | Servidor de prueba con certificado TLS, hostname validado y credenciales | No |
+| Consulta API simulada | project.all, application.one y deployment.all | No |
+| Autenticación fallida | Rechaza un token inválido y no filtra su texto en la respuesta | No |
+
+**Esta matriz es de pruebas locales/simuladas, no de aceptación de la instalación del VPS.** Una versión de Dokploy diferente puede variar; comprobar contra la instancia real únicamente con una aplicación de staging y datos desechables.
+
