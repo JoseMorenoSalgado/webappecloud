@@ -90,6 +90,9 @@ jobs:
           if [ "$ready" -ne 1 ]; then echo 'cPanel mock TLS server failed to start'; exit 1; fi
           ECLOUD_CPANEL_TEST_HOST="mail.test" ECLOUD_CPANEL_TEST_TOKEN="cpanel-staging-token-123456789" php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_mail_mock.php"
 
+      - name: Validate accessible Lagom UX, HTML/Smarty structure and JS syntax
+        run: python3 integrations/whmcs/modules/servers/eclouddokploy/tests/ux_template_contract.py
+
       - name: Package WHMCS Dokploy module for staging
         shell: bash
         run: |
