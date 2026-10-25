@@ -89,7 +89,7 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" "$SRC/lib/OrderInstall.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
@@ -101,7 +101,10 @@ jobs:
           Correo corporativo: vincula un segundo servicio WHMCS cPanel activo,
           usa un token UAPI por cuenta en un archivo privado fuera de public_html.
           Funciones correo desactivadas hasta habilitar en staging.
-          Instalacion guiada activada desde Module Settings (guiado/legado).
+          Instalacion guiada activada desde Module Settings (guiado/pedido/legado).
+          Modo pedido: si el cliente facilita Repositorio GitHub como campo
+          personalizado durante la compra, el despliegue se solicita al aprovisionar.
+          Configura aprovisionamiento tras el primer pago.
           Sin variables PHP para habilitar; WHMCS prepara la cuenta al pagar.
           El secreto de cifrado se genera al primer uso y cifra con WHMCS.
           Probar en staging antes de producción.
