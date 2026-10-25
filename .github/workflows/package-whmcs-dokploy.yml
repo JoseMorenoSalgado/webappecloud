@@ -73,17 +73,23 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    Para servicios del piloto anterior con seed, conservarla sin cambios.
    Probar staging antes de habilitar el automático de pago en WHMCS.
    No pegues tokens en tickets, capturas o repositorios.
-5) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
+5) El modulo verifica la primera factura pagada y crea el proyecto
+   + entorno production inmediatamente al aprovisionar en WHMCS.
+   VERDE = proyecto y entorno creados, no necesariamente web publicada.
+   Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
+   usar una sola vez el comando "Conciliar proyecto antiguo" (requiere
+   primera factura pagada, no duplica un proyecto existente).
+6) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
    Instalacion automatica = guiado (predeterminado).
    WHMCS prepara el servicio con CreateAccount despues del primer pago,
    si activas «Automatically setup when first payment is received».
    No crees variables PHP, tokens extras ni secretos manualmente.
-6) El cliente abre App Ecloud, pega GitHub publico y pulsa Publicar.
+7) El cliente abre App Ecloud, pega GitHub publico y pulsa Publicar.
    La creacion de proyectos, entorno, SQL y build se solicita a Dokploy.
    La publicacion real aun necesita DNS/SSL y verificacion de salud.
-7) Mantener desactivados los cambios de correo y el redespliegue directo
+8) Mantener desactivados los cambios de correo y el redespliegue directo
    hasta validar estas acciones por separado en staging.
-8) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
+9) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
 
 Modulo de aprovisionamiento: NO aparece en Modulos adicionales.
 NO activar en produccion sin respaldo y pruebas.
