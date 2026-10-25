@@ -117,7 +117,12 @@ jobs:
           Sin variables PHP para habilitar; WHMCS verifica el primer pago
           y CREA el proyecto y entorno Dokploy antes de devolver verde.
           Si es un pedido anterior con solo reserva, usar
-          "Conciliar proyecto antiguo" en la ficha de servicio WHMCS.
+          "Crear / verificar proyecto Dokploy" desde Comandos del modulo.
+          SOPORTE: la ficha de servicio WHMCS incluye campos GitHub, rama,
+          carpeta, framework, puerto y variables de entorno cifradas.
+          Guardar primero la ficha y ejecutar despues el comando
+          "Instalar aplicacion del cliente". No entrar como el cliente.
+          Ver docs/WHMCS-DOKPLOY-SOPORTE-ADMIN.md.
           El secreto de cifrado se genera al primer uso y cifra con WHMCS.
           Probar en staging antes de producción.
           Importacion publica de GitHub desde la ficha App Ecloud en Lagom.
