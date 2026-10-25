@@ -62,6 +62,13 @@
     {elseif $ecDokployLiveNotice}
       <div class="alert alert-info" role="status">{$ecDokployLiveNotice|escape:'html'}</div>
     {/if}
+    {if $ecDokployIsolationLabel}
+      <div class="ecd-state" role="status">
+        <p class="ecd-kicker">Proyecto independiente</p>
+        <strong>{$ecDokployIsolationLabel|escape:'html'}</strong>
+        <p>Esta aplicación y su base de datos pertenecen a un proyecto Dokploy vinculado únicamente a tu servicio contratado.</p>
+      </div>
+    {/if}
     <div class="ecd-grid">
       <div class="ecd-card">
         <h4>Dominio de la aplicación</h4>
