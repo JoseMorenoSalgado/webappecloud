@@ -174,6 +174,23 @@ function eclouddokploy_redeploy_request(array $params): string
                 strtotime((string) $last->last_redeploy_at) > time() - 900) {
                 return 'Por seguridad, espera 15 minutos entre redespliegues.';
             }
+            // Fail closed if Dokploy cannot confirm this exact application's state.
+            // Never queue another build while Dokploy says an operation is running.
+            $api = new ECloudDokployClient(
+                trim((string) getenv('ECLOUD_DOKPLOY_URL')),
+                trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'))
+            );
+            $remote = $api->get('application.one', [
+                'applicationId' => $record->application_id,
+            ]);
+            if (!isset($remote['applicationId'])
+                || !is_string($remote['applicationId'])
+                || !hash_equals($record->application_id, $remote['applicationId'])) {
+                return 'No se pudo validar la aplicación remota.';
+            }
+            if (($remote['applicationStatus'] ?? null) === 'running') {
+                return 'Dokploy ya está ejecutando una operación para esta aplicación.';
+            }
             // Reserve the request before calling Dokploy to prevent repetition
             // if the API accepted it but the network response was interrupted.
             if ($last) {
@@ -187,10 +204,6 @@ function eclouddokploy_redeploy_request(array $params): string
                 ]);
             }
 
-            $api = new ECloudDokployClient(
-                trim((string) getenv('ECLOUD_DOKPLOY_URL')),
-                trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'))
-            );
             $api->post('application.deploy', ['applicationId' => $record->application_id]);
             if (function_exists('logActivity')) {
                 logActivity('ECloud Dokploy: redeploy requested for WHMCS service=' . $serviceId);
