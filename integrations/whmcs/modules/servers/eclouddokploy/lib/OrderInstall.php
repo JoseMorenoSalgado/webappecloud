@@ -73,6 +73,55 @@ function eclouddokploy_order_invoice_paid(int $serviceId, int $ownerId): bool
 }
 
 /**
+ * Safe, actionable WHMCS error message. Never echo raw HTTP response bodies,
+ * exception traces, SQL or credentials to customers/administrators.
+ */
+function eclouddokploy_safe_project_diagnostic(Throwable $e): string
+{
+    $detail = $e->getMessage();
+    if (preg_match(
+        '/^Dokploy request failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{3})[)][.]$/D',
+        $detail, $match
+    )) {
+        $operation = $match[1];
+        $status = (int) $match[2];
+        if ($status === 401 || $status === 403) {
+            return 'Dokploy rechazó el acceso a ' . $operation . ' (HTTP '
+                . $status . '). Revisa los permisos de la API key configurada en WHMCS.';
+        }
+        if ($status === 404 || $status === 405) {
+            return 'Dokploy no reconoce el endpoint ' . $operation . ' (HTTP '
+                . $status . '). Verifica la versión y la ruta API de Dokploy.';
+        }
+        if ($status === 0) {
+            return 'WHMCS no pudo completar la conexión HTTPS hacia Dokploy en '
+                . $operation . '. Revisa DNS, firewall, TLS y conectividad desde WHMCS.';
+        }
+        return 'Dokploy devolvió HTTP ' . $status . ' durante '
+            . $operation . '. El proyecto podría existir; no se intentó duplicarlo. '
+            . 'Consulta los registros de Dokploy para ese endpoint.';
+    }
+    if (str_contains($detail, 'project.search returned an incomplete or unknown result')) {
+        return 'Dokploy devolvió una estructura inesperada en project.search. '
+            . 'No se creó ni vinculó otro proyecto. Comprueba la compatibilidad de la API.';
+    }
+    if (str_contains($detail, 'Dokploy response exceeded size limit')) {
+        return 'Dokploy devolvió demasiados datos para la consulta. '
+            . 'No se crearon recursos nuevos. Revisa el endpoint que respondió.';
+    }
+    if (str_contains($detail, 'Unexpected Dokploy response')
+        || str_contains($detail, 'Syntax error')
+        || str_contains($detail, 'JSON')) {
+        return 'Dokploy respondió con JSON inválido o inesperado. '
+            . 'No se creó otro proyecto. Comprueba la API del servidor.';
+    }
+    // Fail closed for all other exception classes; never include
+    // potentially sensitive SQL/HTTP exception messages.
+    return 'La verificación del proyecto no pudo completarse. '
+        . 'No se intentará duplicar recursos; revisa la conexión y los registros de WHMCS.';
+}
+
+/**
  * After the first PAID invoice create the real Dokploy project, even when
  * the buyer hasn't provided their GitHub repository. This is what the WHMCS
  * "Create Account" green-success should represent in guided mode.
@@ -103,7 +152,7 @@ function eclouddokploy_order_prepare_project(array $params, array $route): strin
     } catch (\Throwable $e) {
         // Ambiguous API write: the persisted creating_* state prevents
         // duplicate projects when WHMCS retries this module command.
-        return 'No fue posible verificar la creación del proyecto Dokploy. Revisa el proyecto y estado de este servicio antes de reintentar.';
+        return eclouddokploy_safe_project_diagnostic($e);
     } finally {
         $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
     }
