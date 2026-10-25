@@ -35,7 +35,7 @@ El módulo puede leer **directamente la configuración de Servidores de WHMCS**,
 | Name | Dokploy VPS 1 |
 | Module | eclouddokploy |
 | Hostname | dokploy1.ejemplo.com (sin https ni puerto) |
-| Username | **Environment ID de Dokploy** de ese servidor |
+| Username | **Vacío** para servidores nuevos: cada servicio genera su propio proyecto y entorno |
 | Password | **Token API de Dokploy** de ese servidor (privado en WHMCS) |
 | Maximum No. of Accounts | **10** |
 
@@ -74,3 +74,5 @@ Solo si tienes **un panel Dokploy central que administra múltiples VPS remotos*
 - https://docs.whmcs.com/8-10/servers/server-groups/
 - https://developers.whmcs.com/provisioning-modules/module-parameters/
 - https://docs.dokploy.com/docs/api/application
+
+**Actualización:** ahora el módulo crea un proyecto Dokploy por servicio WHMCS. No hay que crear un proyecto compartido ni obtener un Environment ID para el campo Usuario. Véase `docs/WHMCS-DOKPLOY-PROYECTOS-POR-CLIENTE.md`. No cambiar el Username de servidores con servicios previamente iniciados sin conciliación.
