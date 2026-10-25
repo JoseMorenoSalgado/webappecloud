@@ -334,7 +334,7 @@ function eclouddokploy_dockerfile_payload(string $applicationId): array
 }
 
 function eclouddokploy_create_locked(
-    ECloudDokployClient $api, int $id, string $envId, string $gitUrl,
+    ECloudDokployClient $api, int $id, int $clientId, string $gitUrl,
     string $branch, int $port, string $domain, string $seed, string $dbMode,
     string $remoteServerId, string $routeFingerprint
 ): string {
@@ -342,7 +342,8 @@ function eclouddokploy_create_locked(
     $stateRow = $table->where('service_id', $id)->first();
     if (!$stateRow) {
         $table->insert([
-            'service_id' => $id, 'state' => 'new', 'db_mode' => $dbMode,
+            'service_id' => $id, 'owner_client_id' => $clientId,
+            'state' => 'new', 'db_mode' => $dbMode,
             'route_fingerprint' => $routeFingerprint,
             'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
@@ -354,11 +355,15 @@ function eclouddokploy_create_locked(
         !hash_equals($routeFingerprint, $stateRow->route_fingerprint)) {
         return 'La ruta del servidor ha cambiado o no está vinculada. Requiere conciliación administrativa antes de continuar.';
     }
+    if ((int) $stateRow->owner_client_id !== $clientId) {
+        return 'La instalación no pertenece al cliente de WHMCS asignado.';
+    }
     if ((string) $stateRow->db_mode !== $dbMode) {
         return 'El motor de base de datos de este servicio ya fue establecido; no puede cambiarse durante el aprovisionamiento.';
     }
     $state = (string) $stateRow->state;
     $unsafeStates = [
+        'creating_project', 'creating_environment',
         'creating_db', 'deploying_db', 'creating_app',
         'creating_domain', 'requesting_deploy',
     ];
@@ -369,6 +374,45 @@ function eclouddokploy_create_locked(
         return 'Despliegue solicitado. Verificar /api/health y DNS antes de activar el servicio en WHMCS.';
     }
 
+    $projectId = (string) ($stateRow->project_id ?? '');
+    $envId = (string) ($stateRow->environment_id ?? '');
+    if ($state === 'new') {
+        // If Dokploy accepts the create but the response disappears, the
+        // creating_project state blocks retries until an admin reconciles it.
+        eclouddokploy_set_state($id, 'creating_project');
+        $project = $api->post(
+            'project.create', eclouddokploy_project_create_payload($clientId, $id)
+        );
+        $projectId = eclouddokploy_required_id($project, 'projectId');
+        eclouddokploy_set_state($id, 'project_created', ['project_id' => $projectId]);
+        $state = 'project_created';
+    }
+    if ($projectId === '' || !preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId)) {
+        return 'Falta el proyecto privado de este servicio. Se requiere conciliación administrativa.';
+    }
+    if ($state === 'project_created') {
+        // Current Dokploy versions normally create production automatically
+        // with a new project. Reuse only that environment of THIS project.
+        $found = eclouddokploy_find_production_environment(
+            $api->get('environment.byProjectId', ['projectId' => $projectId]),
+            $projectId
+        );
+        if ($found === null) {
+            eclouddokploy_set_state($id, 'creating_environment');
+            $created = $api->post('environment.create', [
+                'name' => 'production',
+                'projectId' => $projectId,
+            ]);
+            $found = eclouddokploy_required_id($created, 'environmentId');
+        }
+        $envId = $found;
+        eclouddokploy_set_state($id, 'environment_ready', ['environment_id' => $envId]);
+        $state = 'environment_ready';
+    }
+    if ($envId === '' || !preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $envId)) {
+        return 'Falta el entorno privado de este servicio. Se requiere conciliación administrativa.';
+    }
+
     $name = 'ecw-' . $id;
     $dbApp = 'ecw-db-' . $id;
     $dbName = 'ecw_' . $id;
@@ -377,7 +421,7 @@ function eclouddokploy_create_locked(
     $rootPass = eclouddokploy_password($seed, 'db-root', $id);
     $dbIdKey = ['mariadb' => 'mariadbId', 'mysql' => 'mysqlId', 'postgres' => 'postgresId'];
     $managed = isset($dbIdKey[$dbMode]);
-    if ($state === 'new') {
+    if ($state === 'environment_ready') {
         if (!$managed) {
             // External DB and DB-free services do not create any database in Dokploy.
             if ($dbMode === 'external') eclouddokploy_external_database_url($id);
