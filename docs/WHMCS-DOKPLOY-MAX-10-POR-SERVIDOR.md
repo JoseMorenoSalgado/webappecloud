@@ -26,46 +26,28 @@ Así WHMCS selecciona VPS 1 para las primeras 10 cuentas y después VPS 2. Con V
 
 Los clientes de correo usan su módulo cPanel actual y no forman parte del grupo Dokploy.
 
-## Conexión de cada servidor Dokploy
+## Conexión de cada servidor Dokploy (sin archivos adicionales)
 
-WHMCS decide el servidor usando `tblhosting.server`; el módulo recibe `$params['serverid']`. Cada servidor WHMCS se enlaza con su instancia/nodo mediante una configuración privada.
+El módulo puede leer **directamente la configuración de Servidores de WHMCS**, de manera semejante al módulo de cPanel:
 
-Ejemplo JSON (solo plantilla, no contiene claves reales):
+| Campo de servidor WHMCS | Qué debes poner |
+|---|---|
+| Name | Dokploy VPS 1 |
+| Module | eclouddokploy |
+| Hostname | dokploy1.ejemplo.com (sin https ni puerto) |
+| Username | **Environment ID de Dokploy** de ese servidor |
+| Password | **Token API de Dokploy** de ese servidor (privado en WHMCS) |
+| Maximum No. of Accounts | **10** |
 
-```json
-{
-  "servers": {
-    "11": {
-      "url": "https://dokploy1.example.com",
-      "api_key": "TOKEN_PRIVADO_DOKPLOY_1",
-      "environment_id": "env_001",
-      "remote_server_id": null
-    },
-    "12": {
-      "url": "https://dokploy2.example.com",
-      "api_key": "TOKEN_PRIVADO_DOKPLOY_2",
-      "environment_id": "env_002",
-      "remote_server_id": null
-    },
-    "13": {
-      "url": "https://dokploy3.example.com",
-      "api_key": "TOKEN_PRIVADO_DOKPLOY_3",
-      "environment_id": "env_003",
-      "remote_server_id": null
-    }
-  }
-}
-```
+Repite con Dokploy VPS 2, VPS 3, etc. En cada uno introduce su propio hostname, Environment ID y token. Haz clic en **Test Connection** para validar autenticación y HTTPS sin crear ningún recurso.
 
-Donde **11, 12 y 13 son ejemplos de IDs internos de WHMCS** (no la posición visual ni el ID que muestra Dokploy). Si tienes **un Dokploy central gestionando VPS remotos**, puedes repetir URL y API key pero asignar diferentes `remote_server_id` a cada uno.
+**No necesitas editar un archivo JSON** para este caso habitual de varias instalaciones de Dokploy.
 
-Guardar el archivo **fuera de public_html**, accesible únicamente al usuario PHP de WHMCS (modo 0600). Definir:
+Internamente WHMCS decide el servidor usando `tblhosting.server`; el módulo recibe `$params['serverid']` y utiliza el hostname/credenciales **de ese servidor**, no las de otro.
 
-```ini
-ECLOUD_DOKPLOY_SERVER_MAP_FILE=/ruta/privada/whmcs/dokploy-servers.json
-```
+### Modo avanzado (opcional)
 
-Mantener **ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0**, **ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=0** y **ECLOUD_DOKPLOY_ENABLE_CLIENT_READS=0** hasta finalizar las pruebas.
+Solo si tienes **un panel Dokploy central que administra múltiples VPS remotos**, el administrador podrá configurar `ECLOUD_DOKPLOY_SERVER_MAP_FILE` para mapear cada servidor WHMCS a un `remote_server_id` diferente. El archivo se almacena fuera de la raíz web con permisos restringidos. Este modo se usa únicamente cuando se necesita seleccionar explícitamente nodos remotos.
 
 ## Cómo queda ligado el cliente
 
