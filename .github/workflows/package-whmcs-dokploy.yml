@@ -1,0 +1,71 @@
+name: Package WHMCS Dokploy staging module
+
+on:
+  push:
+    branches:
+      - feature/whmcs-dokploy-git-mariadb
+    paths:
+      - integrations/whmcs/modules/servers/eclouddokploy/**
+      - .github/workflows/package-whmcs-dokploy.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build downloadable WHMCS module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate PHP source
+        run: |
+          set -euo pipefail
+          find integrations/whmcs/modules/servers/eclouddokploy -name '*.php' -print0 | xargs -0 -n1 php -l
+          php integrations/whmcs/modules/servers/eclouddokploy/tests/validate.php
+      - name: Prepare clean installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          src="integrations/whmcs/modules/servers/eclouddokploy"
+          mkdir -p package/eclouddokploy/lib package/eclouddokploy/templates
+          install -m 0644 "$src/eclouddokploy.php" package/eclouddokploy/eclouddokploy.php
+          install -m 0644 "$src/lib/DokployClient.php" package/eclouddokploy/lib/DokployClient.php
+          install -m 0644 "$src/lib/ClientOperations.php" package/eclouddokploy/lib/ClientOperations.php
+          install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
+          cat > package/LEEME-INSTALACION.txt <<'EOF'
+Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
+
+Version: rama de pruebas PR #38, NO APTO PARA PRODUCCION.
+Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
+
+1) Extrae la carpeta eclouddokploy en:
+   <WHMCS_ROOT>/modules/servers/eclouddokploy/
+2) En WHMCS, crea UN PRODUCTO DE PRUEBA independiente:
+   Configuracion > Productos/Servicios > Productos/Servicios
+   Modulo: eclouddokploy
+   No modifiques los productos existentes de correo/cPanel.
+3) El servidor WHMCS debe disponer de PHP 8.2+, cURL y acceso HTTPS
+   al entorno Dokploy de pruebas.
+4) Las credenciales y ECLOUD_DOKPLOY_URL deben ir en el entorno
+   privado del servidor. NUNCA en el modulo, repositorio o tickets.
+5) Deja APAGADO hasta validar el VPS real:
+   ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0
+   ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=0
+   ECLOUD_DOKPLOY_ENABLE_CLIENT_READS=0
+6) El aprovisionamiento inicial todavia no valida toda la cadena
+   de instalacion y salud; NO activar pedidos automaticamente.
+7) Revisa docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub
+   y docs/WHMCS-DOKPLOY-STAGING-RUNNER.md.
+
+NO instalar en una cuenta WHMCS productiva sin respaldo y pruebas.
+EOF
+          cd package
+          zip -qr ../eclouddokploy-whmcs-staging.zip eclouddokploy LEEME-INSTALACION.txt
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclouddokploy-whmcs-staging
+          path: eclouddokploy-whmcs-staging.zip
+          retention-days: 30
+          if-no-files-found: error
