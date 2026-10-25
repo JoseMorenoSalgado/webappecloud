@@ -455,14 +455,18 @@ function eclouddokploy_install_from_wizard(array $params): string
                 return 'La instalación ya está iniciada. Consulta el estado en tu panel; no se duplicarán recursos.';
             }
             if ($state === 'awaiting_setup') {
-                // Validation and encryption happen BEFORE entering any remote
-                // state. Persist once; never use a second form to change code.
-                try {
-                    $setup = eclouddokploy_setup_prepare($_POST);
-                } catch (InvalidArgumentException $e) {
-                    return $e->getMessage();
+                // Crash-safe save: if the DB persisted setup before a PHP
+                // interruption, reuse it instead of a duplicate INSERT or
+                // allowing a different repository on the second POST.
+                $existing = eclouddokploy_setup_saved($id, $seed);
+                if ($existing === null) {
+                    try {
+                        $setup = eclouddokploy_setup_prepare($_POST);
+                    } catch (InvalidArgumentException $e) {
+                        return $e->getMessage();
+                    }
+                    eclouddokploy_setup_persist($id, $setup, $seed);
                 }
-                eclouddokploy_setup_persist($id, $setup, $seed);
                 eclouddokploy_set_state($id, 'new');
             }
             $setup = eclouddokploy_setup_saved($id, $seed);
