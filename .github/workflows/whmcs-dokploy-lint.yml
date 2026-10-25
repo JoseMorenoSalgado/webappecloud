@@ -49,6 +49,8 @@ jobs:
           php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_readonly.php" | tee "$TEMP_DIR/output.txt"
           grep -q '"status":"pass"' "$TEMP_DIR/output.txt"
           grep -q '"test_application_lookup":"ok"' "$TEMP_DIR/output.txt"
+          # Mutations below operate ONLY on the ephemeral local mock's RAM.
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/mock_project_isolation.php"
           export ECLOUD_DOKPLOY_API_KEY="wrong-token"
           if php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_readonly.php" > "$TEMP_DIR/denied.txt"; then
             echo 'Invalid Dokploy token was accepted'; exit 1
