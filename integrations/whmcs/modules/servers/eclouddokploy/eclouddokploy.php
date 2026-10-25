@@ -94,6 +94,10 @@ function eclouddokploy_CreateAccount(array $params): string
             return 'El aprovisionamiento de este cliente ya está en ejecución.';
         }
         try {
+            if ($route['whmcs_server_id'] > 0 &&
+                !eclouddokploy_server_has_capacity($route['whmcs_server_id'], $serviceId)) {
+                return 'Este servidor alcanzó su límite de cuentas o su asignación no es válida. Verificar el grupo de servidores WHMCS; no se instalaron recursos adicionales.';
+            }
             return eclouddokploy_create_locked(
                 $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode,
                 $route['remote_server_id'], $route['fingerprint']
