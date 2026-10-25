@@ -49,6 +49,54 @@ function eclouddokploy_ConfigOptions(): array
     ];
 }
 
+/**
+ * Explain the cause of WHMCS Test Connection without leaking any API response,
+ * token, hostname, or network-internal detail.
+ */
+function eclouddokploy_safe_connection_error(Throwable $e): string
+{
+    $message = $e->getMessage();
+    if (str_contains($message, 'Dokploy API key is missing')) {
+        return 'Falta la API key de Dokploy en el campo Contraseña de WHMCS.';
+    }
+    if (preg_match('/^Dokploy read failed: project[.]all [(]HTTP ([0-9]{3})[)][.]$/D', $message, $m)) {
+        switch ((int) $m[1]) {
+            case 401:
+                return 'HTTP 401: Dokploy rechazó la API key. Genera un token nuevo en Settings > Profile > API/CLI.';
+            case 403:
+                return 'HTTP 403: la API key no tiene permisos para consultar proyectos.';
+            case 404:
+                return 'HTTP 404: el dominio responde, pero /api/project.all no existe en ese destino. Verifica dominio y proxy.';
+            case 429:
+                return 'HTTP 429: demasiadas solicitudes; vuelve a probar más tarde.';
+            case 502:
+            case 503:
+            case 504:
+                return 'Dokploy no responde detrás del proxy HTTPS (HTTP ' . (int) $m[1] . ').';
+            default:
+                return 'Dokploy devolvió HTTP ' . (int) $m[1] . '. Revisa la API y el proxy del servidor.';
+        }
+    }
+    if (preg_match('/^Dokploy transport failed [(]cURL ([0-9]+)[)][.]$/D', $message, $m)) {
+        switch ((int) $m[1]) {
+            case 6:
+                return 'Error DNS: el servidor WHMCS no puede resolver el hostname de Dokploy.';
+            case 7:
+                return 'Error de red: el servidor WHMCS no puede conectar con Dokploy por HTTPS (443).';
+            case 28:
+                return 'Tiempo de espera agotado al conectar con Dokploy. Revisa firewall y red.';
+            case 35:
+                return 'Falló el establecimiento de la conexión TLS con Dokploy.';
+            case 51:
+            case 60:
+                return 'Certificado HTTPS de Dokploy inválido o no confiable.';
+            default:
+                return 'Fallo de conexión con Dokploy (cURL ' . (int) $m[1] . ').';
+        }
+    }
+    return 'No se pudo validar la API de Dokploy. Comprueba hostname HTTPS, token y respuesta JSON.';
+}
+
 function eclouddokploy_TestConnection(array $params): array
 {
     try {
@@ -64,7 +112,7 @@ function eclouddokploy_TestConnection(array $params): array
         }
         return ['success' => true, 'error' => ''];
     } catch (Throwable $e) {
-        return ['success' => false, 'error' => 'Conexión HTTPS o token Dokploy no válido.'];
+        return ['success' => false, 'error' => eclouddokploy_safe_connection_error($e)];
     }
 }
 
