@@ -49,6 +49,25 @@ function eclouddokploy_ConfigOptions(): array
     ];
 }
 
+function eclouddokploy_TestConnection(array $params): array
+{
+    try {
+        $hostname = strtolower(trim((string) ($params['serverhostname'] ?? '')));
+        $key = trim((string) ($params['serverpassword'] ?? ''));
+        if (!eclouddokploy_valid_server_hostname($hostname)) {
+            return ['success' => false, 'error' => 'Hostname de Dokploy inválido.'];
+        }
+        $client = new ECloudDokployClient('https://' . $hostname, $key);
+        $projects = $client->get('project.all', []);
+        if (!array_is_list($projects)) {
+            return ['success' => false, 'error' => 'Respuesta de Dokploy inválida.'];
+        }
+        return ['success' => true, 'error' => ''];
+    } catch (Throwable $e) {
+        return ['success' => false, 'error' => 'Conexión HTTPS o token Dokploy no válido.'];
+    }
+}
+
 /** Expose no public client provisioning actions until health verification is integrated. */
 function eclouddokploy_CreateAccount(array $params): string
 {
