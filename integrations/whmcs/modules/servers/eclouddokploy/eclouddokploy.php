@@ -240,6 +240,13 @@ function eclouddokploy_create_locked(
             if ($dbMode !== 'postgres') {
                 $payload['databaseRootPassword'] = $rootPass;
             }
+            // Pin supported database images. Avoid upstream API defaults that
+            // can move between major versions or reference invalid tags.
+            $payload['dockerImage'] = [
+                'mariadb' => 'mariadb:11.4',
+                'mysql' => 'mysql:8.4',
+                'postgres' => 'postgres:17',
+            ][$dbMode];
             eclouddokploy_set_state($id, 'creating_db');
             $db = $api->post($dbMode . '.create', $payload);
             $dbId = eclouddokploy_required_id($db, $dbIdKey[$dbMode]);
@@ -286,6 +293,7 @@ function eclouddokploy_create_locked(
         $api->post('application.saveBuildType', [
             'applicationId' => $appId, 'buildType' => 'dockerfile',
             'dockerfile' => 'Dockerfile', 'dockerContextPath' => '/', 'dockerBuildStage' => null,
+            'herokuVersion' => null, 'railpackVersion' => null,
         ]);
         $envLines = ['NODE_ENV=production', 'PORT=' . $port];
         if ($managed) {
