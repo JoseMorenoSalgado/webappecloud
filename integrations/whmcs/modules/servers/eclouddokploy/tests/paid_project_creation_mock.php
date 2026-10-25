@@ -256,6 +256,37 @@ namespace {
         'route_fingerprint'=>$fingerprint,
         'state'=>'awaiting_setup', 'project_id'=>null, 'environment_id'=>null,
     ];
+    // The lightweight search API (not fragile project.all) must find the
+    // pre-existing remote object by the exact client/service name.
+    $small = $api->get('project.search', [
+        'name'=>'ec-client-225-service-293', 'limit'=>100, 'offset'=>0,
+    ]);
+    assertion(isset($small['items'], $small['total']) && $small['total'] >= 1,
+        'Dokploy returns documented compact project.search items and total');
+    assertion(
+        eclouddokploy_lookup_service_project($api, 225, 293) === $real293,
+        'exact 225/293 project recovered using project.search, not project.all'
+    );
+    assertion(
+        eclouddokploy_lookup_service_project($api, 225, 295) === null,
+        'search verifies absent project without creating anything'
+    );
+    $diagnostic = eclouddokploy_safe_project_diagnostic(
+        new RuntimeException('Dokploy request failed: project.search (HTTP 500).')
+    );
+    assertion(str_contains($diagnostic, 'HTTP 500')
+        && str_contains($diagnostic, 'project.search'),
+        'safe admin error exposes API endpoint/status, not generic error');
+    $authDiagnostic = eclouddokploy_safe_project_diagnostic(
+        new RuntimeException('Dokploy request failed: project.search (HTTP 403).')
+    );
+    assertion(str_contains($authDiagnostic, 'permisos'),
+        'safe admin message identifies API permission denial');
+    $scrubbed = eclouddokploy_safe_project_diagnostic(
+        new RuntimeException('SQL secret=mysql://private:password@host/db')
+    );
+    assertion(!str_contains($scrubbed, 'private') && !str_contains($scrubbed, 'password'),
+        'hidden SQL and raw exception details never printed to WHMCS');
     $before293 = count($api->get('project.all', []));
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
