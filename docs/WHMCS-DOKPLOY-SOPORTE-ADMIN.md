@@ -55,6 +55,7 @@ Al terminar, WHMCS reporta éxito cuando **se ha solicitado** el despliegue. Que
 - La configuración queda **inmutable** cuando se guarda para crear recursos; una segunda edición se bloquea para prevenir confusión y sobrescritura de aplicaciones ajenas.
 - Si el cliente ya configuró GitHub, soporte utiliza esa configuración guardada y no necesita volver a introducirla.
 - No se expone al navegador la API key, contraseñas de BD o variables descifradas.
+- Las acciones de soporte (guardar repositorio, crear/verificar proyecto y solicitar despliegue) dejan una entrada en el registro de actividad de WHMCS con ID del administrador, servicio y cliente, **sin credenciales, URL Git ni secretos**.
 - Si algún paso remoto quedó ambiguo (ej. `creating_project`, `creating_app`), no se reintenta automáticamente ni se crean proyectos nuevos.
 - **No autoriza crear infraestructura sin pago** en esta versión. Una cortesía/demo comercial debe formalizarse como un servicio de prueba facturado o activado conforme a un flujo de autorización separado; no bypass del control de pago.
 
