@@ -151,6 +151,14 @@ function eclouddokploy_CreateAccount(array $params): string
         // WHMCS assigns a specific server from the product's server group.
         // Its immutable route maps to the Dokploy instance + deployment node.
         $route = eclouddokploy_resolve_route($params);
+        $service = Capsule::table('tblhosting')->where('id', $serviceId)
+            ->where('userid', $clientId)->first(['packageid', 'server', 'domain', 'domainstatus']);
+        if (!$service || (int) $service->packageid !== (int) ($params['pid'] ?? 0)
+            || (int) $service->server !== (int) $route['whmcs_server_id']
+            || strtolower(rtrim((string) $service->domain, '.')) !== $domain
+            || !in_array((string) $service->domainstatus, ['Pending', 'Active'], true)) {
+            return 'El propietario, el producto o el servidor WHMCS no coincide. Instalación rechazada.';
+        }
         $api = new ECloudDokployClient($route['url'], $route['api_key']);
         eclouddokploy_create_table();
 
@@ -527,6 +535,10 @@ function eclouddokploy_public_state(string $state): array
 {
     $map = [
         'new' => ['Pendiente de instalación', 'Estamos preparando los recursos de tu aplicación.'],
+        'creating_project' => ['Creando proyecto privado', 'Se está reservando un proyecto exclusivo de este servicio.'],
+        'project_created' => ['Proyecto privado registrado', 'Estamos preparando el entorno exclusivo del servicio.'],
+        'creating_environment' => ['Creando entorno privado', 'Se está creando un entorno para el proyecto del cliente.'],
+        'environment_ready' => ['Entorno privado configurado', 'Preparando los recursos de la aplicación.'],
         'creating_db' => ['Configurando base de datos', 'Se está solicitando la creación de la base de datos.'],
         'db_created' => ['Base de datos registrada', 'La base de datos está pendiente de inicio.'],
         'deploying_db' => ['Iniciando base de datos', 'El servidor está preparando el motor de base de datos.'],
@@ -566,6 +578,7 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployGitUrl' => '',
         'ecDokployBranch' => '',
         'ecDokployDbMode' => '',
+        'ecDokployIsolationLabel' => '',
         'ecDokployState' => $public[0],
         'ecDokployDescription' => $public[1],
         'ecDokployProvisioned' => false,
@@ -620,12 +633,19 @@ function eclouddokploy_ClientArea(array $params): array
         } else {
             $record = Capsule::table('mod_ecloud_dokploy_services')
                 ->where('service_id', $serviceId)
-                ->first(['state', 'application_id', 'route_fingerprint']);
+                ->first(['state', 'application_id', 'route_fingerprint',
+                    'owner_client_id', 'project_id', 'environment_id']);
             if ($record) {
-                if (!eclouddokploy_route_matches($record->route_fingerprint, $route)) {
+                if (!eclouddokploy_route_matches($record->route_fingerprint, $route)
+                    || !eclouddokploy_service_isolation_valid(
+                        $record->owner_client_id, $record->project_id,
+                        $record->environment_id, $clientId
+                    )) {
                     throw new RuntimeException('Application host assignment mismatch.');
                 }
                 $public = eclouddokploy_public_state((string) $record->state);
+                $view['ecDokployIsolationLabel'] =
+                    eclouddokploy_project_name($clientId, $serviceId);
                 $view['ecDokployProvisioned'] =
                     (string) $record->state === 'deployment_requested'
                     && !empty($record->application_id);
@@ -635,7 +655,10 @@ function eclouddokploy_ClientArea(array $params): array
                     if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_READS') === '1') {
                         try {
                             $api = new ECloudDokployClient($route['url'], $route['api_key']);
-                            $live = eclouddokploy_live_overview($api, (string) $record->application_id);
+                            $live = eclouddokploy_live_overview(
+                                $api, (string) $record->application_id,
+                                (string) $record->environment_id
+                            );
                             $view['ecDokployLiveState'] = $live['state'];
                             $view['ecDokployLiveDescription'] = $live['description'];
                             $view['ecDokployHistory'] = $live['history'];
