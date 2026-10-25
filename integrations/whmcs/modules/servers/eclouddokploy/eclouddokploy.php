@@ -19,7 +19,7 @@ use WHMCS\Database\Capsule;
 
 function eclouddokploy_MetaData(): array
 {
-    return ['DisplayName' => 'Elearning Cloud — Dokploy (piloto)', 'APIVersion' => '1.1'];
+    return ['DisplayName' => 'Elearning Cloud — Dokploy (piloto)', 'APIVersion' => '1.1', 'RequiresServer' => true, 'DefaultSSLPort' => '443'];
 }
 
 function eclouddokploy_ConfigOptions(): array
@@ -27,7 +27,7 @@ function eclouddokploy_ConfigOptions(): array
     return [
         'Dokploy Environment ID' => [
             'Type' => 'text', 'Size' => '48',
-            'Description' => 'Solo modo legacy de un servidor. Con varios servidores se usa el Environment ID de la ruta privada.',
+            'Description' => 'Con varios VPS independientes, introduce el Environment ID como Username en cada servidor WHMCS.',
         ],
         'Git Repository HTTPS' => [
             'Type' => 'text', 'Size' => '80',
