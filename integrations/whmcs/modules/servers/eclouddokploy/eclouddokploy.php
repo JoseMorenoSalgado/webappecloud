@@ -17,6 +17,7 @@ require_once __DIR__ . '/lib/ServerRouting.php';
 require_once __DIR__ . '/lib/ProjectIsolation.php';
 require_once __DIR__ . '/lib/CpanelMail.php';
 require_once __DIR__ . '/lib/EmailOperations.php';
+require_once __DIR__ . '/lib/SelfService.php';
 
 use WHMCS\Database\Capsule;
 
@@ -122,6 +123,19 @@ function eclouddokploy_TestConnection(array $params): array
 /** Expose no public client provisioning actions until health verification is integrated. */
 function eclouddokploy_CreateAccount(array $params): string
 {
+    // Opt-in account reservation: purchase activates the hosting subscription,
+    // the customer then imports THEIR code from the Lagom installation wizard.
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1'
+        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1') {
+        try {
+            $route = eclouddokploy_resolve_route($params);
+            return eclouddokploy_setup_reserve(
+                $params, $route, (string) ($params['configoption5'] ?? 'none')
+            );
+        } catch (Throwable $e) {
+            return 'No se pudo preparar el servicio para la instalación asistida.';
+        }
+    }
     if (getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') {
         return 'El despliegue está desactivado en WHMCS. Habilitar solo en staging.';
     }
@@ -346,7 +360,7 @@ function eclouddokploy_dockerfile_payload(string $applicationId): array
 function eclouddokploy_create_locked(
     ECloudDokployClient $api, int $id, int $clientId, string $gitUrl,
     string $branch, int $port, string $domain, string $seed, string $dbMode,
-    string $remoteServerId, string $routeFingerprint
+    string $remoteServerId, string $routeFingerprint, array $setup = []
 ): string {
     $table = Capsule::table('mod_ecloud_dokploy_services');
     $stateRow = $table->where('service_id', $id)->first();
@@ -478,12 +492,18 @@ function eclouddokploy_create_locked(
             'applicationId' => $appId,
             'customGitUrl' => $gitUrl,
             'customGitBranch' => $branch,
-            'customGitBuildPath' => '/',
+            'customGitBuildPath' => (string) ($setup['root_path'] ?? '/'),
             'customGitSSHKeyId' => null,
             'watchPaths' => [],
             'enableSubmodules' => false,
         ]);
-        $api->post('application.saveBuildType', eclouddokploy_dockerfile_payload($appId));
+        $api->post('application.saveBuildType',
+            $setup !== []
+                ? eclouddokploy_setup_build_payload(
+                    $appId, (string) $setup['preset'], (string) $setup['root_path']
+                )
+                : eclouddokploy_dockerfile_payload($appId)
+        );
         $envLines = ['NODE_ENV=production', 'PORT=' . $port];
         if ($managed) {
             $details = $api->get($dbMode . '.one', [$dbIdKey[$dbMode] => $dbId]);
@@ -498,6 +518,9 @@ function eclouddokploy_create_locked(
             $envLines[] = 'DATABASE_URL=' . $databaseUrl;
         } elseif ($dbMode === 'external') {
             $envLines[] = 'DATABASE_URL=' . eclouddokploy_external_database_url($id);
+        }
+        if ($setup !== [] && !empty($setup['env'])) {
+            $envLines = array_merge($envLines, eclouddokploy_setup_env_lines($setup['env']));
         }
         $api->post('application.saveEnvironment', [
             'applicationId' => $appId,
@@ -537,6 +560,7 @@ function eclouddokploy_public_state(string $state): array
 {
     $map = [
         'new' => ['Pendiente de instalación', 'Estamos preparando los recursos de tu aplicación.'],
+        'awaiting_setup' => ['Preparada para instalar', 'Importa tu repositorio público de GitHub en el asistente de instalación.'],
         'creating_project' => ['Creando proyecto privado', 'Se está reservando un proyecto exclusivo de este servicio.'],
         'project_created' => ['Proyecto privado registrado', 'Estamos preparando el entorno exclusivo del servicio.'],
         'creating_environment' => ['Creando entorno privado', 'Se está creando un entorno para el proyecto del cliente.'],
@@ -581,6 +605,18 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployBranch' => '',
         'ecDokployDbMode' => '',
         'ecDokployIsolationLabel' => '',
+        'ecSetupEnabled' => false,
+        'ecSetupCanInstall' => false,
+        'ecSetupToken' => '',
+        'ecSetupConfigured' => false,
+        'ecSetupGitUrl' => '',
+        'ecSetupBranch' => '',
+        'ecSetupPreset' => '',
+        'ecSetupRoot' => '',
+        'ecSetupPort' => 3000,
+        'ecSetupDomain' => '',
+        'ecSetupEnvNames' => [],
+        'ecSetupDbMode' => '',
         'ecDokployState' => $public[0],
         'ecDokployDescription' => $public[1],
         'ecDokployProvisioned' => false,
@@ -641,6 +677,9 @@ function eclouddokploy_ClientArea(array $params): array
             'none' => 'Sin base de datos',
         ];
         $view['ecDokployDbMode'] = $modes[$dbMode] ?? 'Sin confirmar';
+        $view['ecSetupEnabled'] = getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1';
+        $view['ecSetupDomain'] = $domain;
+        $view['ecSetupDbMode'] = $view['ecDokployDbMode'];
 
         if (!Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) {
             $public = ['Sin instalación registrada', 'Este servicio aún no tiene un despliegue registrado en Dokploy.'];
@@ -660,11 +699,32 @@ function eclouddokploy_ClientArea(array $params): array
                 );
                 // During project creation the identifiers are not known yet.
                 // Progress can be displayed but no application action is enabled.
-                $early = ['new', 'creating_project', 'project_created', 'creating_environment'];
+                $early = ['awaiting_setup', 'new', 'creating_project', 'project_created', 'creating_environment'];
                 if (!$isolated && !in_array((string) $record->state, $early, true)) {
                     throw new RuntimeException('Legacy/shared project requires manual reconciliation.');
                 }
                 $public = eclouddokploy_public_state((string) $record->state);
+                if ($view['ecSetupEnabled']
+                    && in_array((string) $record->state, ['awaiting_setup', 'new'], true)) {
+                    $view['ecSetupCanInstall'] = $active
+                        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1';
+                    $view['ecSetupToken'] = eclouddokploy_setup_csrf($serviceId);
+                }
+                if ($view['ecSetupEnabled']
+                    && Capsule::schema()->hasTable('mod_ecloud_dokploy_setup')) {
+                    $saved = Capsule::table('mod_ecloud_dokploy_setup')
+                        ->where('service_id', $serviceId)->first([
+                            'git_url', 'branch', 'root_path', 'preset', 'port'
+                        ]);
+                    if ($saved) {
+                        $view['ecSetupConfigured'] = true;
+                        $view['ecSetupGitUrl'] = (string) $saved->git_url;
+                        $view['ecSetupBranch'] = (string) $saved->branch;
+                        $view['ecSetupRoot'] = (string) $saved->root_path;
+                        $view['ecSetupPreset'] = (string) $saved->preset;
+                        $view['ecSetupPort'] = (int) $saved->port;
+                    }
+                }
                 if ($isolated) {
                     $view['ecDokployIsolationLabel'] =
                         eclouddokploy_project_name($clientId, $serviceId);
@@ -756,6 +816,10 @@ function eclouddokploy_ClientAreaAllowedFunctions(): array
     if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1') {
         $actions[] = 'Redeploy';
     }
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') === '1'
+        && getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') === '1') {
+        $actions[] = 'InstallApp';
+    }
     if (getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS') === '1'
         && getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES') === '1') {
         $actions[] = 'EmailAction';
@@ -772,4 +836,10 @@ function eclouddokploy_Redeploy(array $params): string
 function eclouddokploy_EmailAction(array $params): string
 {
     return eclouddokploy_email_action($params);
+}
+
+/** First guided install: use only the hosting service's pinned server/domain. */
+function eclouddokploy_InstallApp(array $params): string
+{
+    return eclouddokploy_install_from_wizard($params);
 }
