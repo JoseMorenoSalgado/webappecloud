@@ -637,17 +637,26 @@ function eclouddokploy_ClientArea(array $params): array
                     'owner_client_id', 'project_id', 'environment_id']);
             if ($record) {
                 if (!eclouddokploy_route_matches($record->route_fingerprint, $route)
-                    || !eclouddokploy_service_isolation_valid(
-                        $record->owner_client_id, $record->project_id,
-                        $record->environment_id, $clientId
-                    )) {
-                    throw new RuntimeException('Application host assignment mismatch.');
+                    || (int) $record->owner_client_id !== $clientId) {
+                    throw new RuntimeException('WHMCS service owner/host mismatch.');
+                }
+                $isolated = eclouddokploy_service_isolation_valid(
+                    $record->owner_client_id, $record->project_id,
+                    $record->environment_id, $clientId
+                );
+                // During project creation the identifiers are not known yet.
+                // Progress can be displayed but no application action is enabled.
+                $early = ['new', 'creating_project', 'project_created', 'creating_environment'];
+                if (!$isolated && !in_array((string) $record->state, $early, true)) {
+                    throw new RuntimeException('Legacy/shared project requires manual reconciliation.');
                 }
                 $public = eclouddokploy_public_state((string) $record->state);
-                $view['ecDokployIsolationLabel'] =
-                    eclouddokploy_project_name($clientId, $serviceId);
+                if ($isolated) {
+                    $view['ecDokployIsolationLabel'] =
+                        eclouddokploy_project_name($clientId, $serviceId);
+                }
                 $view['ecDokployProvisioned'] =
-                    (string) $record->state === 'deployment_requested'
+                    $isolated && (string) $record->state === 'deployment_requested'
                     && !empty($record->application_id);
                 if ($active && $view['ecDokployProvisioned']) {
                     $view['ecDokployCanRedeploy'] =
