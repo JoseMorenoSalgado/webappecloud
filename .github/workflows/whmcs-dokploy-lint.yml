@@ -1,0 +1,26 @@
+name: WHMCS Dokploy module checks
+
+on:
+  pull_request:
+    paths:
+      - 'integrations/whmcs/modules/servers/eclouddokploy/**'
+      - '.github/workflows/whmcs-dokploy-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'integrations/whmcs/modules/servers/eclouddokploy/**'
+
+permissions:
+  contents: read
+
+jobs:
+  php-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PHP syntax
+        run: |
+          php -v
+          find integrations/whmcs/modules/servers/eclouddokploy -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Run offline contract checks
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/validate.php
