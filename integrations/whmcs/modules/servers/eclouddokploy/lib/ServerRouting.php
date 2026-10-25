@@ -88,6 +88,33 @@ function eclouddokploy_resolve_route(array $params): array
     return $route;
 }
 
+/**
+ * WHMCS server groups choose the destination. This is a second guard for
+ * manual provisioning, stale group assignment and simultaneous pending orders.
+ * Counts all provisioned or reserved WHMCS accounts including the new service.
+ */
+function eclouddokploy_within_capacity(int $maximum, int $reserved): bool
+{
+    return $maximum > 0 && $reserved >= 1 && $reserved <= $maximum;
+}
+
+function eclouddokploy_server_has_capacity(int $whmcsServerId, int $serviceId): bool
+{
+    if ($whmcsServerId <= 0 || $serviceId <= 0) return false;
+    $db = \WHMCS\Database\Capsule::connection();
+    $host = $db->table('tblservers')->where('id', $whmcsServerId)
+        ->first(['id', 'maxaccounts']);
+    $service = $db->table('tblhosting')->where('id', $serviceId)
+        ->first(['id', 'server', 'domainstatus']);
+    if (!$host || !$service || (int) $service->server !== $whmcsServerId
+        || !in_array((string) $service->domainstatus, ['Pending', 'Active', 'Suspended'], true)) {
+        return false;
+    }
+    $reserved = (int) $db->table('tblhosting')->where('server', $whmcsServerId)
+        ->whereIn('domainstatus', ['Pending', 'Active', 'Suspended'])->count();
+    return eclouddokploy_within_capacity((int) $host->maxaccounts, $reserved);
+}
+
 /** Existing services can never be silently re-homed to a new server. */
 function eclouddokploy_route_matches(?string $persistedFingerprint, array $route): bool
 {
