@@ -272,7 +272,7 @@
               <input type="hidden" name="ec_mail_csrf" value="{$ecMailToken|escape:'html'}">
               <div class="ecd-mail-fields">
                 <label>Nombre de la cuenta
-                  <input name="ec_mail_local" type="text" placeholder="ventas" pattern="[a-zA-Z0-9._+-]+" required maxlength="63" autocapitalize="none" autocomplete="off">
+                  <input name="ec_mail_local" type="text" placeholder="ventas" pattern="[a-zA-Z0-9._-]+" required maxlength="63" autocapitalize="none" autocomplete="off">
                 </label>
                 <label>Dominio (fijo)
                   <input type="text" value="@{$ecMailDomain|escape:'html'}" disabled>
