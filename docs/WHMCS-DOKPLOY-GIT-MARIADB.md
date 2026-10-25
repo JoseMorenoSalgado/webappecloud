@@ -40,6 +40,29 @@ php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
 
 Guardar la semilla en un gestor de secretos y respaldarla de forma segura: cambiarla sin migrar las contraseñas deja sin conexión los servicios existentes.
 
+
+## Integración con WHMCS y Lagom: servicio independiente
+
+**Decisión adoptada:** Dokploy aparece como otro producto/servicio de WHMCS, dentro de **Mis servicios**, totalmente separado del producto de correo. El módulo comercial de cPanel ya existente continúa administrando los paquetes de correo creados anteriormente, sin cambios en su código ni en su facturación.
+
+1. Copiar este módulo de provisión a \`modules/servers/eclouddokploy/\` en un WHMCS de pruebas.
+2. En **Configuración → Productos/Servicios → Productos/Servicios**, crear un **grupo de productos "Aplicaciones web"** si no existe.
+3. Crear un producto de tipo hosting o servicio adecuado al catálogo, nombre sugerido **"Hosting de aplicaciones Next.js"**, y seleccionar **eclouddokploy** como módulo en sus opciones.
+4. Configurar \`Dokploy Environment ID\`, Git, rama, puerto y motor de base de datos para ese producto. Si el cliente necesita otro motor, utilizar otro producto hasta implementar opciones configurables por pedido.
+5. No asignar ni cambiar este módulo en los productos de correo. No editar plantillas de Lagom ni reemplazar la vista completa del servicio.
+6. Al contratar la aplicación, el cliente verá **otro renglón en Mis servicios**, y al abrirlo verá una sección propia **"Administrar aplicación"** integrada en la ficha estándar. Facturas y renovaciones mantienen el flujo habitual de WHMCS.
+
+### Función y plantilla implementadas
+
+- \`eclouddokploy_ClientArea\` devuelve \`tabOverviewModuleOutputTemplate\` apuntando a \`templates/clientarea.tpl\`: se añade a la ficha de un producto sin sustituir facturación, dominio u otros datos de Lagom.
+- Comprueba propietario, ID, producto y dominio desde \`tblhosting\`, y no llama a Dokploy cuando el cliente abre la página.
+- Presenta el estado almacenado del proceso de aprovisionamiento, dominio, tipo de base de datos, repositorio y rama. El estado "Despliegue solicitado" **no afirma** que el sitio esté funcionando.
+- En esta versión, la ficha de cliente es **de solo lectura**. No permite alterar el repositorio, borrar bases, realizar despliegues ni acceder al panel administrador de Dokploy.
+- Se requiere validar visualmente en la versión y variante de Lagom instalada; las variables de estilo tienen valores de respaldo y todo CSS está limitado al componente de Dokploy.
+
+**Importante:** esto es la integración de interfaz para separar los servicios; los tests offline y la vista no confirman que el aprovisionamiento real de Dokploy funcione en producción. Mantener \`ECLOUD_DOKPLOY_ENABLE_PROVISIONING\` apagado hasta completar pruebas de staging.
+
+
 ## Producto WHMCS
 
 Crear producto que utilice módulo `eclouddokploy` y rellenar Config Options:
