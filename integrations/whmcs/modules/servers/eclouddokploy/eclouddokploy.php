@@ -141,8 +141,13 @@ function eclouddokploy_CreateAccount(array $params): string
                 $params, $route, (string) ($params['configoption5'] ?? 'none')
             );
             if ($reserved !== 'success') return $reserved;
-            // Optional full automation when the buyer entered the public GitHub
-            // URL at checkout and this product opted into "pedido".
+            // Immediately create the client's real private Dokploy project +
+            // production environment after payment, before any Git code.
+            // A green WHMCS "Create" now implies actual Dokploy resources.
+            $prepared = eclouddokploy_order_prepare_project($params, $route);
+            if ($prepared !== 'success') return $prepared;
+            // If this product is "pedido" and buyer provided GitHub, continue
+            // with app, DB and deployment. Otherwise leave project ready.
             return eclouddokploy_order_auto_install($params, $route);
         } catch (Throwable $e) {
             // Never leak server tokens or internal paths to WHMCS staff.
@@ -574,10 +579,11 @@ function eclouddokploy_public_state(string $state): array
     $map = [
         'new' => ['Pendiente de instalación', 'Estamos preparando los recursos de tu aplicación.'],
         'awaiting_setup' => ['Preparada para instalar', 'Importa tu repositorio público de GitHub en el asistente de instalación.'],
+        'environment_ready' => ['Proyecto Dokploy creado', 'Tu proyecto privado y entorno production ya existen. Importa tu aplicación para completar el despliegue.'],
         'creating_project' => ['Creando proyecto privado', 'Se está reservando un proyecto exclusivo de este servicio.'],
         'project_created' => ['Proyecto privado registrado', 'Estamos preparando el entorno exclusivo del servicio.'],
         'creating_environment' => ['Creando entorno privado', 'Se está creando un entorno para el proyecto del cliente.'],
-        'environment_ready' => ['Entorno privado configurado', 'Preparando los recursos de la aplicación.'],
+
         'creating_db' => ['Configurando base de datos', 'Se está solicitando la creación de la base de datos.'],
         'db_created' => ['Base de datos registrada', 'La base de datos está pendiente de inicio.'],
         'deploying_db' => ['Iniciando base de datos', 'El servidor está preparando el motor de base de datos.'],
@@ -732,7 +738,7 @@ function eclouddokploy_ClientArea(array $params): array
                 }
                 $public = eclouddokploy_public_state((string) $record->state);
                 if ($view['ecSetupEnabled']
-                    && in_array((string) $record->state, ['awaiting_setup', 'new'], true)) {
+                    && in_array((string) $record->state, ['awaiting_setup', 'new', 'environment_ready'], true)) {
                     $view['ecSetupCanInstall'] = $active;
                     $view['ecSetupToken'] = eclouddokploy_setup_csrf($serviceId);
                 }
