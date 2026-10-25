@@ -54,6 +54,49 @@ function eclouddokploy_find_production_environment(array $response, string $proj
     return $found[0] ?? null;
 }
 
+/**
+ * Read-only recovery of a project by the exact deterministic WHMCS name.
+ * Never pick the first vaguely matching project. A duplicate project name,
+ * incorrect description, or invalid ID requires human review.
+ *
+ * Dokploy's project.all GET is authoritative for the one configured API
+ * endpoint only. The server route fingerprint and owner are validated by
+ * the caller before this read.
+ */
+function eclouddokploy_find_exact_service_project(
+    array $response, int $clientId, int $serviceId
+): ?string {
+    $items = array_is_list($response) ? $response : ($response['projects'] ?? null);
+    if (!is_array($items)) {
+        throw new RuntimeException('Dokploy did not return a list of projects.');
+    }
+    $expectedName = eclouddokploy_project_name($clientId, $serviceId);
+    $expectedDescription = 'Elearning Cloud WHMCS service ' . $serviceId;
+    $matches = [];
+    foreach ($items as $project) {
+        if (!is_array($project) || ($project['name'] ?? null) !== $expectedName) {
+            continue;
+        }
+        // Some Dokploy releases omit description from the list; a supplied
+        // description must nevertheless agree with the original binding.
+        $description = $project['description'] ?? null;
+        if ($description !== null && $description !== ''
+            && $description !== $expectedDescription) {
+            throw new RuntimeException('Project description does not match this WHMCS service.');
+        }
+        $projectId = $project['projectId'] ?? null;
+        if (!is_string($projectId)
+            || preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
+            throw new RuntimeException('Invalid Dokploy project ID during reconciliation.');
+        }
+        $matches[] = $projectId;
+    }
+    if (count($matches) > 1) {
+        throw new RuntimeException('Duplicate project names: manual reconciliation required.');
+    }
+    return $matches[0] ?? null;
+}
+
 /** An application must be in the specific service's private environment. */
 function eclouddokploy_app_environment_matches(array $remote, string $appId, string $envId): bool
 {
@@ -109,32 +152,65 @@ function eclouddokploy_prepare_private_project_locked(
     $projectId = (string) ($row->project_id ?? '');
     $envId = (string) ($row->environment_id ?? '');
 
-    if ($state === 'awaiting_setup') {
-        eclouddokploy_set_state($serviceId, 'creating_project');
-        $project = $api->post(
-            'project.create', eclouddokploy_project_create_payload($clientId, $serviceId)
+    // "new" is the valid pre-project state used by older module versions.
+    // Before creating anything, read Dokploy's projects by exact service name.
+    // This recovers a lost project.create response without another write.
+    if (in_array($state, ['awaiting_setup', 'new', 'creating_project'], true)) {
+        $found = eclouddokploy_find_exact_service_project(
+            $api->get('project.all', []), $clientId, $serviceId
         );
-        $projectId = eclouddokploy_required_id($project, 'projectId');
-        eclouddokploy_set_state(
-            $serviceId, 'project_created', ['project_id' => $projectId]
-        );
-        $state = 'project_created';
+        if ($found !== null) {
+            if ($projectId !== '' && !hash_equals($projectId, $found)) {
+                return 'El proyecto remoto no coincide con el proyecto registrado. Requiere revisión.';
+            }
+            $projectId = $found;
+            eclouddokploy_set_state(
+                $serviceId, 'project_created', ['project_id' => $projectId]
+            );
+            $state = 'project_created';
+        } elseif ($state === 'creating_project') {
+            // A lost remote response remains ambiguous if the read found
+            // nothing. Never convert it into a second project.create.
+            return 'No encontramos el proyecto pendiente en Dokploy. '
+                . 'No se creará otro automáticamente; soporte debe revisar el registro de Dokploy.';
+        } else {
+            // Fresh "awaiting_setup" or legacy "new": no matching remote
+            // project exists, so it is safe to attempt the first write.
+            eclouddokploy_set_state($serviceId, 'creating_project');
+            $project = $api->post(
+                'project.create', eclouddokploy_project_create_payload($clientId, $serviceId)
+            );
+            $projectId = eclouddokploy_required_id($project, 'projectId');
+            eclouddokploy_set_state(
+                $serviceId, 'project_created', ['project_id' => $projectId]
+            );
+            $state = 'project_created';
+        }
     }
 
-    if ($state === 'project_created') {
-        if ($projectId === '' || !preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId)) {
+    if (in_array($state, ['project_created', 'creating_environment'], true)) {
+        if ($projectId === ''
+            || preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
             return 'El proyecto creado requiere conciliación administrativa.';
         }
         $found = eclouddokploy_find_production_environment(
             $api->get('environment.byProjectId', ['projectId' => $projectId]),
             $projectId
         );
+        if ($found === null && $state === 'creating_environment') {
+            // The prior request may still be finishing; avoid retrying.
+            return 'El entorno production no aparece todavía en Dokploy. '
+                . 'No se creó otro entorno; soporte debe comprobar el estado de la petición.';
+        }
         if ($found === null) {
             eclouddokploy_set_state($serviceId, 'creating_environment');
             $created = $api->post('environment.create', [
                 'name' => 'production', 'projectId' => $projectId,
             ]);
             $found = eclouddokploy_required_id($created, 'environmentId');
+        }
+        if ($envId !== '' && !hash_equals($envId, $found)) {
+            return 'El entorno existente no coincide con el registrado. Requiere revisión.';
         }
         eclouddokploy_set_state(
             $serviceId, 'environment_ready', ['environment_id' => $found]
