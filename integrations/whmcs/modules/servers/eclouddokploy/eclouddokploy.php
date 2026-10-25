@@ -21,6 +21,7 @@ require_once __DIR__ . '/lib/SelfService.php';
 require_once __DIR__ . '/lib/AutomaticSetup.php';
 require_once __DIR__ . '/lib/AutoMail.php';
 require_once __DIR__ . '/lib/OrderInstall.php';
+require_once __DIR__ . '/lib/AdminAssistance.php';
 
 use WHMCS\Database\Capsule;
 
@@ -876,40 +877,52 @@ function eclouddokploy_EmailAction(array $params): string
 }
 
 /**
- * Administrator-only recovery path for an existing active pilot service.
- * In WHMCS use the product's admin provisioning button once. This does not
- * contact Dokploy or create resources, only reserves a tenant-safe service row.
+ * Built-in WHMCS admin product/service page integration. Administrators can
+ * assist the customer without impersonating their session or entering Dokploy.
  */
-function eclouddokploy_AdminCustomButtonArray(): array
+function eclouddokploy_AdminServicesTabFields(array $params): array
 {
-    // Normal new paid orders run automatically through CreateAccount.
-    // This one-time recovery action exists ONLY for pre-update subscriptions
-    // already marked Active which did not get a Dokploy project.
-    return ['Conciliar proyecto antiguo' => 'ReconcileProject'];
+    return eclouddokploy_admin_tab_fields($params);
 }
 
-/** Recover a pre-upgrade paid WHMCS service without deploying application code. */
+function eclouddokploy_AdminServicesTabFieldsSave(array $params): void
+{
+    eclouddokploy_admin_save_fields($params);
+}
+
+function eclouddokploy_AdminCustomButtonArray(): array
+{
+    return [
+        'Crear / verificar proyecto Dokploy' => 'AdminCreateProject',
+        'Instalar aplicación del cliente' => 'AdminInstallApp',
+    ];
+}
+
+/** On-demand project creation in the customer's assigned paid WHMCS service. */
+function eclouddokploy_AdminCreateProject(array $params): string
+{
+    return eclouddokploy_admin_create_project($params);
+}
+
+/** Deploy the admin-saved GitHub source into that SAME project and environment. */
+function eclouddokploy_AdminInstallApp(array $params): string
+{
+    return eclouddokploy_admin_install_app($params);
+}
+
+/**
+ * Backwards compatible aliases for earlier pilot versions. Not listed in the
+ * admin button menu; direct callers still require an authenticated admin.
+ */
 function eclouddokploy_ReconcileProject(array $params): string
 {
-    if (!eclouddokploy_auto_enabled($params)) {
-        return 'El producto no usa el aprovisionamiento automático de proyectos.';
-    }
-    try {
-        $route = eclouddokploy_resolve_route($params);
-        $reserved = eclouddokploy_setup_reserve(
-            $params, $route, (string) ($params['configoption5'] ?? 'none')
-        );
-        if ($reserved !== 'success') return $reserved;
-        return eclouddokploy_order_prepare_project($params, $route);
-    } catch (Throwable $e) {
-        return 'No se pudo completar la conciliación del proyecto. Verifica la primera factura y el estado del servidor.';
-    }
+    return eclouddokploy_admin_create_project($params);
 }
 
 function eclouddokploy_PrepareInstaller(array $params): string
 {
-    if (!eclouddokploy_auto_enabled($params)) {
-        return 'El producto no utiliza el instalador guiado.';
+    if (!eclouddokploy_admin_authorized($params)) {
+        return 'Operación reservada a la administración de WHMCS.';
     }
     try {
         return eclouddokploy_setup_reserve(
