@@ -44,7 +44,7 @@ try {
 } catch (RuntimeException $e) {
     check($e->getMessage() !== 'Test failed: missing service DB config', 'external DB isolated by service');
 }
-file_put_contents($externalMap, json_encode(['123' => "mysql://bad:pass@host/db\\ninjected=1"]));
+file_put_contents($externalMap, json_encode(['123' => "mysql://bad:pass@host/db\ninjected=1"]));
 try {
     eclouddokploy_external_database_url(123);
     throw new RuntimeException('Test failed: accepted multiline secret');
@@ -52,4 +52,4 @@ try {
     check($e->getMessage() !== 'Test failed: accepted multiline secret', 'reject env injection');
 }
 unlink($externalMap);
-echo "Dokploy provisioning validations passed\\n";
+echo "Dokploy provisioning validations passed\n";
