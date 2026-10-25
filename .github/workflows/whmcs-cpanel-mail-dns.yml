@@ -1,0 +1,24 @@
+name: WHMCS cPanel mail and DNS checks
+
+on:
+  pull_request:
+    paths:
+      - 'integrations/whmcs/modules/addons/ecloudhosting/**'
+      - '.github/workflows/whmcs-cpanel-mail-dns.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'integrations/whmcs/modules/addons/ecloudhosting/**'
+
+permissions:
+  contents: read
+
+jobs:
+  php-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP lint
+        run: find integrations/whmcs/modules/addons/ecloudhosting -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Offline tests
+        run: php integrations/whmcs/modules/addons/ecloudhosting/tests/validate.php
