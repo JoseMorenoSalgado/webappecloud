@@ -101,8 +101,11 @@ function eclouddokploy_resolve_route(array $params): array
         ];
     }
 
-    if (!preg_match('/^[A-Za-z0-9_-]{4,128}$/D', $route['environment_id'])) {
-        throw new RuntimeException('Invalid Dokploy environment ID for assigned server.');
+    // New services create their own project and environment. The optional
+    // server-level value is retained only for backwards route identification.
+    if ($route['environment_id'] !== '' &&
+        !preg_match('/^[A-Za-z0-9_-]{4,128}$/D', $route['environment_id'])) {
+        throw new RuntimeException('Invalid legacy Dokploy environment ID.');
     }
     if ($route['remote_server_id'] !== '' &&
         !preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $route['remote_server_id'])) {
