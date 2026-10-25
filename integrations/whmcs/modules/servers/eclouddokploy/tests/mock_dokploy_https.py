@@ -42,6 +42,27 @@ class Handler(BaseHTTPRequestHandler):
             return
         url = urlparse(self.path)
         query = parse_qs(url.query)
+        if url.path == "/api/project.search":
+            # Official Dokploy router returns only compact project fields
+            # {items, total}, unlike project.all with nested service secrets.
+            needle = query.get("name", [""])[0].lower()
+            if not needle:
+                return self.response(400, {"error": "project name required"})
+            filtered = [
+                dict(item) for item in projects.values()
+                if needle in str(item.get("name", "")).lower()
+            ]
+            try:
+                limit = int(query.get("limit", ["20"])[0])
+                offset = int(query.get("offset", ["0"])[0])
+            except ValueError:
+                return self.response(400, {"error": "invalid search bounds"})
+            if limit < 1 or limit > 100 or offset < 0:
+                return self.response(400, {"error": "invalid search limit"})
+            return self.response(200, {
+                "items": filtered[offset:offset + limit],
+                "total": len(filtered),
+            })
         if url.path == "/api/project.all":
             return self.response(
                 200, [{"projectId": "stage", "name": "test-project"}] + list(projects.values())
