@@ -146,6 +146,30 @@ function eclouddokploy_admin_editable_state(?object $row): bool
         ['awaiting_setup', 'new', 'project_created', 'environment_ready'], true);
 }
 
+/** Once the installer persisted the Git source, both admin and client edits lock. */
+function eclouddokploy_admin_existing_setup(int $serviceId): ?array
+{
+    if ($serviceId < 1 || !\WHMCS\Database\Capsule::schema()
+        ->hasTable('mod_ecloud_dokploy_setup')) return null;
+    $row = \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_setup')
+        ->where('service_id', $serviceId)
+        ->first(['git_url', 'branch', 'root_path', 'preset', 'port']);
+    if (!$row) return null;
+    return [
+        'git_url' => (string) $row->git_url,
+        'branch' => (string) $row->branch,
+        'root_path' => (string) $row->root_path,
+        'preset' => (string) $row->preset,
+        'port' => (int) $row->port,
+    ];
+}
+
+function eclouddokploy_admin_can_edit(int $serviceId, ?object $state): bool
+{
+    return eclouddokploy_admin_editable_state($state)
+        && eclouddokploy_admin_existing_setup($serviceId) === null;
+}
+
 function eclouddokploy_admin_html(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -171,8 +195,9 @@ function eclouddokploy_admin_tab_fields(array $params): array
     }
     $id = $service['service_id'];
     $state = eclouddokploy_admin_state($id);
-    $draft = eclouddokploy_admin_draft($id);
-    $editable = eclouddokploy_admin_editable_state($state);
+    $installedSource = eclouddokploy_admin_existing_setup($id);
+    $draft = $installedSource ?? eclouddokploy_admin_draft($id);
+    $editable = eclouddokploy_admin_can_edit($id, $state);
     $status = eclouddokploy_public_state((string) ($state->state ?? 'awaiting_setup'));
     $value = '<strong>' . eclouddokploy_admin_html($status[0]) . '</strong>'
         . '<p class="help-block">' . eclouddokploy_admin_html($status[1]) . '</p>';
@@ -252,7 +277,7 @@ function eclouddokploy_admin_save_fields(array $params): void
     if (!is_array($fields) || (int) ($fields[6] ?? 0) !== $id) return;
 
     try {
-        if (!eclouddokploy_admin_editable_state(eclouddokploy_admin_state($id))) {
+        if (!eclouddokploy_admin_can_edit($id, eclouddokploy_admin_state($id))) {
             throw new RuntimeException('No se puede cambiar Git después de comenzar la instalación.');
         }
         $form = eclouddokploy_admin_validate_fields($fields);
@@ -284,15 +309,17 @@ function eclouddokploy_admin_save_fields(array $params): void
         }
         try {
             // Recheck under the same lock held by the deployment handler.
-            if (!eclouddokploy_admin_editable_state(eclouddokploy_admin_state($id))) {
+            if (!eclouddokploy_admin_can_edit($id, eclouddokploy_admin_state($id))) {
                 throw new RuntimeException('La instalación empezó. Los ajustes ya están protegidos.');
             }
             eclouddokploy_admin_draft_table();
+            if ($old === null) $values['created_at'] = date('Y-m-d H:i:s');
             \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_admin_drafts')
-                ->updateOrInsert(
-                    ['service_id' => $id],
-                    $values + ['created_at' => date('Y-m-d H:i:s')]
-                );
+                ->updateOrInsert(['service_id' => $id], $values);
+            if (!isset($_SESSION['ec_dokploy_admin_notice'])
+                || !is_array($_SESSION['ec_dokploy_admin_notice'])) {
+                $_SESSION['ec_dokploy_admin_notice'] = [];
+            }
             $_SESSION['ec_dokploy_admin_notice'][$id] =
                 'Configuración de soporte guardada. Elige un comando del módulo para continuar.';
         } finally {
@@ -300,6 +327,10 @@ function eclouddokploy_admin_save_fields(array $params): void
         }
     } catch (Throwable $e) {
         // No credentials or supplied source text are written to logs.
+        if (!isset($_SESSION['ec_dokploy_admin_notice'])
+            || !is_array($_SESSION['ec_dokploy_admin_notice'])) {
+            $_SESSION['ec_dokploy_admin_notice'] = [];
+        }
         $_SESSION['ec_dokploy_admin_notice'][$id] =
             $e instanceof InvalidArgumentException
                 ? $e->getMessage()
@@ -335,11 +366,15 @@ function eclouddokploy_admin_install_app(array $params): string
     }
     try {
         $draft = eclouddokploy_admin_draft($id);
-        if ($draft === null) {
+        $seed = eclouddokploy_auto_seed();
+        $originalSetup = eclouddokploy_setup_saved($id, $seed);
+        if ($draft === null && $originalSetup === null) {
             return 'Primero introduce el repositorio GitHub y guarda la ficha del servicio.';
         }
-        $seed = eclouddokploy_auto_seed();
-        $setup = eclouddokploy_admin_draft_to_setup($draft, $seed, $id);
+        // Reuse customer's immutable configuration if the guided install was
+        // already saved; otherwise use the support agent's protected draft.
+        $setup = $originalSetup
+            ?? eclouddokploy_admin_draft_to_setup($draft, $seed, $id);
         $route = eclouddokploy_resolve_route($params);
         $prepared = eclouddokploy_admin_create_project($params);
         if ($prepared !== 'success') return $prepared;
