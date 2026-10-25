@@ -198,7 +198,7 @@ function eclouddokploy_admin_html(string $value): string
 
 function eclouddokploy_admin_select(string $name, string $selected, array $options, bool $disabled): string
 {
-    $html = '<select class="form-control input-sm" name="modulefields['
+    $html = '<select class="form-control ecd-admin-control" aria-label="Tipo de aplicación" name="modulefields['
         . eclouddokploy_admin_html($name) . ']"' . ($disabled ? ' disabled' : '') . '>';
     foreach ($options as $value => $label) {
         $html .= '<option value="' . eclouddokploy_admin_html($value) . '"'
@@ -220,20 +220,65 @@ function eclouddokploy_admin_tab_fields(array $params): array
     $draft = $installedSource ?? eclouddokploy_admin_draft($id);
     $editable = eclouddokploy_admin_can_edit($id, $state);
     $status = eclouddokploy_public_state((string) ($state->state ?? 'awaiting_setup'));
-    $value = '<strong>' . eclouddokploy_admin_html($status[0]) . '</strong>'
-        . '<p class="help-block">' . eclouddokploy_admin_html($status[1]) . '</p>';
-    if ($state && !empty($state->project_id) && !empty($state->environment_id)) {
-        $value .= '<small>Proyecto: <code>'
+    $hasProject = $state && !empty($state->project_id) && !empty($state->environment_id);
+    // CSS is scoped to the native module fields, never WHMCS/Lagom globally.
+    $style = '<style>'
+        . '.ecd-admin-panel{--ecap-blue:#155ba7;--ecap-ink:#18304d;--ecap-muted:#496078;'
+        . '--ecap-edge:#d7e2ee;background:#f7fafd;border:1px solid var(--ecap-edge);'
+        . 'border-radius:14px;padding:17px;margin:4px 0 14px;line-height:1.55;color:var(--ecap-ink);max-width:100%;}'
+        . '.ecd-admin-panel *{box-sizing:border-box}'
+        . '.ecd-admin-panel h4{font-size:18px;font-weight:750;color:var(--ecap-ink);margin:0 0 6px}'
+        . '.ecd-admin-panel p{margin:0 0 8px;font-size:13px;color:var(--ecap-muted)}'
+        . '.ecd-admin-pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--ecap-edge);'
+        . 'background:#fff;color:#18304d;border-radius:30px;padding:5px 11px;font-size:12px;font-weight:750}'
+        . '.ecd-admin-pill:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ecap-blue)}'
+        . '.ecd-admin-meta{display:flex;flex-wrap:wrap;gap:8px;margin:13px 0}'
+        . '.ecd-admin-meta span{border:1px solid var(--ecap-edge);border-radius:9px;'
+        . 'background:#fff;padding:7px 10px;font-size:13px;overflow-wrap:anywhere}'
+        . '.ecd-admin-tasks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}'
+        . '.ecd-admin-task{background:#fff;border:1px solid var(--ecap-edge);border-radius:10px;padding:12px;font-size:13px}'
+        . '.ecd-admin-task strong{display:block;color:var(--ecap-ink);margin-bottom:5px}'
+        . '.ecd-admin-task small{font-size:12px;color:var(--ecap-muted);display:block;line-height:1.45}'
+        . '.ecd-admin-panel code{color:#223c5f;font-size:12px;overflow-wrap:anywhere}'
+        . '.ecd-admin-control{display:block;min-height:46px!important;max-width:650px!important;'
+        . 'width:100%!important;font-size:16px!important;border-radius:9px!important;'
+        . 'border:1px solid #b6c6d7!important;padding:9px 12px!important;}'
+        . '.ecd-admin-control:focus-visible{outline:3px solid #1b68ba!important;outline-offset:2px}'
+        . '.ecd-admin-help{display:block;font-size:13px!important;line-height:1.5;'
+        . 'color:#435971!important;max-width:650px;margin-top:6px}'
+        . '.ecd-admin-instructions{max-width:650px;background:#f7fafd;border-left:3px solid #155ba7;'
+        . 'padding:12px 14px;border-radius:0 9px 9px 0;line-height:1.6;font-size:13px;}'
+        . '.ecd-admin-instructions ol{padding-left:18px;margin:6px 0}'
+        . '.ecd-admin-panel .ecd-admin-ids{font-size:12px;overflow-wrap:anywhere}'
+        . '@media(max-width:680px){.ecd-admin-tasks{grid-template-columns:1fr}.ecd-admin-panel{padding:13px}}'
+        . '@media(prefers-reduced-motion:reduce){.ecd-admin-panel *{transition:none!important}}'
+        . '</style>';
+    $value = $style . '<section class="ecd-admin-panel" aria-label="Asistente de soporte Dokploy">'
+        . '<span class="ecd-admin-pill">'
+        . ($hasProject ? 'Proyecto privado creado' : 'Proyecto pendiente de crear')
+        . '</span>'
+        . '<h4 style="margin-top:9px">' . eclouddokploy_admin_html($status[0]) . '</h4>'
+        . '<p>' . eclouddokploy_admin_html($status[1]) . '</p>'
+        . '<div class="ecd-admin-meta">'
+        . '<span><strong>Dominio:</strong> ' . eclouddokploy_admin_html($service['domain']) . '</span>'
+        . '<span><strong>Cliente:</strong> #' . (int) $service['owner_id'] . '</span>'
+        . '<span><strong>Servicio:</strong> #' . $id . '</span>'
+        . '</div>';
+    if ($hasProject) {
+        $value .= '<p class="ecd-admin-ids">Proyecto: <code>'
             . eclouddokploy_admin_html((string) $state->project_id)
-            . '</code> | production: <code>'
-            . eclouddokploy_admin_html((string) $state->environment_id) . '</code></small>';
+            . '</code> · Production: <code>'
+            . eclouddokploy_admin_html((string) $state->environment_id)
+            . '</code></p>';
     }
-    $value .= '<p class="help-block">Dominio del servicio: <strong>'
-        . eclouddokploy_admin_html($service['domain'])
-        . '</strong> · Cliente WHMCS #'
-        . (int) $service['owner_id'] . ' · Servicio #' . $id
-        . '. Nunca se comparte la API key con el cliente.</p>';
-
+    $value .= '<div class="ecd-admin-tasks">'
+        . '<div class="ecd-admin-task"><strong>1. Crear / verificar proyecto</strong>'
+        . '<small>En «Comandos del módulo». Solo crea el proyecto y production. No necesita GitHub.</small></div>'
+        . '<div class="ecd-admin-task"><strong>2. Instalar por el cliente</strong>'
+        . '<small>Introduce GitHub abajo, guarda la ficha y pulsa «Instalar aplicación del cliente».</small></div>'
+        . '</div>'
+        . '<p style="margin-top:12px">Se requiere servicio y primera factura pagados. La solicitud de despliegue no confirma que el sitio esté online.</p>'
+        . '</section>';
     $disabled = $editable ? '' : ' disabled';
     $repo = (string) ($draft['git_url'] ?? '');
     $branch = (string) ($draft['branch'] ?? 'main');
@@ -243,7 +288,7 @@ function eclouddokploy_admin_tab_fields(array $params): array
 
     $input = static function (int $i, string $type, string $value,
         string $placeholder, string $attrs = '') use ($disabled): string {
-        return '<input class="form-control input-sm" name="modulefields[' . $i
+        return '<input class="form-control ecd-admin-control" name="modulefields[' . $i
             . ']" type="' . $type . '" value="' . eclouddokploy_admin_html($value)
             . '" placeholder="' . eclouddokploy_admin_html($placeholder)
             . '" ' . $attrs . $disabled . '>';
@@ -252,38 +297,55 @@ function eclouddokploy_admin_tab_fields(array $params): array
     $message = $_SESSION['ec_dokploy_admin_notice'][$id] ?? '';
     unset($_SESSION['ec_dokploy_admin_notice'][$id]);
     if (is_string($message) && $message !== '') {
-        $value .= '<p class="alert alert-warning">' . eclouddokploy_admin_html($message) . '</p>';
+        $noticeClass = str_starts_with($message, 'Configuración de soporte guardada.')
+            ? 'alert-success' : 'alert-warning';
+        $value .= '<p class="alert ' . $noticeClass . '" role="status">'
+            . eclouddokploy_admin_html($message) . '</p>';
     }
     $note = $editable
-        ? '1. Guarda el servicio. 2. En Comandos del módulo, pulsa «Crear proyecto Dokploy» '
-            . 'o «Instalar aplicación (soporte)» después de completar GitHub.'
-        : 'La creación de recursos ya comenzó. No se puede cambiar el repositorio '
-            . 'desde esta pantalla para evitar instalar código distinto del original.';
+        ? 'Guardar cambios registra únicamente la configuración GitHub en WHMCS; '
+            . 'no instala ni borra recursos en Dokploy. Para instalar, usa «Comandos del módulo» '
+            . 'y elige «Instalar aplicación del cliente». El comando «Crear / verificar proyecto Dokploy» '
+            . 'funciona incluso con GitHub vacío.'
+        : 'Este servicio ya tiene una instalación guardada o en curso: el repositorio original '
+            . 'se mantiene bloqueado para impedir una reinstalación accidental. '
+            . 'Si necesitas cambiarlo, abre una incidencia de conciliación.';
 
     return [
-        'Proyecto Dokploy · Soporte' => $value,
+        'Proyecto Dokploy · Centro de ayuda' => $value,
         'Repositorio GitHub del cliente' => $input(0, 'url', $repo,
-            'https://github.com/usuario/proyecto.git', ' maxlength="255" autocomplete="off"')
-            . '<small>Público y HTTPS. Nunca el repositorio global del producto.</small>',
-        'Rama GitHub' => $input(1, 'text', $branch, 'main', ' maxlength="100"'),
-        'Carpeta de aplicación' => $input(2, 'text', $root, '/', ' maxlength="190"'),
-        'Tipo de aplicación' => eclouddokploy_admin_select('3', $preset, [
-            'nextjs' => 'Next.js (sin Dockerfile)',
-            'nodejs' => 'Node.js (Nixpacks)',
-            'dockerfile' => 'Dockerfile',
-            'auto' => 'Detectar al instalar',
-        ], !$editable),
+            'https://github.com/usuario/proyecto.git',
+            ' aria-label="Repositorio GitHub público" maxlength="255" autocomplete="off" autocapitalize="none"')
+            . '<small class="ecd-admin-help">Solo el repositorio del cliente. '
+            . 'Por ejemplo, https://github.com/cliente/mi-web. '
+            . 'Este campo es opcional si solo vas a crear el proyecto.</small>',
+        'Rama GitHub' => $input(1, 'text', $branch, 'main',
+            ' aria-label="Rama GitHub" maxlength="100"')
+            . '<small class="ecd-admin-help">Normalmente main.</small>',
+        'Carpeta de la aplicación' => $input(2, 'text', $root, '/',
+            ' aria-label="Carpeta raíz de la aplicación" maxlength="190"')
+            . '<small class="ecd-admin-help">Si es un monorepo, usa /apps/web. Por defecto /.</small>',
+        'Framework y compilación' => eclouddokploy_admin_select('3', $preset, [
+            'nextjs' => 'Next.js · Automático (sin Dockerfile)',
+            'nodejs' => 'Node.js · Automático (Nixpacks)',
+            'dockerfile' => 'Dockerfile · Avanzado',
+            'auto' => 'Detectar en GitHub',
+        ], !$editable)
+            . '<small class="ecd-admin-help">Selecciona Next.js en sitios Next.js; no requiere Dockerfile.</small>',
         'Puerto interno' => $input(4, 'number', (string) $port, '3000',
-            ' min="1024" max="65535"'),
-        'Variables de entorno (opcional)' =>
-            '<textarea name="modulefields[5]" rows="3" maxlength="6144" class="form-control" '
+            ' aria-label="Puerto interno" min="1024" max="65535"')
+            . '<small class="ecd-admin-help">El puerto es 3000 para Next.js salvo que el cliente use otro.</small>',
+        'Variables de entorno · Avanzado' =>
+            '<textarea name="modulefields[5]" rows="3" maxlength="6144" '
+            . 'class="form-control ecd-admin-control" aria-label="Variables de entorno" '
             . 'placeholder="API_URL=https://api.ejemplo.com&#10;APP_SECRET=..."'
             . $disabled . '></textarea>'
-            . '<small>Si queda vacío, conserva las variables cifradas anteriores. '
-            . 'No se vuelven a mostrar. No pegues secretos en tickets.</small>',
-        'Instalación asistida · Instrucciones' => '<input type="hidden" name="modulefields[6]" value="'
-            . $id . '"><p class="help-block">' . eclouddokploy_admin_html($note)
-            . '</p>',
+            . '<small class="ecd-admin-help">Opcional. Cada línea: CLAVE=valor. '
+            . 'Se guardan cifradas, no se vuelven a mostrar. Si dejas vacío, se conservan. '
+            . 'Nunca pegues claves en tickets ni envíes aquí la API key de Dokploy.</small>',
+        'Siguiente paso' => '<input type="hidden" name="modulefields[6]" value="'
+            . $id . '"><div class="ecd-admin-instructions" role="note">'
+            . eclouddokploy_admin_html($note) . '</div>',
     ];
 }
 
