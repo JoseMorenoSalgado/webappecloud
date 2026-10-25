@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 /**
  * Routes a WHMCS service to exactly one Dokploy control plane and deploy node.
- * Secrets are stored outside of the WHMCS webroot, indexed by WHMCS server ID.
+ * Uses built-in WHMCS server hostname and password credentials. An optional\n * private server map supports advanced remote Dokploy nodes.
  *
  * One WHMCS server entry == one placement target (Dokploy instance + node).
  * The same Dokploy URL may legitimately appear in multiple entries, each with
@@ -23,6 +23,16 @@ function eclouddokploy_load_server_map(): array
         throw new RuntimeException('Dokploy server map must contain a servers object.');
     }
     return $decoded['servers'];
+}
+
+function eclouddokploy_valid_server_hostname(string $host): bool
+{
+    if (strlen($host) > 253 || !str_contains($host, '.') ||
+        !preg_match('/^[a-z0-9.-]+$/D', $host)) return false;
+    foreach (explode('.', $host) as $label) {
+        if (!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $label)) return false;
+    }
+    return true;
 }
 
 function eclouddokploy_route_fingerprint(array $route): string
@@ -48,16 +58,33 @@ function eclouddokploy_resolve_route(array $params): array
 
     $path = trim((string) getenv('ECLOUD_DOKPLOY_SERVER_MAP_FILE'));
     if ($path === '') {
-        if ($id !== 0 || getenv('ECLOUD_DOKPLOY_ALLOW_LEGACY_SINGLE') !== '1') {
-            throw new RuntimeException('Configure the WHMCS-to-Dokploy server map.');
+        if ($id > 0) {
+            // Standard WHMCS server settings, just like a cPanel provisioning module.
+            // Hostname = Dokploy hostname, Password = API token,
+            // Username = Dokploy environment ID (per server).
+            $hostname = strtolower(trim((string) ($params['serverhostname'] ?? '')));
+            if (!eclouddokploy_valid_server_hostname($hostname)) {
+                throw new RuntimeException('Configure a valid Dokploy server hostname in WHMCS.');
+            }
+            $route = [
+                'whmcs_server_id' => $id,
+                'url' => 'https://' . $hostname,
+                'api_key' => trim((string) ($params['serverpassword'] ?? '')),
+                'environment_id' => trim((string) ($params['serverusername'] ?? '')),
+                'remote_server_id' => '',
+            ];
+        } else {
+            if (getenv('ECLOUD_DOKPLOY_ALLOW_LEGACY_SINGLE') !== '1') {
+                throw new RuntimeException('Assign a Dokploy server using WHMCS Server Groups.');
+            }
+            $route = [
+                'whmcs_server_id' => 0,
+                'url' => trim((string) getenv('ECLOUD_DOKPLOY_URL')),
+                'api_key' => trim((string) getenv('ECLOUD_DOKPLOY_API_KEY')),
+                'environment_id' => trim((string) ($params['configoption1'] ?? '')),
+                'remote_server_id' => '',
+            ];
         }
-        $route = [
-            'whmcs_server_id' => 0,
-            'url' => trim((string) getenv('ECLOUD_DOKPLOY_URL')),
-            'api_key' => trim((string) getenv('ECLOUD_DOKPLOY_API_KEY')),
-            'environment_id' => trim((string) ($params['configoption1'] ?? '')),
-            'remote_server_id' => '',
-        ];
     } else {
         if ($id < 1) throw new RuntimeException('The WHMCS service must have an assigned server.');
         $map = eclouddokploy_load_server_map();
