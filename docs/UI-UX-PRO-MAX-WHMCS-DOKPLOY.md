@@ -63,3 +63,16 @@
 - Error: repo Git mal formado, rama inexistente, GitHub no disponible, campo avanzado inválido, doble click, respuesta API fallida.
 - Administración: «Guardar cambios» NO debe crear proyecto, «Crear/Verificar» solo proyecto, «Instalar» Git/DB/build/deploy; no secretos en HTML ni logs.
 - Servidores reales: QA con WHMCS/Lagom y Dokploy 0.30.9 antes de lanzamiento (CI/mocks no sustituyen prueba visual o API).
+
+## Cambios realizados en el código
+
+- `templates/clientarea.tpl`: navegación «Estado / Mi aplicación / Correo»; tarjeta de estado principal y etapas alimentadas por `ecDokployPhase` desde estados reales del backend; un formulario GitHub principal y parámetros técnicos ocultos tras un `details` accesible; resumen de dominio y base de datos; formulario con errores junto al campo y foco al error; feedback de detección GitHub, carga del botón y bloqueo visual del doble envío; detalles técnicos plegados, colores semánticos, modo oscuro, `prefers-reduced-motion` y controles táctiles de 46–48px.
+- `eclouddokploy.php`: `ecDokployPhase` solo marca hitos persistidos; al instalar desde Git se muestran los valores del repositorio del servicio, evitando que el cliente confunda el repositorio predeterminado del producto con el suyo.
+- `lib/AdminAssistance.php`: resumen compacto con proyecto y dominio, dos tareas diferenciadas («Crear / verificar proyecto» y «Instalar aplicación»), mensajes claros, ejemplos bajo campos, controles accesibles y responsive sin modificar las tablas globales de WHMCS. Mantiene el cifrado y los controles de propietario/pago/estado.
+- `tests/ux_template_contract.py`: validación de estructura HTML y Smarty, focos, estados, formularios, JS compilable, controles táctiles y accesibilidad fundamental; ejecutado en CI junto con PHP, facturación y API mocks.
+
+## Límites y política de lanzamiento
+
+Esta implementación utiliza y adapta las pautas públicas de UI/UX Pro Max para una interfaz PHP/Smarty. **No requiere instalar frameworks frontend ni cambiar el tema Lagom**. La hoja de estilos está encapsulada bajo `.ec-dokploy`, y la del área administrativa usa `.ecd-admin-*` para evitar romper el resto de WHMCS.
+
+Las pruebas automatizadas no prueban la apariencia real a distintos tamaños ni sustituyen una evaluación WCAG completa. Validar con capturas y navegación de teclado sobre WHMCS/Lagom real (Chrome Android y escritorio), incluyendo un servicio de cada estado y buzones opcionales. Sigue siendo un módulo **staging/draft** hasta superar el despliegue real Dokploy, SSL y backups.
