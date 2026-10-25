@@ -55,6 +55,43 @@
 @media(max-width:720px){.ec-dokploy .ecd-mail-fields{grid-template-columns:1fr}}
 
 @media(max-width:720px){.ec-dokploy .ecd-grid{grid-template-columns:1fr}.ec-dokploy .ecd-actions{display:grid;grid-template-columns:1fr}.ec-dokploy .ecd-state,.ec-dokploy .ecd-card{padding:16px}.ec-dokploy h3{font-size:19px}}
+
+/* Wizard: native WHMCS product page, no third-party JS or theme dependency. */
+.ec-dokploy .ecd-setup{border:1px solid var(--ecd-border);border-radius:15px;background:var(--panel-bg,#fff);padding:23px;margin:18px 0 20px;box-shadow:0 4px 20px rgba(16,31,60,.035)}
+.ec-dokploy .ecd-setup-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.ec-dokploy .ecd-setup-top h3{font-size:21px}
+.ec-dokploy .ecd-chip{font-size:12px;font-weight:750;border:1px solid var(--ecd-border);border-radius:40px;padding:6px 12px;line-height:1.2}
+.ec-dokploy .ecd-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 21px}
+.ec-dokploy .ecd-step-pill{border:1px solid var(--ecd-border);border-radius:9px;padding:10px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}
+.ec-dokploy .ecd-step-pill b{display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;border-radius:50%;background:var(--ecd-primary);color:#fff;flex-shrink:0}
+.ec-dokploy .ecd-setup-section{border:1px solid var(--ecd-border);border-radius:11px;padding:15px 16px;margin:10px 0;background:var(--panel-bg,#fff)}
+.ec-dokploy .ecd-setup-section>summary{font-size:15px;font-weight:780;color:var(--ecd-heading);cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ec-dokploy .ecd-setup-section>summary::-webkit-details-marker{display:none}
+.ec-dokploy .ecd-setup-section>summary:after{content:'⌄';color:var(--ecd-muted);font-size:20px}
+.ec-dokploy .ecd-setup-section[open]>summary:after{content:'⌃'}
+.ec-dokploy .ecd-setup-section[open]>summary{margin-bottom:15px}
+.ec-dokploy .ecd-setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.ec-dokploy .ecd-setup-wide{grid-column:1 / -1}
+.ec-dokploy .ecd-setup-label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;min-width:0}
+.ec-dokploy .ecd-setup-input{width:100%;min-width:0;min-height:45px;border:1px solid var(--ecd-border);border-radius:9px;padding:10px 12px;background:var(--panel-bg,#fff);color:var(--ecd-text);font:inherit;font-size:14px}
+.ec-dokploy textarea.ecd-setup-input{min-height:110px;resize:vertical}
+.ec-dokploy .ecd-setup-input:focus-visible{outline:2px solid var(--ecd-primary);outline-offset:2px}
+.ec-dokploy .ecd-setup-hint{font-size:12px;color:var(--ecd-muted);font-weight:400;line-height:1.55}
+.ec-dokploy .ecd-setup-hint.strong{font-weight:650}
+.ec-dokploy .ecd-setup-detection{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:6px}
+.ec-dokploy .ecd-setup-detect-button{border:1px solid var(--ecd-border);border-radius:9px;min-height:40px;background:transparent;color:var(--ecd-heading);padding:8px 12px;font-weight:700;cursor:pointer}
+.ec-dokploy .ecd-setup-detect-result{font-size:12px;color:var(--ecd-muted)}
+.ec-dokploy .ecd-setup-review{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ec-dokploy .ecd-review-box{border-radius:9px;padding:12px;background:var(--panel-bg,#f7f9fc);border:1px solid var(--ecd-border);overflow-wrap:anywhere}
+.ec-dokploy .ecd-review-box strong{display:block;font-size:13px;color:var(--ecd-heading)}
+.ec-dokploy .ecd-review-box small{display:block;color:var(--ecd-muted);font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.ec-dokploy .ecd-setup-cta{width:100%;border:0;border-radius:10px;padding:13px 20px;min-height:49px;background:var(--ecd-primary);color:#fff;font:inherit;font-size:15px;font-weight:780;cursor:pointer}
+.ec-dokploy .ecd-setup-cta:hover{filter:brightness(.9)}
+.ec-dokploy .ecd-setup-note{border-left:3px solid var(--ecd-primary);padding:9px 11px;background:var(--panel-bg,#f7f9fc);color:var(--ecd-muted);font-size:13px;margin:13px 0}
+.ec-dokploy .ecd-setup-check{display:flex;align-items:flex-start;gap:9px;font-weight:500;font-size:13px;margin:16px 0}
+.ec-dokploy .ecd-setup-check input{width:18px;height:18px;margin-top:1px;flex-shrink:0}
+.ec-dokploy .ecd-setup-saved{margin:16px 0;background:var(--panel-bg,#fff)}
+@media(max-width:720px){.ec-dokploy .ecd-setup{padding:15px}.ec-dokploy .ecd-setup-grid,.ec-dokploy .ecd-setup-review{grid-template-columns:1fr}.ec-dokploy .ecd-step-pill{font-size:10px;gap:5px;padding:7px}.ec-dokploy .ecd-step-pill b{height:20px;width:20px}}
 {/literal}
 </style>
 <section class="ec-dokploy" aria-label="Administración de aplicación web">
@@ -90,6 +127,111 @@
         <strong>{$ecDokployIsolationLabel|escape:'html'}</strong>
         <p>Esta aplicación y su base de datos pertenecen a un proyecto Dokploy vinculado únicamente a tu servicio contratado.</p>
       </div>
+    {/if}
+
+    {if $ecSetupEnabled}
+      <section class="ecd-setup" aria-labelledby="ecd-setup-title">
+        <div class="ecd-setup-top">
+          <div>
+            <p class="ecd-kicker">Elearning Cloud · Inicio rápido</p>
+            <h3 id="ecd-setup-title">Instala tu aplicación en 3 pasos</h3>
+            <p class="ecd-intro">Importa tu código y nosotros preparamos el proyecto, el servidor y la base de datos.</p>
+          </div>
+          <span class="ecd-chip">{if $ecSetupConfigured}Configuración guardada{elseif $ecSetupCanInstall}Lista para configurar{else}Disponible próximamente{/if}</span>
+        </div>
+        <div class="ecd-steps" aria-label="Pasos de instalación">
+          <div class="ecd-step-pill"><b>1</b>GitHub</div>
+          <div class="ecd-step-pill"><b>2</b>Configuración</div>
+          <div class="ecd-step-pill"><b>3</b>Desplegar</div>
+        </div>
+        {if $ecSetupConfigured}
+          <div class="ecd-state ecd-setup-saved">
+            <strong>Origen de aplicación registrado</strong>
+            <p>El repositorio y las opciones quedan vinculados a este servicio. No se crean aplicaciones adicionales con envíos repetidos.</p>
+          </div>
+          <div class="ecd-setup-review">
+            <div class="ecd-review-box"><small>Repositorio</small><strong>{$ecSetupGitUrl|escape:'html'}</strong></div>
+            <div class="ecd-review-box"><small>Rama</small><strong>{$ecSetupBranch|escape:'html'}</strong></div>
+            <div class="ecd-review-box"><small>Framework</small><strong>{$ecSetupPreset|escape:'html'}</strong></div>
+            <div class="ecd-review-box"><small>Carpeta / Puerto</small><strong>{$ecSetupRoot|escape:'html'} · {$ecSetupPort|escape:'html'}</strong></div>
+          </div>
+          <p class="ecd-setup-note">Si el despliegue ya comenzó, consulta su estado arriba. La instalación y sus recursos no se duplican cuando se actualiza la página.</p>
+        {elseif $ecSetupCanInstall}
+          <form id="ecd-install-wizard" method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
+            <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
+            <input type="hidden" name="modop" value="custom">
+            <input type="hidden" name="a" value="InstallApp">
+            <input type="hidden" name="token" value="{$token|escape:'html'}">
+            <input type="hidden" name="ec_setup_token" value="{$ecSetupToken|escape:'html'}">
+            <details class="ecd-setup-section" open>
+              <summary>1. Importar repositorio GitHub</summary>
+              <div class="ecd-setup-grid">
+                <label class="ecd-setup-label ecd-setup-wide">
+                  URL del repositorio público
+                  <input class="ecd-setup-input" data-ecd-git name="ec_setup_git" type="url" placeholder="https://github.com/usuario/proyecto" required maxlength="255" autocomplete="off" spellcheck="false">
+                  <span class="ecd-setup-hint">Pega la dirección HTTPS de GitHub. No necesitas entrar a Dokploy ni compartir un token.</span>
+                </label>
+                <label class="ecd-setup-label">
+                  Rama
+                  <input class="ecd-setup-input" data-ecd-branch name="ec_setup_branch" type="text" value="main" required maxlength="100" pattern="[A-Za-z0-9._/-]+" autocapitalize="none" spellcheck="false">
+                  <span class="ecd-setup-hint">Por ejemplo, main o production.</span>
+                </label>
+                <label class="ecd-setup-label">
+                  Carpeta raíz de la aplicación
+                  <input class="ecd-setup-input" data-ecd-root name="ec_setup_root" type="text" value="/" required maxlength="190" autocapitalize="none" spellcheck="false">
+                  <span class="ecd-setup-hint">Usa / o, si es un monorepo, /apps/web.</span>
+                </label>
+              </div>
+              <div class="ecd-setup-detection">
+                <button type="button" class="ecd-setup-detect-button" data-ecd-scan>Detectar proyecto</button>
+                <span data-ecd-detection class="ecd-setup-detect-result" role="status" aria-live="polite">Opcional. También puedes elegirlo manualmente.</span>
+              </div>
+            </details>
+            <details class="ecd-setup-section" open>
+              <summary>2. Ajustar el despliegue</summary>
+              <div class="ecd-setup-grid">
+                <label class="ecd-setup-label">
+                  Tipo de proyecto
+                  <select name="ec_setup_preset" data-ecd-preset class="ecd-setup-input">
+                    <option value="auto" selected>Detectar automáticamente</option>
+                    <option value="nextjs">Next.js (sin Dockerfile)</option>
+                    <option value="nodejs">Node.js (sin Dockerfile)</option>
+                    <option value="dockerfile">Dockerfile (avanzado)</option>
+                  </select>
+                  <span class="ecd-setup-hint">Next.js/Node.js utilizan Nixpacks; Dockerfile usa el archivo de tu repositorio.</span>
+                </label>
+                <label class="ecd-setup-label">
+                  Puerto de aplicación
+                  <input class="ecd-setup-input" name="ec_setup_port" type="number" min="1024" max="65535" value="3000" required>
+                  <span class="ecd-setup-hint">3000 para Next.js. Si tu aplicación escucha otro puerto, modifícalo.</span>
+                </label>
+                <label class="ecd-setup-label ecd-setup-wide">
+                  <span>Variables de entorno (opcional)</span>
+                  <textarea class="ecd-setup-input" name="ec_setup_env" rows="4" maxlength="6144" autocomplete="off" spellcheck="false" placeholder="API_URL=https://api.example.com&#10;MY_SECRET=valor-privado"></textarea>
+                  <span class="ecd-setup-hint">Una por línea: CLAVE=valor. Se cifran antes de almacenarse. No agregues DATABASE_URL, PORT ni NODE_ENV; los administra la plataforma. Las variables NEXT_PUBLIC_ son visibles en el navegador de tu app.</span>
+                </label>
+              </div>
+            </details>
+            <details class="ecd-setup-section" open>
+              <summary>3. Confirmar e instalar</summary>
+              <div class="ecd-setup-review">
+                <div class="ecd-review-box"><small>Dominio del servicio</small><strong>{$ecSetupDomain|escape:'html'}</strong></div>
+                <div class="ecd-review-box"><small>Base de datos incluida</small><strong>{$ecSetupDbMode|escape:'html'}</strong></div>
+                <div class="ecd-review-box"><small>Infraestructura</small><strong>Proyecto privado Dokploy</strong></div>
+                <div class="ecd-review-box"><small>Certificado</small><strong>HTTPS · Let's Encrypt al validar DNS</strong></div>
+              </div>
+              <p class="ecd-setup-note">La URL y el certificado requieren DNS correcto. Este botón solicita el despliegue; publicarlo no garantiza todavía que el sitio esté disponible. Los repositorios privados y la conexión OAuth no están habilitados en esta versión.</p>
+              <label class="ecd-setup-check">
+                <input type="checkbox" name="ec_setup_confirm" value="yes" required>
+                <span>Confirmo que tengo derecho a desplegar este repositorio y que las variables proporcionadas pertenecen a mi proyecto.</span>
+              </label>
+              <button type="submit" class="ecd-setup-cta">Instalar mi aplicación</button>
+            </details>
+          </form>
+        {else}
+          <div class="ecd-setup-note">Este servicio todavía no está habilitado para instalaciones de autoservicio. El equipo de soporte debe verificar primero la configuración y la capacidad del servidor.</div>
+        {/if}
+      </section>
     {/if}
     <div class="ecd-grid">
       <div class="ecd-card">
@@ -311,3 +453,63 @@
     </p>
   {/if}
 </section>
+
+<script>
+{literal}
+(function () {
+  const wrap = document.querySelector('.ec-dokploy');
+  const form = wrap && wrap.querySelector('#ecd-install-wizard');
+  if (!form) return;
+  const git = form.querySelector('[data-ecd-git]');
+  const branch = form.querySelector('[data-ecd-branch]');
+  const root = form.querySelector('[data-ecd-root]');
+  const preset = form.querySelector('[data-ecd-preset]');
+  const button = form.querySelector('[data-ecd-scan]');
+  const status = form.querySelector('[data-ecd-detection]');
+  if (!button) return;
+  button.addEventListener('click', async function () {
+    const match = /^https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/.exec(git.value.trim());
+    const currentBranch = branch.value.trim();
+    const path = root.value.trim().replace(/^\/+|\/+$/g, '');
+    if (!match || !/^[A-Za-z0-9._/-]{1,100}$/.test(currentBranch)
+        || path.split('/').some(function(p){return p==='..'||p==='.';})
+        || !/^[A-Za-z0-9_.\/-]*$/.test(path)) {
+      status.textContent = 'Introduce una URL de GitHub, rama y carpeta válidas.';
+      return;
+    }
+    button.disabled = true;
+    status.textContent = 'Buscando package.json público en GitHub…';
+    const base = 'https://api.github.com/repos/' + encodeURIComponent(match[1])
+      + '/' + encodeURIComponent(match[2]) + '/contents/'
+      + (path ? path.split('/').map(encodeURIComponent).join('/') + '/' : '');
+    try {
+      const resp = await fetch(base + 'package.json?ref=' + encodeURIComponent(currentBranch), {
+        headers: {'Accept':'application/vnd.github+json'},
+        credentials:'omit', redirect:'error'
+      });
+      if (resp.ok) {
+        const info = await resp.json();
+        const encoded = (info.content || '').replace(/\s+/g, '');
+        const pkg = JSON.parse(decodeURIComponent(Array.prototype.map.call(atob(encoded), function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join('')));
+        const deps = Object.assign({}, pkg.dependencies || {}, pkg.devDependencies || {});
+        if (Object.prototype.hasOwnProperty.call(deps, 'next')) {
+          preset.value = 'nextjs';
+          status.textContent = 'Next.js detectado. Configuración automática lista.';
+        } else {
+          preset.value = 'nodejs';
+          status.textContent = 'Proyecto Node.js detectado. Configuración automática lista.';
+        }
+      } else {
+        status.textContent = 'No se encontró package.json. Elige Dockerfile si tu repositorio lo incluye.';
+      }
+    } catch (e) {
+      status.textContent = 'No se pudo consultar GitHub. Elige el tipo de proyecto manualmente.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+})();
+{/literal}
+</script>
