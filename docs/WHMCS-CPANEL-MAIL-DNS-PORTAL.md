@@ -7,7 +7,7 @@ This addon complements the native WHMCS cPanel provisioning module. Clients rece
 ## Current portal functionality
 
 - Service lookup strictly from `tblhosting.userid = current WHMCS session uid` and `domainstatus = Active`.
-- Double-check service domain and username against a private admin-maintained account map.
+- Double-check existing WHMCS product ID (`tblhosting.packageid`), service domain and username against a private admin-maintained account map. This does **not** create new WHMCS products, cPanel packages or user accounts.
 - Read a client's email mailboxes and zone through the cPanel UAPI with the cPanel user's token, not WHM root credentials.
 - Client forms for mailbox creation, password changes and quota changes; DNS listing and constrained A/CNAME/TXT additions.
 - DNS MX, NS, SPF, DKIM, DMARC and known mail hosts are protected from portal writes.
@@ -25,6 +25,7 @@ Example configuration file (must be readable only by the WHMCS PHP account, perm
 {
   "services": {
     "123": {
+      "package_id": 12,
       "host": "cp1.example.net",
       "username": "exampleclient",
       "domain": "example.com",
@@ -62,7 +63,7 @@ If Cloudflare is authoritative, edit DNS in Cloudflare, not cPanel. The public p
 
 1. Confirm that WHM has created a separate mail-only cPanel package and that the client cannot use File Manager, SSH, FTP, SQL, or app hosting features.
 2. Provision one throwaway test account through WHMCS's native cPanel module.
-3. Confirm that its `tblhosting.username`, domain, and service ID match the private map.
+3. Confirm that its existing `tblhosting.packageid`, `username`, domain, and service ID match the private map.
 4. Confirm mailbox list, password and quota APIs and DNS `parse_zone` response layout on your exact cPanel version.
 5. Test an A record with no mail/DNS-critical effects. Review the `mass_edit_zone` payload shape for your cPanel version. **Leave DNS writes disabled until that integration passes.**
 6. Verify client A cannot see/update client B's account, including forged service IDs.
@@ -74,3 +75,7 @@ If Cloudflare is authoritative, edit DNS in Cloudflare, not cPanel. The public p
 The current addon does not create cPanel accounts itself; WHMCS's supported cPanel server module provisions the **ecloud_mail_dns** package. It does not manage Cloudflare zones. It is not a substitute for an email server or email backups. It does not deploy Dokploy; that work is in the separate draft provisioning module.
 
 Caution: the current prototype does not yet have application-level rate limiting or fully validated DNS UAPI response contracts. **Do not enable mail/DNS writes in production until these controls and integration tests are complete.**
+
+## Productos de correo ya existentes en WHMCS
+
+Los paquetes de correo del usuario **ya están creados y conectados a cPanel mediante su propio módulo WHMCS**. Mantenerlos tal como están: precios, límites, automatización y contraseñas siguen en el sistema actual. Para cada servicio habilitado en el portal, registrar su `service_id`, `package_id`, dominio y usuario de cPanel en el mapa privado; el código compara esos datos con los valores de `tblhosting` antes de mostrar o editar buzones. La integración con la ficha de producto dentro de Lagom podrá añadirse tras revisar el nombre técnico del módulo existente y sus plantillas. No usar ni almacenar en el addon una contraseña maestra de WHM.
