@@ -382,7 +382,10 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
         {/if}
       </section>
     {/if}
-    <div class="ecd-grid">
+    <details class="ecd-technical" id="ecd-detalles">
+      <summary>Detalles técnicos de mi alojamiento</summary>
+      <div class="ecd-technical-content">
+        <div class="ecd-grid">
       <div class="ecd-card">
         <h4>Dominio de la aplicación</h4>
         <p class="ecd-value">{if $ecDokployDomain}{$ecDokployDomain|escape:'html'}{else}Pendiente de configurar{/if}</p>
@@ -407,10 +410,12 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
         <p class="ecd-value">{if $ecDokployBranch}{$ecDokployBranch|escape:'html'}{else}No configurada{/if}</p>
         <p class="ecd-note">La rama se administra conforme al plan contratado.</p>
       </div>
-    </div>
+        </div>
+      </div>
+    </details>
     {if $ecDokployLiveAvailable}
-      <div class="ecd-card ecd-ops">
-        <h4>Despliegues recientes</h4>
+      <div class="ecd-card ecd-ops" id="ecd-historial">
+        <h3>Historial de despliegues</h3>
         {if $ecDokployHistory}
           <ul class="ecd-deployments">
             {foreach from=$ecDokployHistory item=deployment}
@@ -424,7 +429,7 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
     {/if}
     {if $ecDokployCanRedeploy}
       <div class="ecd-card ecd-ops">
-        <h4>Actualizar desde Git</h4>
+        <h3>Actualizar desde Git</h3>
         <p class="ecd-note">Se solicitará un nuevo despliegue de la rama configurada.
         El sitio podría experimentar una interrupción durante el proceso.</p>
         <form method="post" action="clientarea.php?action=productdetails&id={$ecDokployServiceId|escape:'html'}">
@@ -455,7 +460,7 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
         {/if}
       </header>
       {if !$ecMailLinked}
-        <div class="ecd-state">
+        <div class="ecd-overview">
           {if $ecMailAutoLink}
             <strong>Tu correo corporativo está disponible</strong>
             <p>Encontramos automáticamente el hosting de correo {$ecMailAutoAccount|escape:'html'} en tu cuenta.</p>
@@ -558,7 +563,7 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
             {/foreach}
           </div>
         {else}
-          <div class="ecd-state"><strong>Aún no hay buzones</strong><p>Puedes crear el primero si tu servicio de correo permite administrar cuentas.</p></div>
+          <div class="ecd-overview"><strong>Aún no hay buzones</strong><p>Puedes crear el primero si tu servicio de correo permite administrar cuentas.</p></div>
         {/if}
         {if $ecMailCanWrite && $ecMailAccountCount < $ecMailMailboxLimit}
           <details class="ecd-mail-action" open>
@@ -604,11 +609,7 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
       {/if}
       <a class="ecd-action ecd-action-alt" href="submitticket.php">Solicitar asistencia</a>
     </div>
-    <p class="ecd-smallprint">
-      El estado de instalación procede de WHMCS. Si se habilita la consulta en Dokploy,
-      verás también su estado de ejecución y despliegues recientes. Ninguno de esos
-      estados confirma por sí solo que el sitio web responda correctamente.
-    </p>
+    <p class="ecd-smallprint">Los cambios del servicio se registran en WHMCS. La disponibilidad pública de la aplicación requiere comprobar el despliegue, el dominio y HTTPS.</p>
   {/if}
 </section>
 
