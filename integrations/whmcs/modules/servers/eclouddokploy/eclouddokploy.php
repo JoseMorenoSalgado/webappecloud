@@ -453,13 +453,15 @@ function eclouddokploy_ClientArea(array $params): array
         $hosting = Capsule::table('tblhosting')
             ->where('id', $serviceId)
             ->where('userid', $clientId)
-            ->first(['id', 'domain', 'packageid', 'domainstatus']);
+            ->first(['id', 'domain', 'packageid', 'domainstatus', 'server']);
         if (!$hosting || (int) $hosting->packageid !== (int) ($params['pid'] ?? 0)) {
             return ['templatefile' => 'templates/clientarea', 'vars' => $view];
         }
-        if (strtolower(rtrim((string) $hosting->domain, '.')) !== $domain) {
+        if (strtolower(rtrim((string) $hosting->domain, '.')) !== $domain ||
+            (int) $hosting->server !== (int) ($params['serverid'] ?? 0)) {
             return ['templatefile' => 'templates/clientarea', 'vars' => $view];
         }
+        $route = eclouddokploy_resolve_route($params);
         $view['ecDokployAuthorized'] = true;
         $view['ecDokployServiceId'] = $serviceId;
         $active = (string) $hosting->domainstatus === 'Active';
@@ -486,8 +488,11 @@ function eclouddokploy_ClientArea(array $params): array
         } else {
             $record = Capsule::table('mod_ecloud_dokploy_services')
                 ->where('service_id', $serviceId)
-                ->first(['state', 'application_id']);
+                ->first(['state', 'application_id', 'route_fingerprint']);
             if ($record) {
+                if (!eclouddokploy_route_matches($record->route_fingerprint, $route)) {
+                    throw new RuntimeException('Application host assignment mismatch.');
+                }
                 $public = eclouddokploy_public_state((string) $record->state);
                 $view['ecDokployProvisioned'] =
                     (string) $record->state === 'deployment_requested'
@@ -497,10 +502,7 @@ function eclouddokploy_ClientArea(array $params): array
                         getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1';
                     if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_READS') === '1') {
                         try {
-                            $api = new ECloudDokployClient(
-                                trim((string) getenv('ECLOUD_DOKPLOY_URL')),
-                                trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'))
-                            );
+                            $api = new ECloudDokployClient($route['url'], $route['api_key']);
                             $live = eclouddokploy_live_overview($api, (string) $record->application_id);
                             $view['ecDokployLiveState'] = $live['state'];
                             $view['ecDokployLiveDescription'] = $live['description'];
