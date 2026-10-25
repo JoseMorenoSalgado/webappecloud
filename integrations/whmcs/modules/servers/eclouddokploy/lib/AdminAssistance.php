@@ -1,0 +1,398 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * WHMCS native Admin Services Tab + Module Commands.
+ * No second login, no Dokploy credentials in admin HTML, and no client
+ * impersonation. A support agent configures a service-scoped draft, then
+ * explicitly chooses either "Crear proyecto" or "Instalar aplicación".
+ *
+ * Only normal WHMCS administrators can invoke these paths. Payment, service
+ * ownership, fixed WHMCS server and project state are checked again on write.
+ */
+
+function eclouddokploy_admin_authorized(array $params): bool
+{
+    return (int) ($_SESSION['adminid'] ?? 0) > 0
+        && (int) ($params['serviceid'] ?? 0) > 0
+        && (int) ($params['userid'] ?? 0) > 0
+        && eclouddokploy_auto_enabled($params);
+}
+
+function eclouddokploy_admin_service(array $params, bool $requireActive = true): ?array
+{
+    if (!eclouddokploy_admin_authorized($params)) return null;
+    $id = (int) $params['serviceid'];
+    $owner = (int) $params['userid'];
+    $domain = strtolower(rtrim(trim((string) ($params['domain'] ?? '')), '.'));
+    if (!eclouddokploy_valid_domain($domain)) return null;
+    $row = \WHMCS\Database\Capsule::table('tblhosting')
+        ->where('id', $id)->where('userid', $owner)
+        ->first(['id', 'domain', 'domainstatus', 'packageid', 'server']);
+    if (!$row || (int) $row->packageid !== (int) ($params['pid'] ?? 0)
+        || (int) $row->server !== (int) ($params['serverid'] ?? 0)
+        || (int) $row->server < 1
+        || strtolower(rtrim((string) $row->domain, '.')) !== $domain) {
+        return null;
+    }
+    $allowed = $requireActive ? ['Active'] : ['Active', 'Pending'];
+    if (!in_array((string) $row->domainstatus, $allowed, true)) return null;
+    return ['service_id' => $id, 'owner_id' => $owner, 'domain' => $domain];
+}
+
+/** Validation is pure and does NOT fetch any URL; only Install validates online. */
+function eclouddokploy_admin_validate_fields(array $fields): ?array
+{
+    $git = trim((string) ($fields[0] ?? ''));
+    if ($git === '') return null;
+    $branch = trim((string) ($fields[1] ?? 'main'));
+    $root = eclouddokploy_setup_root((string) ($fields[2] ?? '/'));
+    $preset = strtolower(trim((string) ($fields[3] ?? 'nextjs')));
+    $port = filter_var($fields[4] ?? 3000, FILTER_VALIDATE_INT);
+    if (!eclouddokploy_valid_git($git, $branch)
+        || eclouddokploy_setup_repo_parts($git) === null) {
+        throw new InvalidArgumentException('Repositorio o rama GitHub inválidos. Usa una URL HTTPS pública.');
+    }
+    if ($root === null || !in_array($preset, ['auto', 'nextjs', 'nodejs', 'dockerfile'], true)
+        || $port === false || $port < 1024 || $port > 65535) {
+        throw new InvalidArgumentException('La carpeta, framework o puerto de la aplicación no es válido.');
+    }
+    $rawSecrets = (string) ($fields[5] ?? '');
+    if (strlen($rawSecrets) > 6144) {
+        throw new InvalidArgumentException('Las variables de entorno son demasiado extensas.');
+    }
+    return [
+        'git_url' => $git,
+        'branch' => $branch,
+        'root_path' => $root,
+        'preset' => $preset,
+        'port' => (int) $port,
+        'env_raw' => $rawSecrets,
+    ];
+}
+
+function eclouddokploy_admin_draft_table(): void
+{
+    $schema = \WHMCS\Database\Capsule::schema();
+    if ($schema->hasTable('mod_ecloud_dokploy_admin_drafts')) return;
+    $schema->create('mod_ecloud_dokploy_admin_drafts', static function ($table) {
+        $table->unsignedInteger('service_id')->primary();
+        $table->string('git_url', 255);
+        $table->string('branch', 100);
+        $table->string('root_path', 191);
+        $table->string('preset', 16);
+        $table->unsignedInteger('port');
+        $table->text('env_ciphertext')->nullable();
+        $table->string('env_nonce', 64)->nullable();
+        $table->timestamps();
+    });
+}
+
+function eclouddokploy_admin_draft(int $serviceId): ?array
+{
+    if ($serviceId < 1 || !\WHMCS\Database\Capsule::schema()
+        ->hasTable('mod_ecloud_dokploy_admin_drafts')) return null;
+    $row = \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_admin_drafts')
+        ->where('service_id', $serviceId)->first();
+    if (!$row) return null;
+    return [
+        'git_url' => (string) $row->git_url,
+        'branch' => (string) $row->branch,
+        'root_path' => (string) $row->root_path,
+        'preset' => (string) $row->preset,
+        'port' => (int) $row->port,
+        'env_ciphertext' => $row->env_ciphertext === null ? null : (string) $row->env_ciphertext,
+        'env_nonce' => $row->env_nonce === null ? null : (string) $row->env_nonce,
+    ];
+}
+
+function eclouddokploy_admin_draft_to_setup(array $draft, string $seed, int $id): array
+{
+    $env = eclouddokploy_setup_decrypt_env(
+        $draft['env_ciphertext'] ?? null,
+        $draft['env_nonce'] ?? null,
+        $seed,
+        $id
+    );
+    // Validate again at install time. "auto" requests GitHub's public
+    // inspection on the server: no customer-supplied hostname / redirect.
+    return eclouddokploy_setup_prepare([
+        'ec_setup_git' => $draft['git_url'],
+        'ec_setup_branch' => $draft['branch'],
+        'ec_setup_root' => $draft['root_path'],
+        'ec_setup_preset' => $draft['preset'],
+        'ec_setup_port' => (string) $draft['port'],
+        'ec_setup_env' => implode("\n", array_map(
+            static fn($k, $v) => $k . '=' . $v,
+            array_keys($env),
+            array_values($env)
+        )),
+    ]);
+}
+
+function eclouddokploy_admin_state(int $serviceId): ?object
+{
+    if ($serviceId < 1 || !\WHMCS\Database\Capsule::schema()
+        ->hasTable('mod_ecloud_dokploy_services')) return null;
+    return \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_services')
+        ->where('service_id', $serviceId)
+        ->first(['state', 'owner_client_id', 'project_id',
+            'environment_id', 'route_fingerprint', 'application_id']);
+}
+
+function eclouddokploy_admin_editable_state(?object $row): bool
+{
+    return $row === null || in_array((string) $row->state,
+        ['awaiting_setup', 'new', 'project_created', 'environment_ready'], true);
+}
+
+function eclouddokploy_admin_html(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function eclouddokploy_admin_select(string $name, string $selected, array $options, bool $disabled): string
+{
+    $html = '<select class="form-control input-sm" name="modulefields['
+        . eclouddokploy_admin_html($name) . ']"' . ($disabled ? ' disabled' : '') . '>';
+    foreach ($options as $value => $label) {
+        $html .= '<option value="' . eclouddokploy_admin_html($value) . '"'
+            . ($selected === $value ? ' selected' : '') . '>'
+            . eclouddokploy_admin_html($label) . '</option>';
+    }
+    return $html . '</select>';
+}
+
+function eclouddokploy_admin_tab_fields(array $params): array
+{
+    $service = eclouddokploy_admin_service($params, false);
+    if ($service === null) {
+        return ['Proyecto Dokploy' => 'No autorizado o servicio no asociado al módulo guiado.'];
+    }
+    $id = $service['service_id'];
+    $state = eclouddokploy_admin_state($id);
+    $draft = eclouddokploy_admin_draft($id);
+    $editable = eclouddokploy_admin_editable_state($state);
+    $status = eclouddokploy_public_state((string) ($state->state ?? 'awaiting_setup'));
+    $value = '<strong>' . eclouddokploy_admin_html($status[0]) . '</strong>'
+        . '<p class="help-block">' . eclouddokploy_admin_html($status[1]) . '</p>';
+    if ($state && !empty($state->project_id) && !empty($state->environment_id)) {
+        $value .= '<small>Proyecto: <code>'
+            . eclouddokploy_admin_html((string) $state->project_id)
+            . '</code> | production: <code>'
+            . eclouddokploy_admin_html((string) $state->environment_id) . '</code></small>';
+    }
+    $value .= '<p class="help-block">Dominio del servicio: <strong>'
+        . eclouddokploy_admin_html($service['domain'])
+        . '</strong> · Cliente WHMCS #'
+        . (int) $service['owner_id'] . ' · Servicio #' . $id
+        . '. Nunca se comparte la API key con el cliente.</p>';
+
+    $disabled = $editable ? '' : ' disabled';
+    $repo = (string) ($draft['git_url'] ?? '');
+    $branch = (string) ($draft['branch'] ?? 'main');
+    $root = (string) ($draft['root_path'] ?? '/');
+    $preset = (string) ($draft['preset'] ?? 'nextjs');
+    $port = (int) ($draft['port'] ?? 3000);
+
+    $input = static function (int $i, string $type, string $value,
+        string $placeholder, string $attrs = '') use ($disabled): string {
+        return '<input class="form-control input-sm" name="modulefields[' . $i
+            . ']" type="' . $type . '" value="' . eclouddokploy_admin_html($value)
+            . '" placeholder="' . eclouddokploy_admin_html($placeholder)
+            . '" ' . $attrs . $disabled . '>';
+    };
+
+    $message = $_SESSION['ec_dokploy_admin_notice'][$id] ?? '';
+    unset($_SESSION['ec_dokploy_admin_notice'][$id]);
+    if (is_string($message) && $message !== '') {
+        $value .= '<p class="alert alert-warning">' . eclouddokploy_admin_html($message) . '</p>';
+    }
+    $note = $editable
+        ? '1. Guarda el servicio. 2. En Comandos del módulo, pulsa «Crear proyecto Dokploy» '
+            . 'o «Instalar aplicación (soporte)» después de completar GitHub.'
+        : 'La creación de recursos ya comenzó. No se puede cambiar el repositorio '
+            . 'desde esta pantalla para evitar instalar código distinto del original.';
+
+    return [
+        'Proyecto Dokploy · Soporte' => $value,
+        'Repositorio GitHub del cliente' => $input(0, 'url', $repo,
+            'https://github.com/usuario/proyecto.git', ' maxlength="255" autocomplete="off"')
+            . '<small>Público y HTTPS. Nunca el repositorio global del producto.</small>',
+        'Rama GitHub' => $input(1, 'text', $branch, 'main', ' maxlength="100"'),
+        'Carpeta de aplicación' => $input(2, 'text', $root, '/', ' maxlength="190"'),
+        'Tipo de aplicación' => eclouddokploy_admin_select('3', $preset, [
+            'nextjs' => 'Next.js (sin Dockerfile)',
+            'nodejs' => 'Node.js (Nixpacks)',
+            'dockerfile' => 'Dockerfile',
+            'auto' => 'Detectar al instalar',
+        ], !$editable),
+        'Puerto interno' => $input(4, 'number', (string) $port, '3000',
+            ' min="1024" max="65535"'),
+        'Variables de entorno (opcional)' =>
+            '<textarea name="modulefields[5]" rows="3" maxlength="6144" class="form-control" '
+            . 'placeholder="API_URL=https://api.ejemplo.com&#10;APP_SECRET=..."'
+            . $disabled . '></textarea>'
+            . '<small>Si queda vacío, conserva las variables cifradas anteriores. '
+            . 'No se vuelven a mostrar. No pegues secretos en tickets.</small>',
+        'Instalación asistida · Instrucciones' => '<input type="hidden" name="modulefields[6]" value="'
+            . $id . '"><p class="help-block">' . eclouddokploy_admin_html($note)
+            . '</p>',
+    ];
+}
+
+function eclouddokploy_admin_save_fields(array $params): void
+{
+    if (!eclouddokploy_admin_authorized($params)
+        || ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') return;
+    $service = eclouddokploy_admin_service($params, false);
+    if ($service === null) return;
+    $id = $service['service_id'];
+    $fields = $_POST['modulefields'] ?? null;
+    if (!is_array($fields) || (int) ($fields[6] ?? 0) !== $id) return;
+
+    try {
+        if (!eclouddokploy_admin_editable_state(eclouddokploy_admin_state($id))) {
+            throw new RuntimeException('No se puede cambiar Git después de comenzar la instalación.');
+        }
+        $form = eclouddokploy_admin_validate_fields($fields);
+        if ($form === null) return; // No Git data to save yet.
+        $old = eclouddokploy_admin_draft($id);
+        $crypto = ['ciphertext' => $old['env_ciphertext'] ?? null,
+            'nonce' => $old['env_nonce'] ?? null];
+        if (trim($form['env_raw']) !== '') {
+            $secrets = eclouddokploy_setup_parse_env($form['env_raw']);
+            $crypto = eclouddokploy_setup_encrypt_env(
+                $secrets, eclouddokploy_auto_seed(), $id
+            );
+        }
+        $values = [
+            'git_url' => $form['git_url'],
+            'branch' => $form['branch'],
+            'root_path' => $form['root_path'],
+            'preset' => $form['preset'],
+            'port' => $form['port'],
+            'env_ciphertext' => $crypto['ciphertext'],
+            'env_nonce' => $crypto['nonce'],
+            'updated_at' => date('Y-m-d H:i:s'),
+        ];
+        $db = \WHMCS\Database\Capsule::connection();
+        $lock = 'ecloud-dokploy-' . $id;
+        $got = $db->selectOne('SELECT GET_LOCK(?, 8) AS acquired', [$lock]);
+        if (!$got || (int) $got->acquired !== 1) {
+            throw new RuntimeException('Ya se está preparando este servicio.');
+        }
+        try {
+            // Recheck under the same lock held by the deployment handler.
+            if (!eclouddokploy_admin_editable_state(eclouddokploy_admin_state($id))) {
+                throw new RuntimeException('La instalación empezó. Los ajustes ya están protegidos.');
+            }
+            eclouddokploy_admin_draft_table();
+            \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_admin_drafts')
+                ->updateOrInsert(
+                    ['service_id' => $id],
+                    $values + ['created_at' => date('Y-m-d H:i:s')]
+                );
+            $_SESSION['ec_dokploy_admin_notice'][$id] =
+                'Configuración de soporte guardada. Elige un comando del módulo para continuar.';
+        } finally {
+            $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
+        }
+    } catch (Throwable $e) {
+        // No credentials or supplied source text are written to logs.
+        $_SESSION['ec_dokploy_admin_notice'][$id] =
+            $e instanceof InvalidArgumentException
+                ? $e->getMessage()
+                : 'No se guardaron los datos de GitHub. Revisa el estado del servicio.';
+    }
+}
+
+function eclouddokploy_admin_create_project(array $params): string
+{
+    $service = eclouddokploy_admin_service($params, false);
+    if ($service === null) return 'No hay una sesión administrativa o un servicio válido.';
+    try {
+        // Existing paid service, pinned WHMCS server; no manually entered URL.
+        $route = eclouddokploy_resolve_route($params);
+        $reserved = eclouddokploy_setup_reserve(
+            $params, $route, (string) ($params['configoption5'] ?? 'none')
+        );
+        if ($reserved !== 'success') return $reserved;
+        return eclouddokploy_order_prepare_project($params, $route);
+    } catch (Throwable $e) {
+        return 'No se pudo crear o verificar el proyecto privado. Comprueba el pago y conexión.';
+    }
+}
+
+function eclouddokploy_admin_install_app(array $params): string
+{
+    $service = eclouddokploy_admin_service($params, true);
+    if ($service === null) return 'El servicio debe estar activo y pertenecer al cliente asignado.';
+    $id = $service['service_id'];
+    $owner = $service['owner_id'];
+    if (!eclouddokploy_order_invoice_paid($id, $owner)) {
+        return 'La factura inicial no está pagada; no se despliegan recursos sin autorización.';
+    }
+    try {
+        $draft = eclouddokploy_admin_draft($id);
+        if ($draft === null) {
+            return 'Primero introduce el repositorio GitHub y guarda la ficha del servicio.';
+        }
+        $seed = eclouddokploy_auto_seed();
+        $setup = eclouddokploy_admin_draft_to_setup($draft, $seed, $id);
+        $route = eclouddokploy_resolve_route($params);
+        $prepared = eclouddokploy_admin_create_project($params);
+        if ($prepared !== 'success') return $prepared;
+
+        $db = \WHMCS\Database\Capsule::connection();
+        $lock = 'ecloud-dokploy-' . $id;
+        $got = $db->selectOne('SELECT GET_LOCK(?, 8) AS acquired', [$lock]);
+        if (!$got || (int) $got->acquired !== 1) {
+            return 'Ya hay una instalación o cambio de configuración en curso.';
+        }
+        try {
+            $state = eclouddokploy_admin_state($id);
+            if (!$state || !is_string($state->route_fingerprint)
+                || !hash_equals($route['fingerprint'], $state->route_fingerprint)
+                || (int) $state->owner_client_id !== $owner) {
+                return 'La cuenta o el servidor asignado no coinciden.';
+            }
+            if ((string) $state->state === 'deployment_requested') {
+                return 'La aplicación ya tiene un despliegue solicitado. No se creó otra.';
+            }
+            if ((string) $state->state !== 'environment_ready') {
+                return 'El despliegue ya se inició o necesita conciliación; no se duplicarán recursos.';
+            }
+            if (!eclouddokploy_server_has_capacity((int) $route['whmcs_server_id'], $id)) {
+                return 'El servidor alcanzó su límite de cuentas.';
+            }
+            $saved = eclouddokploy_setup_saved($id, $seed);
+            if ($saved === null) {
+                eclouddokploy_setup_persist($id, $setup, $seed);
+                $saved = $setup;
+            }
+            // The original setup is immutable once stored, even if another
+            // administrator saved a different draft meanwhile.
+            $api = new ECloudDokployClient($route['url'], $route['api_key']);
+            $result = eclouddokploy_create_locked(
+                $api, $id, $owner, $saved['git_url'], $saved['branch'],
+                $saved['port'], $service['domain'], $seed,
+                (string) ($params['configoption5'] ?? 'none'),
+                $route['remote_server_id'], $route['fingerprint'], $saved
+            );
+            $after = eclouddokploy_admin_state($id);
+            if ($after && (string) $after->state === 'deployment_requested'
+                && str_starts_with($result, 'Despliegue solicitado.')) {
+                return 'success';
+            }
+            return $result;
+        } finally {
+            $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
+        }
+    } catch (InvalidArgumentException $e) {
+        return 'Los datos del repositorio no son válidos; edítalos y guarda antes de instalar.';
+    } catch (Throwable $e) {
+        // Do not echo server exceptions; could include secret parameters.
+        return 'La instalación requiere revisión. Consulta el estado antes de repetir el comando.';
+    }
+}
