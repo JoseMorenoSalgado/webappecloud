@@ -6,7 +6,7 @@
 
 Módulo de aprovisionamiento WHMCS `eclouddokploy` para desplegar aplicaciones desde un repositorio público de GitHub, con base de datos **opcional y seleccionable por producto**: MariaDB, MySQL, PostgreSQL, base de datos externa o sin base de datos. WebAppECloud necesita una base de datos SQL; el modo `none` es solo para otras aplicaciones que no la requieran.
 
-1. Parte de un Environment ID **preexistente** en Dokploy; para múltiples VPS independientes se configura como Username de cada **servidor WHMCS**, no globalmente en el producto. Consultar `docs/WHMCS-DOKPLOY-MAX-10-POR-SERVIDOR.md`.
+1. Crea **un proyecto privado por servicio WHMCS** mediante `project.create`; reutiliza el entorno production del proyecto o lo crea mediante `environment.create`. Ya no requiere Environment ID compartido.
 2. Por cada `serviceid` crea un registro idempotente en `mod_ecloud_dokploy_services`.
 3. Para bases administradas, solicita `<motor>.create` con credenciales distintas por servicio y luego `<motor>.deploy`; para `external` reutiliza la URL SQL guardada en un archivo privado, y para `none` no crea una base de datos.
 4. Solicita `application.create`, `application.saveGitProvider`, `application.saveBuildType` (`Dockerfile`) y `application.saveEnvironment`.
@@ -27,7 +27,7 @@ Los recursos de cada cliente se identifican por `serviceid`, no se mezclan bases
 - Si se elige `external`, agregar la variable privada `ECLOUD_DOKPLOY_EXTERNAL_DB_MAP_FILE=/ruta/fuera/webroot/map.json` en el entorno de WHMCS. El archivo JSON debe mapear el ID de servicio a su URL SQL, por ejemplo `{ "123": "postgresql://usuario:clave@host-privado:5432/basedatos" }`. Protegerlo con permisos del sistema, cifrado en reposo y una cuenta SQL por servicio; no introducir contraseñas en campos públicos de WHMCS. Verificar conectividad desde Dokploy hacia el servidor externo, TLS y restricciones de firewall.
 - WHMCS debe poder acceder a las variables de entorno servidor-privadas (no agregarlas al repositorio ni a campos visibles al cliente):
 
-  - `ECLOUD_DOKPLOY_URL` y `ECLOUD_DOKPLOY_API_KEY` se reservan para diagnóstico CLI o modo piloto legado; las instalaciones multi-servidor utilizan Hostname/Password de la ficha de cada servidor WHMCS.
+  - `ECLOUD_DOKPLOY_URL` y `ECLOUD_DOKPLOY_API_KEY` se reservan para diagnóstico CLI o modo piloto legado; las instalaciones multi-servidor utilizan Hostname/Password de la ficha de cada servidor WHMCS. Username puede quedar vacío en servidores nuevos.
   - `ECLOUD_DOKPLOY_PASSWORD_SEED=<32 bytes aleatorios en hex, longitud 64>`
   - `ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1` **solo durante las pruebas autorizadas**.
 
@@ -47,7 +47,7 @@ Guardar la semilla en un gestor de secretos y respaldarla de forma segura: cambi
 1. Copiar este módulo de provisión a \`modules/servers/eclouddokploy/\` en un WHMCS de pruebas.
 2. En **Configuración → Productos/Servicios → Productos/Servicios**, crear un **grupo de productos "Aplicaciones web"** si no existe.
 3. Crear un producto de tipo hosting o servicio adecuado al catálogo, nombre sugerido **"Hosting de aplicaciones Next.js"**, y seleccionar **eclouddokploy** como módulo en sus opciones.
-4. Configurar Git, rama, puerto y motor de base de datos para ese producto; cada servidor WHMCS suministra su Environment ID como Username y su API key como Password. Si el cliente necesita otro motor, utilizar otro producto hasta implementar opciones configurables por pedido.
+4. Configurar Git, rama, puerto y motor de base de datos. Cada servidor WHMCS suministra su API key como Password y el módulo genera un proyecto/entorno nuevo por servicio. Si el cliente necesita otro motor, utilizar otro producto.
 5. No asignar ni cambiar este módulo en los productos de correo. No editar plantillas de Lagom ni reemplazar la vista completa del servicio.
 6. Al contratar la aplicación, el cliente verá **otro renglón en Mis servicios**, y al abrirlo verá una sección propia **"Administrar aplicación"** integrada en la ficha estándar. Facturas y renovaciones mantienen el flujo habitual de WHMCS.
 
@@ -66,7 +66,7 @@ Guardar la semilla en un gestor de secretos y respaldarla de forma segura: cambi
 
 Crear producto que utilice módulo `eclouddokploy` y rellenar Config Options:
 
-- Dokploy Environment ID: solo para modo legado; el flujo de múltiples servidores lo toma del Username de cada ficha de servidor WHMCS.
+- Dokploy Environment ID: obsoleto para clientes nuevos. El entorno privado se crea por servicio; Username del servidor nuevo puede quedar vacío.
 - Git Repository HTTPS: `https://github.com/JoseMorenoSalgado/webappecloud.git`.
 - Git Branch: `main`.
 - App Port: `3000`.
@@ -174,3 +174,5 @@ El workflow `.github/workflows/whmcs-dokploy-lint.yml` ejecuta:
 
 
 Para distribución nativa de diez instalaciones por VPS, configurar cada servidor con `Maximum No. of Accounts = 10` y el grupo `Fill active server until full then switch to next least used`. Guía: `docs/WHMCS-DOKPLOY-MAX-10-POR-SERVIDOR.md`. El módulo también rechaza un servicio que exceda el límite; no redirige pedidos a servidores diferentes por cuenta propia.
+
+**Proyecto aislado por servicio (nueva arquitectura):** ya no se comparte un Environment ID de servidor entre clientes. El módulo crea primero proyecto y entorno propios por servicio, guarda `owner_client_id`, `project_id` y `environment_id` y bloquea recursos antiguos compartidos hasta una conciliación administrativa. Guía: `docs/WHMCS-DOKPLOY-PROYECTOS-POR-CLIENTE.md`.
