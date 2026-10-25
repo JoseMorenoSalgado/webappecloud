@@ -88,10 +88,10 @@ $csrf = eclouddokploy_csrf(555);
 check(strlen($csrf) === 64 && $csrf === eclouddokploy_csrf(555), 'per-service stable csrf');
 check($csrf !== eclouddokploy_csrf(556), 'per-service separate csrf');
 putenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=0');
-check(eclouddokploy_ClientAreaAllowedFunctions() === [], 'no client action by default');
+check(eclouddokploy_ClientAreaAllowedFunctions() === ['InstallApp'], 'guided install is registered but per-service permission is enforced');
 check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555]), 'no está habilitada'), 'action fails closed');
 putenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=1');
-check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy'], 'optional client action registered');
+check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy', 'InstallApp'], 'optional redeploy and default guided actions registered');
 $_SERVER['REQUEST_METHOD'] = 'GET';
 check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' => 123]), 'no autorizada'), 'client action refuses GET');
 $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -307,7 +307,7 @@ check(eclouddokploy_public_state('environment_ready')[0] === 'Entorno privado co
 putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS=0');
 putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES=0');
 putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_DELETE=0');
-check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy'], 'mail actions absent unless explicitly enabled');
+check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy', 'InstallApp'], 'mail actions absent unless explicitly enabled');
 check(str_contains(eclouddokploy_email_action([]), 'no está habilitada'), 'mail CRUD gated');
 check(eclouddokploy_mail_valid_local('ventas'), 'valid mailbox local part');
 check(eclouddokploy_mail_valid_local('ventas.2027'), 'mailbox local punctuation');
@@ -375,13 +375,13 @@ check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 
 
 
 // Three-step customer installer (public GitHub, no shared Dokploy credentials).
-putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=0');
-check(!in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'self-service unavailable by default');
-putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=1');
-putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0');
-check(!in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'self-service requires provisioning gate');
-putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1');
-check(in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'optional install wizard action enabled');
+check(eclouddokploy_auto_product_mode([]) === 'guiado', 'guided onboarding default, no PHP flag required');
+check(eclouddokploy_auto_product_mode(['configoption6'=>'legado']) === 'legado', 'legacy mode explicit');
+check(!eclouddokploy_auto_enabled(['configoption6'=>'legado']), 'legacy product does not auto-reserve');
+check(!eclouddokploy_auto_enabled(['configoption6'=>'not-a-mode']), 'unknown mode fails closed');
+check(eclouddokploy_auto_enabled(['configoption6'=>'guiado']), 'auto setup enabled by product settings');
+check(in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'install action registered without manual environment flags');
+check(str_contains(eclouddokploy_install_from_wizard(['configoption6'=>'legado']), 'no está habilitada'), 'legacy product denied by install wizard');
 $_SESSION['uid'] = 0;
 $_SERVER['REQUEST_METHOD'] = 'GET';
 check(str_contains(eclouddokploy_install_from_wizard(['serviceid'=>310,'userid'=>25]), 'no autorizada'), 'unauthenticated install denied');
@@ -464,7 +464,42 @@ if (function_exists('sodium_crypto_secretbox')) {
         check(true, 'other service cannot decrypt secrets');
     }
 }
+// Guided provisioning no longer depends on environment activation switches.
 putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=0');
 putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0');
+
+
+// Automatic encrypted seed uses historical seed if present and never changes it.
+check(eclouddokploy_auto_seed_valid(str_repeat('ab', 32)), 'automatic seed length and hexadecimal validation');
+check(!eclouddokploy_auto_seed_valid(str_repeat('ax', 32)), 'non-hex seed rejected');
+putenv('ECLOUD_DOKPLOY_PASSWORD_SEED=' . str_repeat('aB', 32));
+check(eclouddokploy_auto_seed() === str_repeat('ab', 32), 'existing SQL/master seed preserved without DB access');
+putenv('ECLOUD_DOKPLOY_PASSWORD_SEED=invalid');
+try {
+    eclouddokploy_auto_seed();
+    throw new RuntimeException('Test failed: invalid existing seed ignored');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: invalid existing seed ignored', 'wrong legacy secret blocked');
+}
+putenv('ECLOUD_DOKPLOY_PASSWORD_SEED');
+
+// Native cPanel linking: never choose a service belonging to another domain.
+$mailCandidates = [
+    ['service_id'=>111, 'domain'=>'empresa.com'],
+    ['service_id'=>112, 'domain'=>'otraempresa.com'],
+];
+check(eclouddokploy_auto_mail_choose($mailCandidates, 'app.empresa.com')['service_id'] === 111,
+    'parent-domain email account automatically linked');
+check(eclouddokploy_auto_mail_choose($mailCandidates, 'empresa.com')['service_id'] === 111,
+    'exact-domain email account automatically linked');
+check(eclouddokploy_auto_mail_choose($mailCandidates, 'app.otra.net') === null,
+    'unrelated domain never linked');
+$mailCandidates[] = ['service_id'=>113, 'domain'=>'empresa.com'];
+check(eclouddokploy_auto_mail_choose($mailCandidates, 'app.empresa.com') === null,
+    'ambiguous multiple email accounts denied');
+check(eclouddokploy_auto_mail_choose([
+    ['service_id'=>114, 'domain'=>'app.empresa.com'],
+    ['service_id'=>111, 'domain'=>'empresa.com'],
+], 'app.empresa.com')['service_id'] === 114, 'most specific email service preferred');
 
 echo "Dokploy provisioning validations passed\n";
