@@ -37,6 +37,8 @@ jobs:
           install -m 0644 "$src/lib/CpanelMail.php" package/eclouddokploy/lib/CpanelMail.php
           install -m 0644 "$src/lib/EmailOperations.php" package/eclouddokploy/lib/EmailOperations.php
           install -m 0644 "$src/lib/SelfService.php" package/eclouddokploy/lib/SelfService.php
+          install -m 0644 "$src/lib/AutomaticSetup.php" package/eclouddokploy/lib/AutomaticSetup.php
+          install -m 0644 "$src/lib/AutoMail.php" package/eclouddokploy/lib/AutoMail.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
@@ -60,10 +62,12 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    y habilita primero consultas de correo en staging.
    IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
    App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
-   Requiere ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=1 y habilitar
-   ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1 SOLO EN STAGING.
-   Los secretos de variables de entorno se cifran usando sodium y
-   ECLOUD_DOKPLOY_PASSWORD_SEED (conservar su valor para restauración).
+   Modo guiado es la opción predeterminada de productos nuevos.
+   No requiere variables de entorno SSH ni contraseña maestra manual.
+   Al primer uso genera un secreto cifrado mediante el Crypt de WHMCS,
+   almacena en mod_ecloud_dokploy_runtime y lo reutiliza en adelante.
+   Para servicios del piloto anterior con seed, conservarla sin cambios.
+   Probar staging antes de habilitar el automático de pago en WHMCS.
    No pegues tokens en tickets, capturas o repositorios.
 5) Deja APAGADO hasta validar el VPS real:
    ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0
