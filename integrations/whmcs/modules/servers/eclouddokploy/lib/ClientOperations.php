@@ -80,17 +80,15 @@ function eclouddokploy_deployment_rows($payload): array
  * Retrieve only fields that are safe to show customers. Not a site healthcheck:
  * applicationStatus is Dokploy's job state, not proof the URL responds with 200.
  */
-function eclouddokploy_live_overview(ECloudDokployClient $api, string $applicationId): array
+function eclouddokploy_live_overview(ECloudDokployClient $api, string $applicationId, string $environmentId): array
 {
     if (!preg_match('/^[a-zA-Z0-9_-]{3,128}$/D', $applicationId)) {
         throw new RuntimeException('Invalid remote application ID.');
     }
 
     $application = $api->get('application.one', ['applicationId' => $applicationId]);
-    if (!isset($application['applicationId']) ||
-        !is_string($application['applicationId']) ||
-        !hash_equals($applicationId, $application['applicationId'])) {
-        throw new RuntimeException('Remote application identity mismatch.');
+    if (!eclouddokploy_app_environment_matches($application, $applicationId, $environmentId)) {
+        throw new RuntimeException('Remote application environment mismatch.');
     }
     $state = eclouddokploy_application_status($application['applicationStatus'] ?? null);
     // Deployment history is optional; errors should not hide the job state.
@@ -163,9 +161,13 @@ function eclouddokploy_redeploy_request(array $params): string
         try {
             eclouddokploy_create_actions_table();
             $record = $db->table('mod_ecloud_dokploy_services')->where('service_id', $serviceId)
-                ->first(['state', 'application_id', 'route_fingerprint']);
-            if (!$record || !eclouddokploy_route_matches($record->route_fingerprint, $route) ||
-                (string) $record->state !== 'deployment_requested'
+                ->first(['state', 'application_id', 'route_fingerprint',
+                    'owner_client_id', 'project_id', 'environment_id']);
+            if (!$record || !eclouddokploy_route_matches($record->route_fingerprint, $route)
+                || !eclouddokploy_service_isolation_valid(
+                    $record->owner_client_id, $record->project_id,
+                    $record->environment_id, $clientId
+                ) || (string) $record->state !== 'deployment_requested'
                 || !is_string($record->application_id)
                 || !preg_match('/^[a-zA-Z0-9_-]{3,128}$/D', $record->application_id)) {
                 return 'Todavía no existe una aplicación habilitada para redespliegue.';
@@ -183,9 +185,9 @@ function eclouddokploy_redeploy_request(array $params): string
             $remote = $api->get('application.one', [
                 'applicationId' => $record->application_id,
             ]);
-            if (!isset($remote['applicationId'])
-                || !is_string($remote['applicationId'])
-                || !hash_equals($record->application_id, $remote['applicationId'])) {
+            if (!eclouddokploy_app_environment_matches(
+                $remote, $record->application_id, $record->environment_id
+            )) {
                 return 'No se pudo validar la aplicación remota.';
             }
             if (($remote['applicationStatus'] ?? null) === 'running') {
