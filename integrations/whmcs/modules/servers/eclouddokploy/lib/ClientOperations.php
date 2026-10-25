@@ -145,14 +145,16 @@ function eclouddokploy_redeploy_request(array $params): string
         $db = \WHMCS\Database\Capsule::connection();
         $service = $db->table('tblhosting')
             ->where('id', $serviceId)->where('userid', $clientId)
-            ->first(['id', 'packageid', 'domain', 'domainstatus']);
+            ->first(['id', 'packageid', 'domain', 'domainstatus', 'server']);
         if (!$service || (int) $service->packageid !== (int) ($params['pid'] ?? 0)
             || (string) $service->domainstatus !== 'Active'
+            || (int) $service->server !== (int) ($params['serverid'] ?? 0)
             || strtolower(rtrim((string) $service->domain, '.')) !==
                strtolower(rtrim((string) ($params['domain'] ?? ''), '.'))) {
             return 'El servicio no se encuentra activo o no está autorizado.';
         }
 
+        $route = eclouddokploy_resolve_route($params);
         $lock = 'ec-dokploy-client-deploy-' . $serviceId;
         $got = $db->selectOne('SELECT GET_LOCK(?, 0) AS acquired', [$lock]);
         if (!$got || (int) $got->acquired !== 1) {
@@ -161,8 +163,9 @@ function eclouddokploy_redeploy_request(array $params): string
         try {
             eclouddokploy_create_actions_table();
             $record = $db->table('mod_ecloud_dokploy_services')->where('service_id', $serviceId)
-                ->first(['state', 'application_id']);
-            if (!$record || (string) $record->state !== 'deployment_requested'
+                ->first(['state', 'application_id', 'route_fingerprint']);
+            if (!$record || !eclouddokploy_route_matches($record->route_fingerprint, $route) ||
+                (string) $record->state !== 'deployment_requested'
                 || !is_string($record->application_id)
                 || !preg_match('/^[a-zA-Z0-9_-]{3,128}$/D', $record->application_id)) {
                 return 'Todavía no existe una aplicación habilitada para redespliegue.';
@@ -176,10 +179,7 @@ function eclouddokploy_redeploy_request(array $params): string
             }
             // Fail closed if Dokploy cannot confirm this exact application's state.
             // Never queue another build while Dokploy says an operation is running.
-            $api = new ECloudDokployClient(
-                trim((string) getenv('ECLOUD_DOKPLOY_URL')),
-                trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'))
-            );
+            $api = new ECloudDokployClient($route['url'], $route['api_key']);
             $remote = $api->get('application.one', [
                 'applicationId' => $record->application_id,
             ]);
