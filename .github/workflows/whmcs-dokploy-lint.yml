@@ -58,6 +58,9 @@ jobs:
           # Verify that WHMCS green CreateAccount implies a real Dokploy
           # project and environment, with idempotent retries.
           php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/paid_project_creation_mock.php"
+          # WHMCS support agent saves Git in native admin tab, creates project
+          # and installs within exactly that account's existing environment.
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/admin_assistance_https_mock.php"
           export ECLOUD_DOKPLOY_API_KEY="wrong-token"
           if php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_readonly.php" > "$TEMP_DIR/denied.txt"; then
             echo 'Invalid Dokploy token was accepted'; exit 1
