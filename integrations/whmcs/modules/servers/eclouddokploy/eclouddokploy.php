@@ -639,6 +639,8 @@ function eclouddokploy_ClientArea(array $params): array
         'ecSetupDbMode' => '',
         'ecDokployState' => $public[0],
         'ecDokployDescription' => $public[1],
+        'ecDokployPhase' => 0,
+        'ecDokployRawState' => '',
         'ecDokployProvisioned' => false,
         'ecDokployCanRedeploy' => false,
         'ecDokployCsrf' => '',
@@ -737,7 +739,21 @@ function eclouddokploy_ClientArea(array $params): array
                 if (!$isolated && !in_array((string) $record->state, $early, true)) {
                     throw new RuntimeException('Legacy/shared project requires manual reconciliation.');
                 }
-                $public = eclouddokploy_public_state((string) $record->state);
+                $rawState = (string) $record->state;
+                $public = eclouddokploy_public_state($rawState);
+                $view['ecDokployRawState'] = $rawState;
+                // Journey never represents an unverified deploy as "online".
+                if ($rawState === 'deployment_requested') {
+                    $view['ecDokployPhase'] = 3;
+                } elseif (in_array($rawState, [
+                    'creating_db','db_created','deploying_db','db_deployed',
+                    'creating_app','app_created','configuring_app','app_configured',
+                    'creating_domain','domain_created','requesting_deploy'
+                ], true)) {
+                    $view['ecDokployPhase'] = 2;
+                } elseif ($isolated) {
+                    $view['ecDokployPhase'] = 1;
+                }
                 if ($view['ecSetupEnabled']
                     && in_array((string) $record->state, ['awaiting_setup', 'new', 'environment_ready'], true)) {
                     $view['ecSetupCanInstall'] = $active;
@@ -756,6 +772,14 @@ function eclouddokploy_ClientArea(array $params): array
                         $view['ecSetupRoot'] = (string) $saved->root_path;
                         $view['ecSetupPreset'] = (string) $saved->preset;
                         $view['ecSetupPort'] = (int) $saved->port;
+                        if (eclouddokploy_valid_git((string) $saved->git_url, (string) $saved->branch)) {
+                            $view['ecDokployGitUrl'] = (string) $saved->git_url;
+                            $view['ecDokployBranch'] = (string) $saved->branch;
+                        }
+                    } elseif (in_array($rawState, ['awaiting_setup','new','environment_ready'], true)) {
+                        // Module product defaults are NOT a customer's repository.
+                        $view['ecDokployGitUrl'] = '';
+                        $view['ecDokployBranch'] = '';
                     }
                 }
                 if ($isolated) {
