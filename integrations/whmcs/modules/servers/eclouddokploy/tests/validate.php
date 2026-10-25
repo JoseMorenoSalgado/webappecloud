@@ -543,7 +543,7 @@ $deniedAdminTab = eclouddokploy_AdminServicesTabFields($adminFixture);
 check(count($deniedAdminTab) === 1, 'admin service HTML not exposed to clients');
 $_SESSION['adminid'] = 5;
 check(eclouddokploy_admin_authorized($adminFixture), 'WHMCS admin session authorized');
-check(!eclouddokploy_admin_authorized($adminFixture + ['serviceid'=>0]), 'explicit service owner required');
+check(!eclouddokploy_admin_authorized(array_replace($adminFixture, ['serviceid'=>0])), 'explicit service owner required');
 check(!eclouddokploy_admin_authorized(array_replace($adminFixture, ['configoption6'=>'legado'])),
     'legacy server products cannot be installed from assisted wizard');
 $adminData = eclouddokploy_admin_validate_fields([
