@@ -69,4 +69,35 @@ check($clientArea['tabOverviewModuleOutputTemplate'] === 'templates/clientarea.t
 check($clientArea['templateVariables']['ecDokployAuthorized'] === false, 'unauthenticated visitor denied');
 check(!array_key_exists('password', $clientArea['templateVariables']), 'no secrets in template variables');
 
+
+$running = eclouddokploy_application_status('running');
+check($running[0] === 'Compilando o desplegando', 'live status mapping');
+check(eclouddokploy_application_status('unexpected')[0] === 'Estado no disponible', 'unknown live status protected');
+$history = eclouddokploy_deployment_rows([
+    ['status' => 'success', 'createdAt' => '2026-10-24T18:00:00Z', 'secret' => 'do-not-show'],
+    ['status' => 'failed', 'createdAt' => 'garbage'],
+]);
+check(count($history) === 2, 'deployment history count');
+check($history[0]['status'] === 'Correcto', 'sanitized deployment status');
+check($history[0]['date'] === '2026-10-24 18:00 UTC', 'UTC date normalization');
+check(!isset($history[0]['secret']), 'no raw Dokploy field rendered');
+check($history[1]['date'] === 'Fecha no disponible', 'reject invalid dates');
+check(count(eclouddokploy_deployment_rows(array_fill(0, 20, ['status' => 'done']))) === 5, 'deployment list bounded');
+$_SESSION['uid'] = 123;
+$csrf = eclouddokploy_csrf(555);
+check(strlen($csrf) === 64 && $csrf === eclouddokploy_csrf(555), 'per-service stable csrf');
+check($csrf !== eclouddokploy_csrf(556), 'per-service separate csrf');
+putenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=0');
+check(eclouddokploy_ClientAreaAllowedFunctions() === [], 'no client action by default');
+check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555]), 'no está habilitada'), 'action fails closed');
+putenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=1');
+check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy'], 'optional client action registered');
+$_SERVER['REQUEST_METHOD'] = 'GET';
+check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' => 123]), 'no autorizada'), 'client action refuses GET');
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_POST = ['id' => '555', 'modop' => 'custom', 'a' => 'Redeploy', 'ec_confirm' => 'yes', 'ec_redeploy_token' => 'bad'];
+check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' => 123]), 'expiró'), 'reject invalid csrf before DB call');
+$_SESSION['uid'] = 456;
+check(str_contains(eclouddokploy_redeploy_request(['serviceid' => 555, 'userid' => 123]), 'no autorizada'), 'reject other WHMCS user');
+
 echo "Dokploy provisioning validations passed\n";
