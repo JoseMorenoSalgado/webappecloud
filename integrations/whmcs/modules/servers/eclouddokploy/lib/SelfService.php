@@ -404,9 +404,8 @@ function eclouddokploy_setup_reserve(array $params, array $route, string $dbMode
 
 function eclouddokploy_install_from_wizard(array $params): string
 {
-    if (getenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE') !== '1'
-        || getenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING') !== '1') {
-        return 'La instalación asistida aún no está habilitada en este entorno.';
+    if (!eclouddokploy_auto_enabled($params)) {
+        return 'La instalación asistida no está habilitada en este producto.';
     }
     if (!eclouddokploy_setup_request_authorized($params)) {
         return 'Instalación no autorizada o confirmación caducada.';
@@ -415,12 +414,13 @@ function eclouddokploy_install_from_wizard(array $params): string
     $owner = (int) $params['userid'];
     $domain = strtolower(rtrim(trim((string) ($params['domain'] ?? '')), '.'));
     $dbMode = (string) ($params['configoption5'] ?? 'none');
-    $seed = (string) getenv('ECLOUD_DOKPLOY_PASSWORD_SEED');
-    if (!preg_match('/^[a-f0-9]{64}$/Di', $seed)
-        || !eclouddokploy_valid_domain($domain)) {
-        return 'Configuración del plan o cifrado incompleta. Contacta con soporte.';
+    if (!eclouddokploy_valid_domain($domain)) {
+        return 'Este servicio necesita un dominio válido antes de instalar.';
     }
     try {
+        // Automatic first-use seed, encrypted with the WHMCS application key.
+        // Existing pilot deployments preserve their historical env seed.
+        $seed = eclouddokploy_auto_seed();
         $route = eclouddokploy_resolve_route($params);
         $hosting = \WHMCS\Database\Capsule::table('tblhosting')
             ->where('id', $id)->where('userid', $owner)
