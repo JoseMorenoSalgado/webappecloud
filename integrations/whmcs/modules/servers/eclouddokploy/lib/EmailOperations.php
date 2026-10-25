@@ -22,7 +22,8 @@ function eclouddokploy_email_binding_file(int $serviceId): ?array
         return null;
     }
     $real = realpath($path);
-    $docroot = realpath((string) ($_SERVER['DOCUMENT_ROOT'] ?? ''));
+    $rawDocroot = (string) ($_SERVER['DOCUMENT_ROOT'] ?? '');
+    $docroot = $rawDocroot !== '' ? realpath($rawDocroot) : false;
     if ($real === false || ($docroot !== false
         && ($real === $docroot || str_starts_with($real, $docroot . DIRECTORY_SEPARATOR)))) {
         return null;
@@ -44,11 +45,18 @@ function eclouddokploy_email_binding_file(int $serviceId): ?array
         || preg_match('/[\x00-\x20\x7f]/', $token)) {
         return null;
     }
+    $mailDomain = $entry['mail_domain'] ?? null;
+    if ($mailDomain !== null && (!is_string($mailDomain)
+        || !eclouddokploy_valid_domain($mailDomain)
+        || strtolower($mailDomain) !== $mailDomain)) {
+        return null;
+    }
     return [
         'email_service_id' => $target,
         'api_token' => $token,
         'mailbox_limit' => $limit,
         'max_quota_mb' => $quota,
+        'mail_domain' => $mailDomain,
     ];
 }
 
@@ -62,6 +70,11 @@ function eclouddokploy_email_binding(int $appServiceId, int $ownerId, string $do
         || !eclouddokploy_valid_domain($domain)) return null;
     $entry = eclouddokploy_email_binding_file($appServiceId);
     if ($entry === null) return null;
+    // The application may use app.example.com while email uses example.com.
+    // A parent email domain must be explicitly selected by the admin-only map.
+    $mailDomain = $entry['mail_domain'] ?? $domain;
+    if ($mailDomain !== $domain
+        && !str_ends_with($domain, '.' . $mailDomain)) return null;
 
     $db = \WHMCS\Database\Capsule::table('tblhosting');
     $app = $db->where('id', $appServiceId)
@@ -74,7 +87,7 @@ function eclouddokploy_email_binding(int $appServiceId, int $ownerId, string $do
         ->where('userid', $ownerId)
         ->first(['id', 'domain', 'domainstatus', 'packageid', 'server', 'username']);
     if (!$mail || (string) $mail->domainstatus !== 'Active'
-        || strtolower(rtrim((string) $mail->domain, '.')) !== $domain
+        || strtolower(rtrim((string) $mail->domain, '.')) !== $mailDomain
         || (int) $mail->server <= 0) return null;
 
     // Only an actual cPanel product/service can authorize cPanel UAPI access.
@@ -91,7 +104,7 @@ function eclouddokploy_email_binding(int $appServiceId, int $ownerId, string $do
 
     return [
         'email_service_id' => (int) $mail->id,
-        'domain' => $domain,
+        'domain' => $mailDomain,
         'host' => $host,
         'username' => $user,
         'api_token' => $entry['api_token'],
@@ -206,7 +219,8 @@ function eclouddokploy_email_action(array $params): string
             && !eclouddokploy_mail_valid_quota($quota, $binding['max_quota_mb'])) {
             return 'La cuota no cumple los límites del plan contratado.';
         }
-        $address = eclouddokploy_mail_address($local, $domain);
+        $mailDomain = $binding['domain'];
+        $address = eclouddokploy_mail_address($local, $mailDomain);
         if ($op === 'delete'
             && ((string) ($_POST['ec_mail_delete_confirmation'] ?? '') !== 'ELIMINAR ' . $address
                 || (string) ($_POST['ec_mail_ack'] ?? '') !== 'yes')) {
@@ -224,7 +238,7 @@ function eclouddokploy_email_action(array $params): string
                 return 'Espera 20 segundos entre operaciones de correo.';
             }
             $api = eclouddokploy_email_client($binding);
-            $rows = eclouddokploy_email_list($api, $domain);
+            $rows = eclouddokploy_email_list($api, $mailDomain);
             $exists = eclouddokploy_email_exists($rows, $local);
             if ($op === 'create') {
                 if ($exists) return 'Esa dirección de correo ya existe.';
@@ -232,7 +246,7 @@ function eclouddokploy_email_action(array $params): string
                     return 'Se alcanzó el máximo de buzones del plan contratado.';
                 }
                 $api->call('add_pop', [
-                    'domain' => $domain,
+                    'domain' => $mailDomain,
                     'email' => $local,
                     'password' => $password,
                     'quota' => (int) $quota,
@@ -242,14 +256,14 @@ function eclouddokploy_email_action(array $params): string
                 if (!$exists) return 'El buzón no existe en la cuenta de correo contratada.';
                 if ($op === 'password') {
                     $api->call('passwd_pop', [
-                        'domain' => $domain, 'email' => $local, 'password' => $password,
+                        'domain' => $mailDomain, 'email' => $local, 'password' => $password,
                     ], true);
                 } elseif ($op === 'quota') {
                     $api->call('edit_pop_quota', [
-                        'domain' => $domain, 'email' => $local, 'quota' => (int) $quota,
+                        'domain' => $mailDomain, 'email' => $local, 'quota' => (int) $quota,
                     ], true);
                 } else {
-                    $api->call('delete_pop', ['domain' => $domain, 'email' => $local], true);
+                    $api->call('delete_pop', ['domain' => $mailDomain, 'email' => $local], true);
                 }
             }
             return 'success';
