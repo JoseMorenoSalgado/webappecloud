@@ -93,4 +93,14 @@ La nueva versión ejecuta una conciliación **de solo lectura y con el mismo blo
 - En Dokploy → Projects, busca `ec-client-{CLIENT_ID}-service-{SERVICE_ID}`. Los identificadores de cliente y servicio están en la ficha de WHMCS; **no es necesariamente el número de pedido 324**.
 - Si permanece el aviso `No encontramos el proyecto pendiente en Dokploy`, la recuperación automatizada se niega a crear un duplicado sin confirmar el resultado de la solicitud anterior. Comprueba el registro de auditoría de Dokploy y solicita conciliación técnica. **No modifiques `state` directamente en SQL**.
 
+### Proyecto existente confirmado: cliente 225 / servicio 293
+
+En la captura real se observa **`ec-client-225-service-293`**, con entorno **`production`**. El número de pedido WHMCS es **324**, pero el nombre del proyecto se deriva de los IDs **225 y 293**, respectivamente.
+
+El botón **«Crear / verificar proyecto Dokploy»** ahora **SIEMPRE** consulta primero `project.all`, incluso si WHMCS ya marcó la cuenta como `environment_ready` o conservó IDs locales. Recupera el `projectId` y `environmentId` cuando faltan, pero **nunca sustituye un ID existente distinto**. Si el nombre existe exactamente en Dokploy, la función adopta ese proyecto; no llama a `project.create` por segunda vez. Solo se crea un recurso nuevo cuando la respuesta de la API confirma que no existe ninguno y el estado era inicial `new` o `awaiting_setup`.
+
+Este proceso se verifica mediante pruebas automatizadas que recrean un proyecto remoto llamado `ec-client-225-service-293` antes de ejecutar la recuperación, y comprueban que el número de proyectos no aumenta. Se prueban además pérdida de IDs, cambios de ID indebidos, propietario cruzado y un estado `environment_ready` cuyo proyecto remoto ya no existe.
+
+**Atención:** la captura demuestra la existencia del proyecto y entorno, pero no demuestra todavía que el servicio esté correctamente enlazado en la base de datos WHMCS ni que haya una aplicación desplegada. El resultado real de la conciliación debe observarse desde el servidor WHMCS y el panel Dokploy. Mantener la implementación en staging hasta ese paso.
+
 El ZIP se valida con `tests/paid_project_creation_mock.php` y un servidor HTTPS Dokploy simulado. Las pruebas no prueban que el proyecto remoto del usuario exista ni sustituyen inspeccionar sus logs.
