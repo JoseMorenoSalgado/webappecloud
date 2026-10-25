@@ -39,6 +39,7 @@ jobs:
           install -m 0644 "$src/lib/SelfService.php" package/eclouddokploy/lib/SelfService.php
           install -m 0644 "$src/lib/AutomaticSetup.php" package/eclouddokploy/lib/AutomaticSetup.php
           install -m 0644 "$src/lib/AutoMail.php" package/eclouddokploy/lib/AutoMail.php
+          install -m 0644 "$src/lib/OrderInstall.php" package/eclouddokploy/lib/OrderInstall.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
@@ -64,6 +65,8 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
    App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
    Modo guiado es la opción predeterminada de productos nuevos.
+   Modo pedido (opcional): añadir campo de compra Repositorio GitHub;
+   tras recibir el primer pago solicita despliegue en el VPS asignado.
    No requiere variables de entorno SSH ni contraseña maestra manual.
    Al primer uso genera un secreto cifrado mediante el Crypt de WHMCS,
    almacena en mod_ecloud_dokploy_runtime y lo reutiliza en adelante.
