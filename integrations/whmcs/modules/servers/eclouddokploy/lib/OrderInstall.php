@@ -50,6 +50,29 @@ function eclouddokploy_order_source(array $params): ?array
 }
 
 /**
+ * No automatic remote deployments on unpaid, missing or unverifiable invoices.
+ * A "pedido" product is intended for WHMCS's first-payment provisioning mode;
+ * this check also protects users if the product was set up "on order placed".
+ */
+function eclouddokploy_order_invoice_paid(int $serviceId, int $ownerId): bool
+{
+    if ($serviceId <= 0 || $ownerId <= 0) return false;
+    $hosting = \WHMCS\Database\Capsule::table('tblhosting')
+        ->where('id', $serviceId)->where('userid', $ownerId)
+        ->first(['orderid']);
+    $orderId = (int) ($hosting->orderid ?? 0);
+    if ($orderId <= 0) return false;
+    $order = \WHMCS\Database\Capsule::table('tblorders')
+        ->where('id', $orderId)->first(['invoiceid']);
+    $invoiceId = (int) ($order->invoiceid ?? 0);
+    if ($invoiceId <= 0) return false;
+    $invoice = \WHMCS\Database\Capsule::table('tblinvoices')
+        ->where('id', $invoiceId)->where('userid', $ownerId)
+        ->first(['status']);
+    return $invoice !== null && (string) $invoice->status === 'Paid';
+}
+
+/**
  * Runs inside CreateAccount after WHMCS reserves this service.
  * The external calls only happen for an explicitly opted-in paid-order
  * product, with public GitHub URL provided and validated.
@@ -70,6 +93,11 @@ function eclouddokploy_order_auto_install(array $params, array $route): string
     $dbMode = (string) ($params['configoption5'] ?? 'none');
     if ($id < 1 || $owner < 1 || !eclouddokploy_valid_domain($domain)) {
         return 'El sitio necesita un dominio válido antes del despliegue automático.';
+    }
+    if (!eclouddokploy_order_invoice_paid($id, $owner)) {
+        // The buyer may still use the guided installer after their service is
+        // genuinely active. A reserved slot alone is not a paid deployment.
+        return 'success';
     }
 
     // Reject bad repository before attempting any external writes.
