@@ -526,7 +526,7 @@ check(eclouddokploy_auto_mail_choose([
 // WHMCS Admin Services Tab + custom support actions, without client impersonation.
 $adminButtons = eclouddokploy_AdminCustomButtonArray();
 check(($adminButtons['Crear / verificar proyecto Dokploy'] ?? '') === 'AdminCreateProject',
-    'admin can create the client's isolated project from service details');
+    'admin can create the customer project from service details');
 check(($adminButtons['Instalar aplicación del cliente'] ?? '') === 'AdminInstallApp',
     'admin can install the application for the customer from service details');
 $adminFixture = [
