@@ -26,6 +26,8 @@ jobs:
         run: php integrations/whmcs/modules/servers/eclouddokploy/tests/validate.php
       - name: Verify one-time automatic encryption seed (mock WHMCS runtime)
         run: php integrations/whmcs/modules/servers/eclouddokploy/tests/automatic_seed_mock.php
+      - name: Verify only paid orders can trigger automatic deployment
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/order_payment_mock.php
       - name: Verify HTTPS handshake, auth and read-only Dokploy contract (mock)
         shell: bash
         run: |
