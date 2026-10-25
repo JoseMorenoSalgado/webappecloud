@@ -243,118 +243,142 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
     {/if}
 
     {if $ecSetupEnabled}
-      <section class="ecd-setup" aria-labelledby="ecd-setup-title">
+      <section class="ecd-setup" id="ecd-instalar" aria-labelledby="ecd-install-title">
         <div class="ecd-setup-top">
           <div>
-            <p class="ecd-kicker">Elearning Cloud · Inicio rápido</p>
-            <h3 id="ecd-setup-title">Publica tu sitio web en minutos</h3>
-            <p class="ecd-intro">Pega el enlace de GitHub y pulsa instalar. Elearning Cloud prepara la infraestructura automáticamente, sin entrar a Dokploy.</p>
+            <p class="ecd-kicker">Tu siguiente paso</p>
+            <h3 id="ecd-install-title">
+              {if $ecSetupConfigured}Repositorio configurado
+              {elseif $ecSetupCanInstall}Importa tu proyecto desde GitHub
+              {elseif $ecDokployPhase >= 2}Instalación en proceso
+              {else}Configuración pendiente{/if}
+            </h3>
+            <p class="ecd-intro">
+              {if $ecSetupConfigured}
+                Tu código está asociado a este servicio. No necesitas instalarlo nuevamente.
+              {elseif $ecSetupCanInstall}
+                Pega tu repositorio público y Elearning Cloud se encarga de preparar la aplicación y su base de datos.
+              {else}
+                Estamos revisando la instalación. Puedes consultar el estado o pedir ayuda a nuestro equipo.
+              {/if}
+            </p>
           </div>
-          <span class="ecd-chip">{if $ecSetupConfigured}Configuración guardada{elseif $ecSetupCanInstall}Lista para configurar{else}Disponible próximamente{/if}</span>
-        </div>
-        <div class="ecd-steps" aria-label="Pasos de instalación">
-          <div class="ecd-step-pill"><b>1</b>Tu repositorio</div>
-          <div class="ecd-step-pill"><b>2</b>Autoajustes</div>
-          <div class="ecd-step-pill"><b>3</b>Publicar</div>
+          {if $ecSetupConfigured}<span class="ecd-chip">Origen guardado</span>
+          {elseif $ecSetupCanInstall}<span class="ecd-chip">Sin configuración técnica obligatoria</span>
+          {else}<span class="ecd-chip">En revisión</span>{/if}
         </div>
         {if $ecSetupConfigured}
-          <div class="ecd-state ecd-setup-saved">
-            <strong>Origen de aplicación registrado</strong>
-            <p>El repositorio y las opciones quedan vinculados a este servicio. No se crean aplicaciones adicionales con envíos repetidos.</p>
-          </div>
-          <div class="ecd-setup-review">
+          <div class="ecd-review-grid" aria-label="Resumen del repositorio">
             <div class="ecd-review-box"><small>Repositorio</small><strong>{$ecSetupGitUrl|escape:'html'}</strong></div>
             <div class="ecd-review-box"><small>Rama</small><strong>{$ecSetupBranch|escape:'html'}</strong></div>
-            <div class="ecd-review-box"><small>Framework</small><strong>{$ecSetupPreset|escape:'html'}</strong></div>
-            <div class="ecd-review-box"><small>Carpeta / Puerto</small><strong>{$ecSetupRoot|escape:'html'} · {$ecSetupPort|escape:'html'}</strong></div>
+            <div class="ecd-review-box"><small>Tipo de proyecto</small><strong>{$ecSetupPreset|escape:'html'}</strong></div>
+            <div class="ecd-review-box"><small>Carpeta y puerto</small><strong>{$ecSetupRoot|escape:'html'} · {$ecSetupPort|escape:'html'}</strong></div>
           </div>
-          <p class="ecd-setup-note">Si el despliegue ya comenzó, consulta su estado arriba. La instalación y sus recursos no se duplican cuando se actualiza la página.</p>
           {if $ecSetupCanInstall}
-            <form method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
+            <p class="ecd-setup-note">La configuración quedó guardada. Si todavía no empezó la instalación, puedes solicitarla nuevamente con los mismos valores.</p>
+            <form method="post" data-ecd-submit-form action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
               <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
               <input type="hidden" name="modop" value="custom">
               <input type="hidden" name="a" value="InstallApp">
               <input type="hidden" name="token" value="{$token|escape:'html'}">
               <input type="hidden" name="ec_setup_token" value="{$ecSetupToken|escape:'html'}">
               <input type="hidden" name="ec_setup_confirm" value="yes">
-              <p class="ecd-setup-note">La configuración está guardada, pero todavía no se ha iniciado la creación de recursos remotos. Puedes reintentar con las mismas opciones.</p>
-              <button type="submit" class="ecd-setup-cta">Reintentar instalación guardada</button>
+              <button type="submit" class="ecd-setup-cta" data-ecd-submit>Continuar instalación guardada</button>
+              <p class="ecd-progress-note" data-ecd-submit-notice role="status" aria-live="polite">Solo se continuará si aún no existe una operación remota en curso.</p>
             </form>
+          {else}
+            <p class="ecd-setup-note">Se ha registrado la configuración. Consulta el estado de instalación; la plataforma no duplicará recursos.</p>
           {/if}
         {elseif $ecSetupCanInstall}
-          <form id="ecd-install-wizard" method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}">
+          <form id="ecd-install-wizard" data-ecd-submit-form method="post" action="clientarea.php?action=productdetails&amp;id={$ecDokployServiceId|escape:'html'}" novalidate>
             <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
             <input type="hidden" name="modop" value="custom">
             <input type="hidden" name="a" value="InstallApp">
             <input type="hidden" name="token" value="{$token|escape:'html'}">
             <input type="hidden" name="ec_setup_token" value="{$ecSetupToken|escape:'html'}">
-            <details class="ecd-setup-section" open>
-              <summary>1. ¿Dónde está tu proyecto?</summary>
-              <div class="ecd-setup-grid">
-                <label class="ecd-setup-label ecd-setup-wide">
-                  URL del repositorio público
-                  <input class="ecd-setup-input" data-ecd-git name="ec_setup_git" type="url" placeholder="https://github.com/usuario/proyecto" required maxlength="255" autocomplete="off" spellcheck="false">
-                  <span class="ecd-setup-hint">Solo pega el enlace público de GitHub. No necesitas saber de servidores, Docker ni claves API.</span>
-                </label>
-                <label class="ecd-setup-label">
-                  Rama (opcional)
-                  <input class="ecd-setup-input" data-ecd-branch name="ec_setup_branch" type="text" value="main" required maxlength="100" pattern="[A-Za-z0-9._/-]+" autocapitalize="none" spellcheck="false">
-                  <span class="ecd-setup-hint">Por ejemplo, main o production.</span>
-                </label>
-                <label class="ecd-setup-label">
-                  Carpeta raíz de la aplicación
-                  <input class="ecd-setup-input" data-ecd-root name="ec_setup_root" type="text" value="/" required maxlength="190" autocapitalize="none" spellcheck="false">
-                  <span class="ecd-setup-hint">Usa / o, si es un monorepo, /apps/web.</span>
-                </label>
+            <div class="ecd-primary-form">
+              <div class="ecd-main-field">
+                <label class="ecd-field-label" for="ecd-repository">Enlace de tu repositorio GitHub</label>
+                <input id="ecd-repository" class="ecd-setup-input" data-ecd-git name="ec_setup_git"
+                       type="url" inputmode="url" placeholder="https://github.com/usuario/proyecto"
+                       required maxlength="255" autocomplete="url" autocapitalize="none"
+                       aria-describedby="ecd-repo-help ecd-repo-error" spellcheck="false">
+                <p id="ecd-repo-help" class="ecd-setup-hint">Debe ser un repositorio público. No necesitas compartir tu contraseña ni una clave API.</p>
+                <p id="ecd-repo-error" class="ecd-field-error" data-ecd-repo-error aria-live="polite"></p>
               </div>
               <div class="ecd-setup-detection">
-                <button type="button" class="ecd-setup-detect-button" data-ecd-scan>Detectar proyecto</button>
-                <span data-ecd-detection class="ecd-setup-detect-result" role="status" aria-live="polite">Opcional. También puedes elegirlo manualmente.</span>
+                <button type="button" class="ecd-setup-detect-button" data-ecd-scan>Identificar framework</button>
+                <span data-ecd-detection class="ecd-setup-detect-result" role="status" aria-live="polite">Opcional: intentaremos detectar Next.js o Node.js.</span>
+              </div>
+            </div>
+            <details class="ecd-advanced" data-ecd-advanced>
+              <summary>Personalizar la instalación (opcional)</summary>
+              <div class="ecd-advanced-inner">
+                <div class="ecd-setup-grid">
+                  <label class="ecd-setup-label">
+                    Rama de GitHub
+                    <input class="ecd-setup-input" data-ecd-branch name="ec_setup_branch"
+                           type="text" value="main" required maxlength="100"
+                           pattern="[A-Za-z0-9._/-]+" autocapitalize="none" spellcheck="false">
+                    <span class="ecd-setup-hint">Por defecto: main.</span>
+                  </label>
+                  <label class="ecd-setup-label">
+                    Carpeta raíz
+                    <input class="ecd-setup-input" data-ecd-root name="ec_setup_root"
+                           type="text" value="/" required maxlength="190"
+                           autocapitalize="none" spellcheck="false">
+                    <span class="ecd-setup-hint">Para monorepos, por ejemplo /apps/web.</span>
+                  </label>
+                  <label class="ecd-setup-label">
+                    Tecnología
+                    <select class="ecd-setup-input" data-ecd-preset name="ec_setup_preset">
+                      <option value="auto" selected>Detectar automáticamente</option>
+                      <option value="nextjs">Next.js · Nixpacks</option>
+                      <option value="nodejs">Node.js · Nixpacks</option>
+                      <option value="dockerfile">Dockerfile · Avanzado</option>
+                    </select>
+                    <span class="ecd-setup-hint">Next.js y Node.js no necesitan Dockerfile.</span>
+                  </label>
+                  <label class="ecd-setup-label">
+                    Puerto interno
+                    <input class="ecd-setup-input" name="ec_setup_port" type="number"
+                           min="1024" max="65535" value="3000" required inputmode="numeric">
+                    <span class="ecd-setup-hint">3000 por defecto para Next.js.</span>
+                  </label>
+                  <label class="ecd-setup-label ecd-setup-wide">
+                    Variables de entorno (opcional)
+                    <textarea class="ecd-setup-input" name="ec_setup_env" rows="4"
+                              maxlength="6144" autocomplete="off" spellcheck="false"
+                              placeholder="API_URL=https://api.example.com&#10;APP_SECRET=valor-privado"></textarea>
+                    <span class="ecd-setup-hint">Formato CLAVE=valor, una por línea. Se cifran antes de guardarse. DATABASE_URL, PORT y NODE_ENV los administra Elearning Cloud. Las variables NEXT_PUBLIC_ son públicas.</span>
+                  </label>
+                </div>
               </div>
             </details>
-            <details class="ecd-setup-section">
-              <summary>2. Configuración avanzada (opcional)</summary>
-              <div class="ecd-setup-grid">
-                <label class="ecd-setup-label">
-                  Tipo de proyecto
-                  <select name="ec_setup_preset" data-ecd-preset class="ecd-setup-input">
-                    <option value="auto" selected>Detectar automáticamente</option>
-                    <option value="nextjs">Next.js (sin Dockerfile)</option>
-                    <option value="nodejs">Node.js (sin Dockerfile)</option>
-                    <option value="dockerfile">Dockerfile (avanzado)</option>
-                  </select>
-                  <span class="ecd-setup-hint">Next.js/Node.js utilizan Nixpacks; Dockerfile usa el archivo de tu repositorio.</span>
-                </label>
-                <label class="ecd-setup-label">
-                  Puerto de aplicación
-                  <input class="ecd-setup-input" name="ec_setup_port" type="number" min="1024" max="65535" value="3000" required>
-                  <span class="ecd-setup-hint">3000 para Next.js. Si tu aplicación escucha otro puerto, modifícalo.</span>
-                </label>
-                <label class="ecd-setup-label ecd-setup-wide">
-                  <span>Variables de entorno (opcional)</span>
-                  <textarea class="ecd-setup-input" name="ec_setup_env" rows="4" maxlength="6144" autocomplete="off" spellcheck="false" placeholder="API_URL=https://api.example.com&#10;MY_SECRET=valor-privado"></textarea>
-                  <span class="ecd-setup-hint">Una por línea: CLAVE=valor. Se cifran antes de almacenarse. No agregues DATABASE_URL, PORT ni NODE_ENV; los administra la plataforma. Las variables NEXT_PUBLIC_ son visibles en el navegador de tu app.</span>
-                </label>
+            <div class="ecd-review-grid" aria-label="Configuración de tu alojamiento">
+              <div class="ecd-review-box">
+                <small>Dominio del servicio</small>
+                <strong>{$ecSetupDomain|escape:'html'}</strong>
               </div>
-            </details>
-            <details class="ecd-setup-section" open>
-              <summary>3. Publicar mi sitio</summary>
-              <div class="ecd-setup-review">
-                <div class="ecd-review-box"><small>Dominio del servicio</small><strong>{$ecSetupDomain|escape:'html'}</strong></div>
-                <div class="ecd-review-box"><small>Base de datos incluida</small><strong>{$ecSetupDbMode|escape:'html'}</strong></div>
-                <div class="ecd-review-box"><small>Infraestructura</small><strong>Proyecto privado Dokploy</strong></div>
-                <div class="ecd-review-box"><small>Certificado</small><strong>HTTPS · Let's Encrypt al validar DNS</strong></div>
+              <div class="ecd-review-box">
+                <small>Base de datos incluida</small>
+                <strong>{$ecSetupDbMode|escape:'html'}</strong>
               </div>
-              <p class="ecd-setup-note">La URL y el certificado requieren DNS correcto. Este botón solicita el despliegue; publicarlo no garantiza todavía que el sitio esté disponible. Los repositorios privados y la conexión OAuth no están habilitados en esta versión.</p>
-              <label class="ecd-setup-check">
-                <input type="checkbox" name="ec_setup_confirm" value="yes" required>
-                <span>Confirmo que tengo derecho a desplegar este repositorio y que las variables proporcionadas pertenecen a mi proyecto.</span>
-              </label>
-              <button type="submit" class="ecd-setup-cta">Publicar automáticamente</button>
-            </details>
+            </div>
+            <p class="ecd-setup-note">La publicación requiere DNS correcto. Solicitar un despliegue no garantiza que la web ya esté operativa; podrás comprobar su estado desde este panel.</p>
+            <div class="ecd-form-error" data-ecd-form-error role="alert" tabindex="-1"></div>
+            <label class="ecd-setup-check">
+              <input type="checkbox" name="ec_setup_confirm" value="yes" required data-ecd-confirm>
+              <span>Confirmo que tengo autorización para publicar este repositorio.</span>
+            </label>
+            <button class="ecd-setup-cta" type="submit" data-ecd-submit>
+              Instalar mi aplicación
+            </button>
+            <p class="ecd-progress-note" role="status" aria-live="polite" data-ecd-submit-notice>El sistema utilizará el proyecto privado asociado a este servicio.</p>
           </form>
         {else}
-          <div class="ecd-setup-note">Este servicio todavía no está habilitado para instalaciones de autoservicio. El equipo de soporte debe verificar primero la configuración y la capacidad del servidor.</div>
+          <p class="ecd-setup-note">Todavía no está habilitada la instalación para este servicio. Solicita asistencia y revisaremos el estado sin duplicar proyectos.</p>
+          <div class="ecd-actions"><a class="ecd-action ecd-action-alt" href="submitticket.php">Solicitar ayuda para instalar</a></div>
         {/if}
       </section>
     {/if}
