@@ -14,6 +14,7 @@ if (!defined('WHMCS')) {
 require_once __DIR__ . '/lib/DokployClient.php';
 require_once __DIR__ . '/lib/ClientOperations.php';
 require_once __DIR__ . '/lib/ServerRouting.php';
+require_once __DIR__ . '/lib/ProjectIsolation.php';
 
 use WHMCS\Database\Capsule;
 
@@ -27,7 +28,7 @@ function eclouddokploy_ConfigOptions(): array
     return [
         'Dokploy Environment ID' => [
             'Type' => 'text', 'Size' => '48',
-            'Description' => 'Con varios VPS independientes, introduce el Environment ID como Username en cada servidor WHMCS.',
+            'Description' => 'Obsoleto. Ahora cada servicio crea su propio proyecto y entorno en Dokploy; puede quedar vacío.',
         ],
         'Git Repository HTTPS' => [
             'Type' => 'text', 'Size' => '80',
@@ -124,7 +125,7 @@ function eclouddokploy_CreateAccount(array $params): string
     }
     try {
         $serviceId = (int) ($params['serviceid'] ?? 0);
-        $environmentId = trim((string) ($params['configoption1'] ?? ''));
+        $clientId = (int) ($params['userid'] ?? 0);
         $gitUrl = trim((string) ($params['configoption2'] ?? ''));
         $branch = trim((string) ($params['configoption3'] ?? ''));
         $port = filter_var($params['configoption4'] ?? 3000, FILTER_VALIDATE_INT);
@@ -133,8 +134,8 @@ function eclouddokploy_CreateAccount(array $params): string
         if (!in_array($dbMode, ['mariadb', 'mysql', 'postgres', 'external', 'none'], true)) {
             return 'Modo de base de datos no admitido.';
         }
-        if ($serviceId <= 0) {
-            return 'Configuración incompleta: Service ID incorrecto.';
+        if ($serviceId <= 0 || $clientId <= 0) {
+            return 'Configuración incompleta: servicio o propietario inválido.';
         }
         if (!eclouddokploy_valid_git($gitUrl, $branch)) {
             return 'Repositorio Git inválido: solo HTTPS público de GitHub, rama válida.';
@@ -150,7 +151,6 @@ function eclouddokploy_CreateAccount(array $params): string
         // WHMCS assigns a specific server from the product's server group.
         // Its immutable route maps to the Dokploy instance + deployment node.
         $route = eclouddokploy_resolve_route($params);
-        $environmentId = $route['environment_id'];
         $api = new ECloudDokployClient($route['url'], $route['api_key']);
         eclouddokploy_create_table();
 
@@ -166,7 +166,7 @@ function eclouddokploy_CreateAccount(array $params): string
                 return 'Este servidor alcanzó su límite de cuentas o su asignación no es válida. Verificar el grupo de servidores WHMCS; no se instalaron recursos adicionales.';
             }
             return eclouddokploy_create_locked(
-                $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode,
+                $api, $serviceId, $clientId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode,
                 $route['remote_server_id'], $route['fingerprint']
             );
         } finally {
@@ -230,6 +230,20 @@ function eclouddokploy_external_database_url(int $serviceId): string
 function eclouddokploy_create_table(): void
 {
     if (Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) {
+        // Schema changes are additive; existing prototype accounts cannot be
+        // adopted without explicit administrative reconciliation.
+        $additions = [
+            'owner_client_id' => 'unsignedInteger',
+            'project_id' => 'string',
+            'environment_id' => 'string',
+        ];
+        foreach ($additions as $column => $type) {
+            if (Capsule::schema()->hasColumn('mod_ecloud_dokploy_services', $column)) continue;
+            Capsule::schema()->table('mod_ecloud_dokploy_services', function ($table) use ($column, $type) {
+                if ($type === 'unsignedInteger') $table->unsignedInteger($column)->nullable();
+                else $table->string($column, 128)->nullable();
+            });
+        }
         if (!Capsule::schema()->hasColumn('mod_ecloud_dokploy_services', 'route_fingerprint')) {
             Capsule::schema()->table('mod_ecloud_dokploy_services', function ($table) {
                 $table->string('route_fingerprint', 64)->nullable();
@@ -239,8 +253,11 @@ function eclouddokploy_create_table(): void
     }
     Capsule::schema()->create('mod_ecloud_dokploy_services', function ($table) {
         $table->unsignedInteger('service_id')->primary();
+        $table->unsignedInteger('owner_client_id');
         $table->string('state', 48)->default('new');
         $table->string('db_mode', 16)->default('mariadb');
+        $table->string('project_id', 128)->nullable();
+        $table->string('environment_id', 128)->nullable();
         $table->string('mariadb_id', 128)->nullable();
         $table->string('application_id', 128)->nullable();
         $table->string('domain_id', 128)->nullable();
