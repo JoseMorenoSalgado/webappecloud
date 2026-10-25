@@ -38,6 +38,12 @@ function eclouddokploy_ConfigOptions(): array
         'App Port' => [
             'Type' => 'text', 'Size' => '8', 'Default' => '3000',
         ],
+        'Database Mode' => [
+            'Type' => 'dropdown',
+            'Options' => 'mariadb,mysql,postgres,external,none',
+            'Default' => 'mariadb',
+            'Description' => 'MariaDB, MySQL, PostgreSQL, existente o sin base de datos.',
+        ],
     ];
 }
 
@@ -54,6 +60,10 @@ function eclouddokploy_CreateAccount(array $params): string
         $branch = trim((string) ($params['configoption3'] ?? ''));
         $port = filter_var($params['configoption4'] ?? 3000, FILTER_VALIDATE_INT);
         $domain = strtolower(rtrim(trim((string) ($params['domain'] ?? '')), '.'));
+        $dbMode = trim((string) ($params['configoption5'] ?? 'mariadb'));
+        if (!in_array($dbMode, ['mariadb', 'mysql', 'postgres', 'external', 'none'], true)) {
+            return 'Modo de base de datos no admitido.';
+        }
         if ($serviceId <= 0 || !preg_match('/^[A-Za-z0-9_-]{4,128}$/D', $environmentId)) {
             return 'Configuración incompleta: Service ID o Environment ID incorrecto.';
         }
@@ -81,7 +91,7 @@ function eclouddokploy_CreateAccount(array $params): string
         }
         try {
             return eclouddokploy_create_locked(
-                $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret
+                $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode
             );
         } finally {
             $connection->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lockName]);
@@ -112,12 +122,42 @@ function eclouddokploy_valid_git(string $url, string $branch): bool
     return (bool) preg_match('~^[A-Za-z0-9._/-]{1,100}$~D', $branch);
 }
 
+/**
+ * Existing DB secrets must be supplied from a root-managed JSON file outside
+ * the webroot. Do not store SQL passwords in WHMCS configurable options.
+ * Format: {"123":"mysql://user:password@host:3306/database"}.
+ */
+function eclouddokploy_external_database_url(int $serviceId): string
+{
+    $path = (string) getenv('ECLOUD_DOKPLOY_EXTERNAL_DB_MAP_FILE');
+    if ($path === '' || $path[0] !== '/' || is_link($path) || !is_file($path) || !is_readable($path)) {
+        throw new RuntimeException('Private external database map is unavailable.');
+    }
+    if (filesize($path) > 131072) {
+        throw new RuntimeException('External database map too large.');
+    }
+    $map = json_decode((string) file_get_contents($path), true, 16, JSON_THROW_ON_ERROR);
+    $url = is_array($map) ? ($map[(string) $serviceId] ?? null) : null;
+    if (!is_string($url) || strpos($url, "\n") !== false || strpos($url, "\r") !== false || strlen($url) > 4096) {
+        throw new RuntimeException('Database URL for this service is not configured.');
+    }
+    $parts = parse_url($url);
+    if (!$parts || !in_array($parts['scheme'] ?? '', ['mysql', 'postgresql', 'postgres'], true)
+        || empty($parts['host']) || empty($parts['user']) || empty($parts['pass'])
+        || empty($parts['path']) || $parts['path'] === '/'
+        || isset($parts['fragment'])) {
+        throw new RuntimeException('Unsupported external database URL.');
+    }
+    return $url;
+}
+
 function eclouddokploy_create_table(): void
 {
     if (Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) return;
     Capsule::schema()->create('mod_ecloud_dokploy_services', function ($table) {
         $table->unsignedInteger('service_id')->primary();
         $table->string('state', 48)->default('new');
+        $table->string('db_mode', 16)->default('mariadb');
         $table->string('mariadb_id', 128)->nullable();
         $table->string('application_id', 128)->nullable();
         $table->string('domain_id', 128)->nullable();
@@ -149,16 +189,19 @@ function eclouddokploy_required_id(array $value, string $key): string
 
 function eclouddokploy_create_locked(
     ECloudDokployClient $api, int $id, string $envId, string $gitUrl,
-    string $branch, int $port, string $domain, string $seed
+    string $branch, int $port, string $domain, string $seed, string $dbMode
 ): string {
     $table = Capsule::table('mod_ecloud_dokploy_services');
     $stateRow = $table->where('service_id', $id)->first();
     if (!$stateRow) {
         $table->insert([
-            'service_id' => $id, 'state' => 'new',
+            'service_id' => $id, 'state' => 'new', 'db_mode' => $dbMode,
             'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $stateRow = $table->where('service_id', $id)->first();
+    }
+    if ((string) $stateRow->db_mode !== $dbMode) {
+        return 'El motor de base de datos de este servicio ya fue establecido; no puede cambiarse durante el aprovisionamiento.';
     }
     $state = (string) $stateRow->state;
     $unsafeStates = [
@@ -178,25 +221,38 @@ function eclouddokploy_create_locked(
     $dbUser = 'ecw_' . $id;
     $pass = eclouddokploy_password($seed, 'db-user', $id);
     $rootPass = eclouddokploy_password($seed, 'db-root', $id);
+    $dbIdKey = ['mariadb' => 'mariadbId', 'mysql' => 'mysqlId', 'postgres' => 'postgresId'];
+    $managed = isset($dbIdKey[$dbMode]);
     if ($state === 'new') {
-        eclouddokploy_set_state($id, 'creating_db');
-        $db = $api->post('mariadb.create', [
-            'name' => $dbApp, 'appName' => $dbApp,
-            'environmentId' => $envId, 'dockerImage' => 'mariadb:11.4',
-            'databaseName' => $dbName, 'databaseUser' => $dbUser,
-            'databasePassword' => $pass, 'databaseRootPassword' => $rootPass,
-        ]);
-        $dbId = eclouddokploy_required_id($db, 'mariadbId');
-        eclouddokploy_set_state($id, 'db_created', ['mariadb_id' => $dbId]);
-        $state = 'db_created';
+        if (!$managed) {
+            // External DB and DB-free services do not create any database in Dokploy.
+            if ($dbMode === 'external') eclouddokploy_external_database_url($id);
+            eclouddokploy_set_state($id, 'db_deployed');
+            $state = 'db_deployed';
+        } else {
+            $payload = [
+                'name' => $dbApp, 'appName' => $dbApp,
+                'environmentId' => $envId,
+                'databaseName' => $dbName, 'databaseUser' => $dbUser,
+                'databasePassword' => $pass,
+            ];
+            if ($dbMode !== 'postgres') {
+                $payload['databaseRootPassword'] = $rootPass;
+            }
+            eclouddokploy_set_state($id, 'creating_db');
+            $db = $api->post($dbMode . '.create', $payload);
+            $dbId = eclouddokploy_required_id($db, $dbIdKey[$dbMode]);
+            eclouddokploy_set_state($id, 'db_created', ['mariadb_id' => $dbId]);
+            $state = 'db_created';
+        }
     }
     $stateRow = $table->where('service_id', $id)->first();
     $dbId = (string) ($stateRow->mariadb_id ?? '');
-    if ($dbId === '') return 'No hay ID de MariaDB. Requiere conciliación manual.';
+    if ($managed && $dbId === '') return 'Falta ID de base de datos. Requiere conciliación manual.';
 
-    if ($state === 'db_created') {
+    if ($state === 'db_created' && $managed) {
         eclouddokploy_set_state($id, 'deploying_db');
-        $api->post('mariadb.deploy', ['mariadbId' => $dbId]);
+        $api->post($dbMode . '.deploy', [$dbIdKey[$dbMode] => $dbId]);
         eclouddokploy_set_state($id, 'db_deployed');
         $state = 'db_deployed';
     }
@@ -228,20 +284,26 @@ function eclouddokploy_create_locked(
         ]);
         $api->post('application.saveBuildType', [
             'applicationId' => $appId, 'buildType' => 'dockerfile',
-            'dockerfile' => 'Dockerfile', 'dockerContextPath' => '/',
+            'dockerfile' => 'Dockerfile', 'dockerContextPath' => '/', 'dockerBuildStage' => null,
         ]);
-        $details = $api->get('mariadb.one', ['mariadbId' => $dbId]);
-        $internalHost = (string) ($details['appName'] ?? '');
-        if ($internalHost === '' || !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/D', $internalHost)) {
-            throw new RuntimeException('Cannot determine private MariaDB hostname; configure manually.');
+        $envLines = ['NODE_ENV=production', 'PORT=' . $port];
+        if ($managed) {
+            $details = $api->get($dbMode . '.one', [$dbIdKey[$dbMode] => $dbId]);
+            $internalHost = (string) ($details['appName'] ?? '');
+            if ($internalHost === '' || !preg_match('/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/D', $internalHost)) {
+                throw new RuntimeException('Cannot determine private database hostname; configure manually.');
+            }
+            $protocol = $dbMode === 'postgres' ? 'postgresql' : 'mysql';
+            $dbPort = $dbMode === 'postgres' ? 5432 : 3306;
+            $databaseUrl = $protocol . '://' . rawurlencode($dbUser) . ':' . rawurlencode($pass)
+                . '@' . $internalHost . ':' . $dbPort . '/' . rawurlencode($dbName);
+            $envLines[] = 'DATABASE_URL=' . $databaseUrl;
+        } elseif ($dbMode === 'external') {
+            $envLines[] = 'DATABASE_URL=' . eclouddokploy_external_database_url($id);
         }
-        $databaseUrl = 'mysql://' . rawurlencode($dbUser) . ':' . rawurlencode($pass)
-            . '@' . $internalHost . ':3306/' . rawurlencode($dbName);
         $api->post('application.saveEnvironment', [
             'applicationId' => $appId,
-            'env' => 'DATABASE_URL=' . $databaseUrl . "\n"
-                . 'NODE_ENV=production' . "\n"
-                . 'PORT=' . $port . "\n",
+            'env' => implode("\n", $envLines) . "\n",
             'buildArgs' => '', 'buildSecrets' => '', 'createEnvFile' => false,
         ]);
         eclouddokploy_set_state($id, 'app_configured');
