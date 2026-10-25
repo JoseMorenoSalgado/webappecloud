@@ -302,4 +302,75 @@ check(!eclouddokploy_app_environment_matches([
 check(eclouddokploy_public_state('creating_project')[0] === 'Creando proyecto privado', 'project provisioning status visible');
 check(eclouddokploy_public_state('environment_ready')[0] === 'Entorno privado configurado', 'isolated environment status visible');
 
+
+// cPanel email integration: all authentication and mailbox actions default OFF.
+putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS=0');
+putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES=0');
+putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_DELETE=0');
+check(eclouddokploy_ClientAreaAllowedFunctions() === ['Redeploy'], 'mail actions absent unless explicitly enabled');
+check(str_contains(eclouddokploy_email_action([]), 'no está habilitada'), 'mail CRUD gated');
+check(eclouddokploy_mail_valid_local('ventas'), 'valid mailbox local part');
+check(eclouddokploy_mail_valid_local('ventas.2027'), 'mailbox local punctuation');
+check(!eclouddokploy_mail_valid_local('ventas@other.example'), 'reject untrusted posted domain');
+check(!eclouddokploy_mail_valid_local('admin/../../etc'), 'reject slash in local part');
+check(!eclouddokploy_mail_valid_local('invalid..mail'), 'reject double dots');
+check(!eclouddokploy_mail_valid_local('cpanel'), 'reject reserved cPanel inbox');
+check(eclouddokploy_mail_address('ventas','empresa.com') === 'ventas@empresa.com', 'canonical mailbox');
+check(eclouddokploy_mail_valid_password('Strong2026!PassZ'), 'strong email password');
+check(!eclouddokploy_mail_valid_password('weakpass'), 'weak email password rejected');
+check(!eclouddokploy_mail_valid_password('CapitalNumber1234'), 'password must include symbol');
+check(eclouddokploy_mail_valid_quota('512',2048), 'mailbox quota within plan');
+check(!eclouddokploy_mail_valid_quota('0',2048), 'unlimited quota rejected');
+check(!eclouddokploy_mail_valid_quota('3000',2048), 'quota above plan rejected');
+check(!eclouddokploy_mail_valid_quota('512abc',2048), 'quota injection rejected');
+$sanitized = eclouddokploy_mail_rows([
+    ['email'=>'ventas@empresa.com', 'diskquota'=>512, 'password'=>'NEVER_RENDER'],
+    ['email'=>'otros@otro.com', 'diskquota'=>1000],
+    ['email'=>'sistemas@empresa.com', 'diskquota'=>0],
+    ['email'=>'bad@empresa.com','tokens'=>'secret','other'=>'private'],
+], 'empresa.com');
+check(count($sanitized) === 3, 'mailbox list filters to owned domain');
+check($sanitized[0]['address'] === 'bad@empresa.com', 'mailboxes sorted consistently');
+check(!isset($sanitized[0]['tokens']) && !isset($sanitized[2]['password']), 'no raw cPanel fields exposed');
+check(eclouddokploy_email_exists($sanitized, 'ventas'), 'mailbox exact lookup');
+check(!eclouddokploy_email_exists($sanitized, 'otro'), 'no other mailbox authorized');
+$mapfile = tempnam(sys_get_temp_dir(), 'ecloud-mail-private-');
+chmod($mapfile,0600);
+file_put_contents($mapfile,json_encode([
+    '310'=>['email_service_id'=>411,'api_token'=>'mail-token-0123456789',
+        'mailbox_limit'=>5,'max_quota_mb'=>1024],
+], JSON_THROW_ON_ERROR));
+putenv('ECLOUD_DOKPLOY_EMAIL_MAP_FILE='.$mapfile);
+$_SERVER['DOCUMENT_ROOT']='/var/www/no-access';
+$bound = eclouddokploy_email_binding_file(310);
+check($bound !== null && $bound['email_service_id'] === 411, 'private mail config loaded');
+check(!array_key_exists('api_token',$clientArea['vars']), 'no cPanel credential exposed in Smarty');
+check(eclouddokploy_email_binding_file(311) === null, 'unlinked service cannot adopt another mail token');
+chmod($mapfile,0644);
+check(eclouddokploy_email_binding_file(310) === null, 'world-readable credentials refused');
+chmod($mapfile,0600);
+file_put_contents($mapfile,json_encode([
+    '310'=>['email_service_id'=>310,'api_token'=>'mail-token-0123456789',
+        'mailbox_limit'=>5,'max_quota_mb'=>1024],
+], JSON_THROW_ON_ERROR));
+check(eclouddokploy_email_binding_file(310) === null, 'self-link forbidden');
+unlink($mapfile);
+putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS=1');
+putenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES=1');
+check(in_array('EmailAction',eclouddokploy_ClientAreaAllowedFunctions(),true), 'mail custom action registered only with explicit flags');
+$_SESSION['uid'] = 456;
+check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 'no autorizada'), 'other user email action denied');
+$_SESSION['uid'] = 25;
+$_SERVER['REQUEST_METHOD'] = 'GET';
+check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 'no autorizada'), 'GET mail mutation denied');
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_POST=['id'=>'310','modop'=>'custom','a'=>'EmailAction','ec_mail_csrf'=>'invalid','ec_mail_op'=>'create','ec_mail_local'=>'ventas'];
+check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 'expiró'), 'mail CSRF enforced before database');
+$ecMailCsrf = eclouddokploy_email_csrf(310);
+check($ecMailCsrf !== eclouddokploy_email_csrf(311), 'mail CSRF per service');
+check($ecMailCsrf !== eclouddokploy_csrf(310), 'mail CSRF separated from deploy');
+$_POST['ec_mail_csrf']=$ecMailCsrf;
+$_POST['ec_mail_op']='delete';
+check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 'desactivada'), 'mailbox deletion separately gated');
+
 echo "Dokploy provisioning validations passed\n";
