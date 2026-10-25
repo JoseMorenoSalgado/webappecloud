@@ -111,7 +111,10 @@ jobs:
           Modo pedido: si el cliente facilita Repositorio GitHub como campo
           personalizado durante la compra, el despliegue se solicita al aprovisionar.
           Configura aprovisionamiento tras el primer pago.
-          Sin variables PHP para habilitar; WHMCS prepara la cuenta al pagar.
+          Sin variables PHP para habilitar; WHMCS verifica el primer pago
+          y CREA el proyecto y entorno Dokploy antes de devolver verde.
+          Si es un pedido anterior con solo reserva, usar
+          "Conciliar proyecto antiguo" en la ficha de servicio WHMCS.
           El secreto de cifrado se genera al primer uso y cifra con WHMCS.
           Probar en staging antes de producción.
           Importacion publica de GitHub desde la ficha App Ecloud en Lagom.
