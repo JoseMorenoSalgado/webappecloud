@@ -116,6 +116,46 @@ class Handler(BaseHTTPRequestHandler):
                 "applicationStatus": "idle",
             }
             return self.response(200, {"applicationId": app_id})
+        if path == "/api/application.saveGitProvider":
+            app = applications.get(data.get("applicationId"))
+            if not app or not str(data.get("customGitUrl", "")).startswith("https://github.com/"):
+                return self.response(400, {"error": "invalid Git repository"})
+            if not data.get("customGitBranch") or not data.get("customGitBuildPath"):
+                return self.response(400, {"error": "missing Git configuration"})
+            app["gitConfigured"] = True
+            app["gitBranch"] = data["customGitBranch"]
+            app["gitBuildPath"] = data["customGitBuildPath"]
+            return self.response(200, {"success": True})
+        if path == "/api/application.saveBuildType":
+            app = applications.get(data.get("applicationId"))
+            if not app or data.get("buildType") not in ("nixpacks", "dockerfile"):
+                return self.response(400, {"error": "unknown build type"})
+            if data["buildType"] == "dockerfile" and data.get("dockerfile") != "Dockerfile":
+                return self.response(400, {"error": "missing Dockerfile"})
+            app["buildType"] = data["buildType"]
+            return self.response(200, {"success": True})
+        if path == "/api/application.saveEnvironment":
+            app = applications.get(data.get("applicationId"))
+            env = data.get("env")
+            if not app or not isinstance(env, str) or "NODE_ENV=production" not in env:
+                return self.response(400, {"error": "missing environment"})
+            app["environmentConfigured"] = True
+            return self.response(200, {"success": True})
+        if path == "/api/domain.create":
+            app = applications.get(data.get("applicationId"))
+            domain = data.get("host")
+            if not app or not isinstance(domain, str) or not domain.endswith(".test"):
+                return self.response(400, {"error": "unverified domain"})
+            app["domainConfigured"] = True
+            return self.response(200, {"domainId": "domain-" + app["applicationId"]})
+        if path == "/api/application.deploy":
+            app = applications.get(data.get("applicationId"))
+            if not app or not all(app.get(key) for key in [
+                "gitConfigured", "buildType", "environmentConfigured", "domainConfigured"
+            ]):
+                return self.response(400, {"error": "incomplete setup"})
+            app["applicationStatus"] = "running"
+            return self.response(200, {"success": True})
         return self.response(405, {"error": "unsupported operation in mock"})
 
 
