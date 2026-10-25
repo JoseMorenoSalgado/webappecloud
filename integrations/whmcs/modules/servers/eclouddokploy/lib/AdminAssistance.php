@@ -11,6 +11,27 @@ declare(strict_types=1);
  * ownership, fixed WHMCS server and project state are checked again on write.
  */
 
+/** Minimal WHMCS audit trail: no tokens, repositories, passwords or env values. */
+function eclouddokploy_admin_audit(string $event, array $params): void
+{
+    $messages = [
+        'draft_saved' => 'Soporte guardó los ajustes GitHub del servicio',
+        'project_ready' => 'Soporte creó o verificó el proyecto Dokploy',
+        'deploy_requested' => 'Soporte solicitó la instalación de la aplicación',
+    ];
+    if (!isset($messages[$event])
+        || (int) ($_SESSION['adminid'] ?? 0) <= 0
+        || !function_exists('logActivity')) return;
+    $id = (int) ($params['serviceid'] ?? 0);
+    $owner = (int) ($params['userid'] ?? 0);
+    if ($id < 1 || $owner < 1) return;
+    logActivity(
+        'Elearning Cloud: ' . $messages[$event] . ' #' . $id
+        . ' (admin #' . (int) $_SESSION['adminid'] . ')',
+        $owner
+    );
+}
+
 function eclouddokploy_admin_authorized(array $params): bool
 {
     return (int) ($_SESSION['adminid'] ?? 0) > 0
@@ -322,6 +343,7 @@ function eclouddokploy_admin_save_fields(array $params): void
             }
             $_SESSION['ec_dokploy_admin_notice'][$id] =
                 'Configuración de soporte guardada. Elige un comando del módulo para continuar.';
+            eclouddokploy_admin_audit('draft_saved', $params);
         } finally {
             $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
         }
@@ -349,7 +371,11 @@ function eclouddokploy_admin_create_project(array $params): string
             $params, $route, (string) ($params['configoption5'] ?? 'none')
         );
         if ($reserved !== 'success') return $reserved;
-        return eclouddokploy_order_prepare_project($params, $route);
+        $result = eclouddokploy_order_prepare_project($params, $route);
+        if ($result === 'success') {
+            eclouddokploy_admin_audit('project_ready', $params);
+        }
+        return $result;
     } catch (Throwable $e) {
         return 'No se pudo crear o verificar el proyecto privado. Comprueba el pago y conexión.';
     }
@@ -418,6 +444,7 @@ function eclouddokploy_admin_install_app(array $params): string
             $after = eclouddokploy_admin_state($id);
             if ($after && (string) $after->state === 'deployment_requested'
                 && str_starts_with($result, 'Despliegue solicitado.')) {
+                eclouddokploy_admin_audit('deploy_requested', $params);
                 return 'success';
             }
             return $result;
