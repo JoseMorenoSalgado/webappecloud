@@ -32,6 +32,7 @@ jobs:
           install -m 0644 "$src/eclouddokploy.php" package/eclouddokploy/eclouddokploy.php
           install -m 0644 "$src/lib/DokployClient.php" package/eclouddokploy/lib/DokployClient.php
           install -m 0644 "$src/lib/ClientOperations.php" package/eclouddokploy/lib/ClientOperations.php
+          install -m 0644 "$src/lib/ServerRouting.php" package/eclouddokploy/lib/ServerRouting.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
