@@ -73,6 +73,43 @@ function eclouddokploy_order_invoice_paid(int $serviceId, int $ownerId): bool
 }
 
 /**
+ * After the first PAID invoice create the real Dokploy project, even when
+ * the buyer hasn't provided their GitHub repository. This is what the WHMCS
+ * "Create Account" green-success should represent in guided mode.
+ */
+function eclouddokploy_order_prepare_project(array $params, array $route): string
+{
+    $serviceId = (int) ($params['serviceid'] ?? 0);
+    $owner = (int) ($params['userid'] ?? 0);
+    if (!eclouddokploy_order_invoice_paid($serviceId, $owner)) {
+        // Don't report green success for a reservation when the customer
+        // expects a project; this is an actionable WHMCS module error.
+        return 'No se creó el proyecto Dokploy: falta confirmar la primera factura pagada de este servicio.';
+    }
+    $db = \WHMCS\Database\Capsule::connection();
+    $lock = 'ecloud-dokploy-' . $serviceId;
+    $acquired = $db->selectOne('SELECT GET_LOCK(?, 10) AS acquired', [$lock]);
+    if (!$acquired || (int) $acquired->acquired !== 1) {
+        return 'Este servicio ya está siendo preparado en Dokploy.';
+    }
+    try {
+        if (!eclouddokploy_server_has_capacity((int) $route['whmcs_server_id'], $serviceId)) {
+            return 'El VPS asignado no tiene capacidad disponible para crear el proyecto.';
+        }
+        $api = new ECloudDokployClient($route['url'], $route['api_key']);
+        return eclouddokploy_prepare_private_project_locked(
+            $api, $serviceId, $owner, $route['fingerprint']
+        );
+    } catch (\Throwable $e) {
+        // Ambiguous API write: the persisted creating_* state prevents
+        // duplicate projects when WHMCS retries this module command.
+        return 'No fue posible verificar la creación del proyecto Dokploy. Revisa el proyecto y estado de este servicio antes de reintentar.';
+    } finally {
+        $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
+    }
+}
+
+/**
  * Runs inside CreateAccount after WHMCS reserves this service.
  * The external calls only happen for an explicitly opted-in paid-order
  * product, with public GitHub URL provided and validated.
@@ -124,7 +161,7 @@ function eclouddokploy_order_auto_install(array $params, array $route): string
                 return 'No hay plazas disponibles en el VPS asignado.';
             }
             if ((string) $row->state === 'deployment_requested') return 'success';
-            if (!in_array((string) $row->state, ['awaiting_setup', 'new'], true)) {
+            if (!in_array((string) $row->state, ['awaiting_setup', 'new', 'environment_ready'], true)) {
                 return 'La instalación ya empezó. Se requiere verificar el estado antes de reintentar.';
             }
             if (!\WHMCS\Database\Capsule::schema()->hasTable('mod_ecloud_dokploy_setup')) {
