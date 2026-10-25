@@ -104,3 +104,25 @@ Este proceso se verifica mediante pruebas automatizadas que recrean un proyecto 
 **Atención:** la captura demuestra la existencia del proyecto y entorno, pero no demuestra todavía que el servicio esté correctamente enlazado en la base de datos WHMCS ni que haya una aplicación desplegada. El resultado real de la conciliación debe observarse desde el servidor WHMCS y el panel Dokploy. Mantener la implementación en staging hasta ese paso.
 
 El ZIP se valida con `tests/paid_project_creation_mock.php` y un servidor HTTPS Dokploy simulado. Las pruebas no prueban que el proyecto remoto del usuario exista ni sustituyen inspeccionar sus logs.
+
+
+## Diagnóstico del error genérico «No fue posible verificar la creación del proyecto Dokploy» (25 oct 2026)
+
+La captura de WHMCS corresponde al servicio #293, cliente #225 y pedido #324. El mensaje antiguo se originaba en el manejador genérico de errores de eclouddokploy_order_prepare_project, que ocultaba incluso las respuestas HTTP de Dokploy. La pantalla por sí sola no demuestra qué error devolvió la API.
+
+**Corrección implementada:**
+
+1. En la consulta inicial se reemplazó el endpoint pesado /api/project.all por GET /api/project.search?name=ec-client-225-service-293&limit=100&offset=0. El formato real de Dokploy es JSON con claves items (array) y total (entero). Se exige que la respuesta esté completa antes de tratarla como ausencia de proyecto. Los resultados se cotejan de forma exacta por nombre, descripción y projectId. Si el servidor no soporta project.search (HTTP 404/405), el módulo intenta la lectura anterior project.all solo como alternativa de compatibilidad. Respuesta HTTP 401/403/500 o inesperada no permite crear otro proyecto.
+2. La llamada a environment.byProjectId sigue limitada al projectId confirmado. Se recupera exclusivamente production y se conserva el ID anterior si coincide.
+3. Errores operativos seguros en WHMCS, sin secretos: ahora indica project.search o environment.byProjectId y el código HTTP; distingue permisos 401/403, endpoint ausente 404/405, fallo HTTPS (HTTP 0), error HTTP 500 y JSON incompatible. No se muestran respuestas HTTP crudas, tokens, SQL, credenciales ni stack traces.
+4. Se añadió una prueba de integración que realiza project.search contra un simulador HTTPS y confirma que recupera ec-client-225-service-293 sin crear duplicados; comprueba también que mensajes SQL ficticios no aparecen en el diagnóstico.
+
+**Contexto de compatibilidad:** Dokploy mantiene /api/project.search en su API y su router retorna items/total con búsqueda parcial de nombre, que WHMCS filtra después por igualdad exacta. El endpoint /api/project.all puede devolver proyectos con servicios anidados, más datos de los necesarios y, según reportes públicos en algunas versiones de Dokploy, errores HTTP 500 de serialización. El cambio evita depender de esa consulta global cuando project.search está disponible.
+
+**Para tu instalación:** respalda WHMCS, actualiza la carpeta del módulo y ejecuta una sola vez el comando «Crear / verificar proyecto Dokploy» del servicio 293. Si la API acepta la búsqueda, WHMCS recupera los IDs sin tocar la infraestructura. Si devuelve HTTP 401/403/500, toma nota del endpoint y código para revisar desde el VPS WHMCS/Dokploy; **no borres ni recrees recursos ni pegues la API key en el chat**.
+
+Fuentes públicas:
+- https://docs.dokploy.com/docs/api/project
+- https://github.com/Dokploy/dokploy/issues/3793
+
+**Estado:** CI automatizada verificada con simulación HTTPS, todavía no probado sobre el servidor real; staging, no desplegar masivamente sin validación.
