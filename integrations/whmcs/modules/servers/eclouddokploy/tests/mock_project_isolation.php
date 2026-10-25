@@ -42,9 +42,40 @@ foreach ([310 => 25, 311 => 25, 312 => 26] as $service => $client) {
         eclouddokploy_application_create_payload($environment, 'mockapp-' . $service, '')
     );
     $app = eclouddokploy_required_id($appResponse, 'applicationId');
+    // Simulate the actual Vercel-like client import without a Dokploy UI.
+    $preset = $service === 311 ? 'dockerfile' : 'nextjs';
+    $root = $service === 311 ? '/apps/frontend' : '/';
+    $api->post('application.saveGitProvider', [
+        'applicationId' => $app,
+        'customGitUrl' => 'https://github.com/example/project.git',
+        'customGitBranch' => 'main',
+        'customGitBuildPath' => $root,
+        'customGitSSHKeyId' => null,
+        'watchPaths' => [],
+        'enableSubmodules' => false,
+    ]);
+    $api->post('application.saveBuildType',
+        eclouddokploy_setup_build_payload($app, $preset, $root));
+    $api->post('application.saveEnvironment', [
+        'applicationId'=>$app,
+        'env'=>"NODE_ENV=production\nPORT=3000\n"
+            . implode("\n", eclouddokploy_setup_env_lines(['SITE_NAME'=>'Example Site'])) . "\n",
+        'buildArgs'=>'', 'buildSecrets'=>'', 'createEnvFile'=>false,
+    ]);
+    $domain = $api->post('domain.create', [
+        'host'=>'app-' . $service . '.example.test',
+        'applicationId'=>$app, 'port'=>3000,
+        'https'=>true, 'certificateType'=>'letsencrypt',
+    ]);
+    expect(isset($domain['domainId']) && is_string($domain['domainId']), 'domain created for service');
+    $api->post('application.deploy', ['applicationId'=>$app]);
     $remote = $api->get('application.one', ['applicationId' => $app]);
     expect(eclouddokploy_app_environment_matches($remote, $app, $environment),
         'new application belongs to private environment');
+    expect(($remote['applicationStatus'] ?? '') === 'running', 'deployment accepted by local mock');
+    expect(($remote['buildType'] ?? '') === ($service === 311 ? 'dockerfile' : 'nixpacks'),
+        'framework build settings match GitHub import');
+    expect(($remote['gitBuildPath'] ?? '') === $root, 'monorepo root persisted in Dokploy');
     expect(!in_array($environment, $environments, true),
         'private environment not reused by another service');
 
