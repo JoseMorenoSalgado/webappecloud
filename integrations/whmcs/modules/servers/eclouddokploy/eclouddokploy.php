@@ -15,6 +15,8 @@ require_once __DIR__ . '/lib/DokployClient.php';
 require_once __DIR__ . '/lib/ClientOperations.php';
 require_once __DIR__ . '/lib/ServerRouting.php';
 require_once __DIR__ . '/lib/ProjectIsolation.php';
+require_once __DIR__ . '/lib/CpanelMail.php';
+require_once __DIR__ . '/lib/EmailOperations.php';
 
 use WHMCS\Database\Capsule;
 
@@ -589,6 +591,18 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployLiveAvailable' => false,
         'ecDokployHistory' => [],
         'ecDokployLiveNotice' => '',
+        'ecMailLinked' => false,
+        'ecMailAvailable' => false,
+        'ecMailCanWrite' => false,
+        'ecMailCanDelete' => false,
+        'ecMailDomain' => '',
+        'ecMailWebmailUrl' => '',
+        'ecMailAccounts' => [],
+        'ecMailAccountCount' => 0,
+        'ecMailMailboxLimit' => 0,
+        'ecMailMaxQuotaMb' => 0,
+        'ecMailToken' => '',
+        'ecMailNotice' => 'Para administrar los buzones, activa y vincula un servicio de correo cPanel a este dominio.',
     ];
     if ($serviceId < 1 || $clientId < 1 || $ownerId !== $clientId) {
         return ['templatefile' => 'templates/clientarea', 'vars' => $view];
@@ -687,6 +701,43 @@ function eclouddokploy_ClientArea(array $params): array
         }
         $view['ecDokployState'] = $public[0];
         $view['ecDokployDescription'] = $public[1];
+
+        // Email works independently of whether the Dokploy app has deployed.
+        // Both WHMCS services must be active, with the same owner and domain.
+        if ($active && eclouddokploy_valid_domain($domain)) {
+            try {
+                $binding = eclouddokploy_email_binding($serviceId, $clientId, $domain);
+                if ($binding !== null) {
+                    $view['ecMailLinked'] = true;
+                    $view['ecMailDomain'] = $domain;
+                    $view['ecMailMailboxLimit'] = $binding['mailbox_limit'];
+                    $view['ecMailMaxQuotaMb'] = $binding['max_quota_mb'];
+                    $view['ecMailWebmailUrl'] = 'https://' . $binding['host'] . ':2096/';
+                    if (getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS') === '1') {
+                        $rows = eclouddokploy_email_list(
+                            eclouddokploy_email_client($binding), $domain
+                        );
+                        $view['ecMailAccounts'] = $rows;
+                        $view['ecMailAccountCount'] = count($rows);
+                        $view['ecMailAvailable'] = true;
+                        $view['ecMailCanWrite'] =
+                            getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES') === '1';
+                        $view['ecMailCanDelete'] = $view['ecMailCanWrite']
+                            && getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_DELETE') === '1';
+                        if ($view['ecMailCanWrite']) {
+                            $view['ecMailToken'] = eclouddokploy_email_csrf($serviceId);
+                        }
+                        $view['ecMailNotice'] = '';
+                    } else {
+                        $view['ecMailNotice'] =
+                            'El servicio de correo está vinculado, pero la consulta de buzones está pendiente de habilitación.';
+                    }
+                }
+            } catch (Throwable $e) {
+                $view['ecMailNotice'] =
+                    'No se pudieron consultar los buzones de correo. Contacta con soporte.';
+            }
+        }
     } catch (Throwable $e) {
         // Fail closed, avoiding application/database secrets in output or logs.
         $view['ecDokployAuthorized'] = false;
@@ -701,12 +752,24 @@ function eclouddokploy_ClientArea(array $params): array
  */
 function eclouddokploy_ClientAreaAllowedFunctions(): array
 {
-    return getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1'
-        ? ['Redeploy']
-        : [];
+    $actions = [];
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1') {
+        $actions[] = 'Redeploy';
+    }
+    if (getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS') === '1'
+        && getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_WRITES') === '1') {
+        $actions[] = 'EmailAction';
+    }
+    return $actions;
 }
 
 function eclouddokploy_Redeploy(array $params): string
 {
     return eclouddokploy_redeploy_request($params);
+}
+
+/** Authorized corporate email operations on a separate cPanel hosting account. */
+function eclouddokploy_EmailAction(array $params): string
+{
+    return eclouddokploy_email_action($params);
 }
