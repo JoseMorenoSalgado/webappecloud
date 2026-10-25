@@ -147,6 +147,13 @@ namespace WHMCS\Database {
 
 namespace {
     define('WHMCS', true);
+    $GLOBALS['admin_audit_events'] = [];
+    function logActivity(string $description, int $clientId): void {
+        $GLOBALS['admin_audit_events'][] = [
+            'description' => $description,
+            'client_id' => $clientId,
+        ];
+    }
     require_once dirname(__DIR__) . '/eclouddokploy.php';
 
     function must(bool $value, string $name): void {
@@ -244,5 +251,14 @@ namespace {
     must(str_contains($after['Repositorio GitHub del cliente'], 'disabled'),
         'support form rendered read-only after provisioning starts');
 
+    must(count($GLOBALS['admin_audit_events']) >= 3,
+        'WHMCS administrator save, create and install actions are auditable');
+    foreach ($GLOBALS['admin_audit_events'] as $event) {
+        must($event['client_id'] === 25, 'admin logs scoped to owning client');
+        must(!str_contains($event['description'], 'ManagedBySupport')
+            && !str_contains($event['description'], 'test-key-very-long')
+            && !str_contains($event['description'], 'client-510.git'),
+            'audit trail never contains source URLs, API token or env values');
+    }
     echo "WHMCS admin assisted installation over TLS mock passed\n";
 }
