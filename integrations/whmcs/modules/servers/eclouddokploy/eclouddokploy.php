@@ -13,6 +13,7 @@ if (!defined('WHMCS')) {
 
 require_once __DIR__ . '/lib/DokployClient.php';
 require_once __DIR__ . '/lib/ClientOperations.php';
+require_once __DIR__ . '/lib/ServerRouting.php';
 
 use WHMCS\Database\Capsule;
 
@@ -26,7 +27,7 @@ function eclouddokploy_ConfigOptions(): array
     return [
         'Dokploy Environment ID' => [
             'Type' => 'text', 'Size' => '48',
-            'Description' => 'ID de un entorno existente de Dokploy. No incluir API keys.',
+            'Description' => 'Solo modo legacy de un servidor. Con varios servidores se usa el Environment ID de la ruta privada.',
         ],
         'Git Repository HTTPS' => [
             'Type' => 'text', 'Size' => '80',
@@ -65,8 +66,8 @@ function eclouddokploy_CreateAccount(array $params): string
         if (!in_array($dbMode, ['mariadb', 'mysql', 'postgres', 'external', 'none'], true)) {
             return 'Modo de base de datos no admitido.';
         }
-        if ($serviceId <= 0 || !preg_match('/^[A-Za-z0-9_-]{4,128}$/D', $environmentId)) {
-            return 'Configuración incompleta: Service ID o Environment ID incorrecto.';
+        if ($serviceId <= 0) {
+            return 'Configuración incompleta: Service ID incorrecto.';
         }
         if (!eclouddokploy_valid_git($gitUrl, $branch)) {
             return 'Repositorio Git inválido: solo HTTPS público de GitHub, rama válida.';
@@ -76,12 +77,14 @@ function eclouddokploy_CreateAccount(array $params): string
         }
 
         $secret = trim((string) getenv('ECLOUD_DOKPLOY_PASSWORD_SEED'));
-        $baseUrl = trim((string) getenv('ECLOUD_DOKPLOY_URL'));
-        $apiKey = trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'));
         if (!preg_match('/^[a-f0-9]{64}$/Di', $secret)) {
             return 'Configurar ECLOUD_DOKPLOY_PASSWORD_SEED como 32 bytes hexadecimales.';
         }
-        $api = new ECloudDokployClient($baseUrl, $apiKey);
+        // WHMCS assigns a specific server from the product's server group.
+        // Its immutable route maps to the Dokploy instance + deployment node.
+        $route = eclouddokploy_resolve_route($params);
+        $environmentId = $route['environment_id'];
+        $api = new ECloudDokployClient($route['url'], $route['api_key']);
         eclouddokploy_create_table();
 
         $lockName = 'ecloud-dokploy-' . $serviceId;
@@ -92,7 +95,8 @@ function eclouddokploy_CreateAccount(array $params): string
         }
         try {
             return eclouddokploy_create_locked(
-                $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode
+                $api, $serviceId, $environmentId, $gitUrl, $branch, (int) $port, $domain, $secret, $dbMode,
+                $route['remote_server_id'], $route['fingerprint']
             );
         } finally {
             $connection->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lockName]);
@@ -154,7 +158,14 @@ function eclouddokploy_external_database_url(int $serviceId): string
 
 function eclouddokploy_create_table(): void
 {
-    if (Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) return;
+    if (Capsule::schema()->hasTable('mod_ecloud_dokploy_services')) {
+        if (!Capsule::schema()->hasColumn('mod_ecloud_dokploy_services', 'route_fingerprint')) {
+            Capsule::schema()->table('mod_ecloud_dokploy_services', function ($table) {
+                $table->string('route_fingerprint', 64)->nullable();
+            });
+        }
+        return;
+    }
     Capsule::schema()->create('mod_ecloud_dokploy_services', function ($table) {
         $table->unsignedInteger('service_id')->primary();
         $table->string('state', 48)->default('new');
@@ -162,6 +173,7 @@ function eclouddokploy_create_table(): void
         $table->string('mariadb_id', 128)->nullable();
         $table->string('application_id', 128)->nullable();
         $table->string('domain_id', 128)->nullable();
+        $table->string('route_fingerprint', 64)->nullable();
         $table->timestamps();
     });
 }
@@ -195,7 +207,7 @@ function eclouddokploy_required_id(array $value, string $key): string
  */
 function eclouddokploy_database_payload(
     string $dbMode, string $envId, string $dbApp, string $dbName,
-    string $dbUser, string $password, string $rootPassword
+    string $dbUser, string $password, string $rootPassword, string $remoteServerId = ''
 ): array {
     $images = [
         'mariadb' => 'mariadb:11.4',
@@ -215,6 +227,7 @@ function eclouddokploy_database_payload(
         'dockerImage' => $images[$dbMode],
     ];
     if ($dbMode !== 'postgres') $payload['databaseRootPassword'] = $rootPassword;
+    if ($remoteServerId !== '') $payload['serverId'] = $remoteServerId;
     return $payload;
 }
 
@@ -234,16 +247,24 @@ function eclouddokploy_dockerfile_payload(string $applicationId): array
 
 function eclouddokploy_create_locked(
     ECloudDokployClient $api, int $id, string $envId, string $gitUrl,
-    string $branch, int $port, string $domain, string $seed, string $dbMode
+    string $branch, int $port, string $domain, string $seed, string $dbMode,
+    string $remoteServerId, string $routeFingerprint
 ): string {
     $table = Capsule::table('mod_ecloud_dokploy_services');
     $stateRow = $table->where('service_id', $id)->first();
     if (!$stateRow) {
         $table->insert([
             'service_id' => $id, 'state' => 'new', 'db_mode' => $dbMode,
+            'route_fingerprint' => $routeFingerprint,
             'created_at' => date('Y-m-d H:i:s'), 'updated_at' => date('Y-m-d H:i:s'),
         ]);
         $stateRow = $table->where('service_id', $id)->first();
+    }
+    // If a service already exists, never silently move it between Dokploy
+    // instances, remote deployment nodes or environments.
+    if (!is_string($stateRow->route_fingerprint) ||
+        !hash_equals($routeFingerprint, $stateRow->route_fingerprint)) {
+        return 'La ruta del servidor ha cambiado o no está vinculada. Requiere conciliación administrativa antes de continuar.';
     }
     if ((string) $stateRow->db_mode !== $dbMode) {
         return 'El motor de base de datos de este servicio ya fue establecido; no puede cambiarse durante el aprovisionamiento.';
@@ -276,7 +297,7 @@ function eclouddokploy_create_locked(
             $state = 'db_deployed';
         } else {
             $payload = eclouddokploy_database_payload(
-                $dbMode, $envId, $dbApp, $dbName, $dbUser, $pass, $rootPass
+                $dbMode, $envId, $dbApp, $dbName, $dbUser, $pass, $rootPass, $remoteServerId
             );
             eclouddokploy_set_state($id, 'creating_db');
             $db = $api->post($dbMode . '.create', $payload);
@@ -297,10 +318,9 @@ function eclouddokploy_create_locked(
     }
     if ($state === 'db_deployed') {
         eclouddokploy_set_state($id, 'creating_app');
-        $app = $api->post('application.create', [
-            'name' => $name, 'appName' => $name,
-            'environmentId' => $envId, 'sourceType' => 'git',
-        ]);
+        $app = $api->post('application.create',
+            eclouddokploy_application_create_payload($envId, $name, $remoteServerId)
+        );
         $appId = eclouddokploy_required_id($app, 'applicationId');
         eclouddokploy_set_state($id, 'app_created', ['application_id' => $appId]);
         $state = 'app_created';
