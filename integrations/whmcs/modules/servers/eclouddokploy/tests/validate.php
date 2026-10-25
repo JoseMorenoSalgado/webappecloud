@@ -18,6 +18,9 @@ check(eclouddokploy_valid_git('https://github.com/JoseMorenoSalgado/webappecloud
 check(!eclouddokploy_valid_git('http://github.com/owner/repo', 'main'), 'reject plain HTTP');
 check(!eclouddokploy_valid_git('https://github.com/owner/repo?token=secret', 'main'), 'reject query token');
 check(!eclouddokploy_valid_git('https://git.bad.example/owner/repo', 'main'), 'reject untrusted host');
+check(in_array('mariadb', ['mariadb', 'mysql', 'postgres', 'external', 'none'], true), 'MariaDB option available');
+check(in_array('mysql', ['mariadb', 'mysql', 'postgres', 'external', 'none'], true), 'MySQL option available');
+check(in_array('postgres', ['mariadb', 'mysql', 'postgres', 'external', 'none'], true), 'Postgres option available');
 $seed = str_repeat('ab', 32);
 $one = eclouddokploy_password($seed, 'db-user', 123);
 check(strlen($one) === 64, 'derived password length');
@@ -31,4 +34,22 @@ try {
 } catch (RuntimeException $e) {
     check($e->getMessage() !== 'Test failed: accepted HTTP', 'reject HTTP Dokploy API');
 }
-echo "Dokploy provisioning validations passed\n";
+$externalMap = tempnam(sys_get_temp_dir(), 'external-db-test-');
+file_put_contents($externalMap, json_encode(['123' => 'postgresql://app:pass@private-db.example:5432/appdb']));
+putenv('ECLOUD_DOKPLOY_EXTERNAL_DB_MAP_FILE=' . $externalMap);
+check(eclouddokploy_external_database_url(123) === 'postgresql://app:pass@private-db.example:5432/appdb', 'external PostgreSQL connection');
+try {
+    eclouddokploy_external_database_url(124);
+    throw new RuntimeException('Test failed: missing service DB config');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: missing service DB config', 'external DB isolated by service');
+}
+file_put_contents($externalMap, json_encode(['123' => "mysql://bad:pass@host/db\\ninjected=1"]));
+try {
+    eclouddokploy_external_database_url(123);
+    throw new RuntimeException('Test failed: accepted multiline secret');
+} catch (RuntimeException $e) {
+    check($e->getMessage() !== 'Test failed: accepted multiline secret', 'reject env injection');
+}
+unlink($externalMap);
+echo "Dokploy provisioning validations passed\\n";
