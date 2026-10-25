@@ -87,7 +87,7 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
@@ -99,8 +99,10 @@ jobs:
           Correo corporativo: vincula un segundo servicio WHMCS cPanel activo,
           usa un token UAPI por cuenta en un archivo privado fuera de public_html.
           Funciones correo desactivadas hasta habilitar en staging.
-          Instalacion de apps: activar solo staging las variables
-          ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE y ECLOUD_DOKPLOY_ENABLE_PROVISIONING.
+          Instalacion guiada activada desde Module Settings (guiado/legado).
+          Sin variables PHP para habilitar; WHMCS prepara la cuenta al pagar.
+          El secreto de cifrado se genera al primer uso y cifra con WHMCS.
+          Probar en staging antes de producción.
           Importacion publica de GitHub desde la ficha App Ecloud en Lagom.
           No soporta GitHub privado OAuth ni dominio gratuito automatizado.
           No activar creacion automatica de servicios ni redespliegues en produccion.
