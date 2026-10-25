@@ -9,7 +9,7 @@ declare(strict_types=1);
  */
 function eclouddokploy_mail_valid_local(string $local): bool
 {
-    return (bool) preg_match('/^[a-z0-9][a-z0-9._+-]{0,62}$/D', $local)
+    return (bool) preg_match('/^[a-z0-9][a-z0-9._-]{0,62}$/D', $local)
         && !str_contains($local, '..')
         && !str_ends_with($local, '.')
         && !in_array($local, ['cpanel'], true);
