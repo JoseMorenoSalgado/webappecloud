@@ -115,7 +115,7 @@ El módulo mantiene la modalidad elegida para cada servicio y rechaza cambios du
 El módulo ofrece dos banderas privadas **apagadas por defecto**, independientes de ECLOUD_DOKPLOY_ENABLE_PROVISIONING:
 
 - ECLOUD_DOKPLOY_ENABLE_CLIENT_READS=1: permite consultar GET /api/application.one y GET /api/deployment.all cuando el propietario abre su servicio Active. Muestra el estado de operación y hasta 5 ejecuciones recientes, sin exponer respuestas completas ni credenciales. Si Dokploy falla, solo aparece un aviso. **Esto no comprueba HTTP/SSL ni garantiza que la aplicación esté online.**
-- ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=1: habilita el formulario de actualización desde Git en esa ficha de Lagom. Envía la acción personalizada WHMCS mediante POST, con token CSRF por sesión y servicio y confirmación explícita. Se comprueba cliente propietario, producto, dominio, estado Active y applicationId guardado previamente. Usa bloqueo MySQL y una reserva de 15 minutos antes de solicitar POST /api/application.deploy.
+- ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=1: habilita el formulario de actualización desde Git en esa ficha de Lagom. Envía la acción personalizada WHMCS mediante POST, con token CSRF por sesión y servicio y confirmación explícita. Se comprueba cliente propietario, producto, dominio, estado Active y applicationId guardado previamente. Usa bloqueo MySQL, confirma el applicationId remoto con GET /api/application.one, rechaza otro despliegue si Dokploy informa applicationStatus=running y aplica una reserva de 15 minutos antes de solicitar POST /api/application.deploy.
 
 Las cuentas de correo del cliente mantienen su módulo cPanel actual sin modificaciones. Ninguna de estas opciones crea o administra buzones.
 
