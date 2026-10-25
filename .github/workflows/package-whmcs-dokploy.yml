@@ -78,8 +78,14 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    + entorno production inmediatamente al aprovisionar en WHMCS.
    VERDE = proyecto y entorno creados, no necesariamente web publicada.
    Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
-   usar una sola vez el comando "Conciliar proyecto antiguo" (requiere
+   usar el comando "Crear / verificar proyecto Dokploy" (requiere
    primera factura pagada, no duplica un proyecto existente).
+   Asistencia tecnica sin ingresar a la cuenta del cliente:
+   En ficha del servicio WHMCS > campos del modulo, introducir GitHub,
+   rama, carpeta, tipo app, puerto y variables opcionales, y GUARDAR.
+   En Comandos del modulo pulsa "Instalar aplicacion del cliente".
+   El modulo conserva propietario, VPS, dominio y proyecto existentes.
+   Guía: docs/WHMCS-DOKPLOY-SOPORTE-ADMIN.md.
 6) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
    Instalacion automatica = guiado (predeterminado).
    WHMCS prepara el servicio con CreateAccount despues del primer pago,
