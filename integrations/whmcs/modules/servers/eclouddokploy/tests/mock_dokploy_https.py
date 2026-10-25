@@ -87,7 +87,7 @@ class Handler(BaseHTTPRequestHandler):
             projects[pid] = {"projectId": pid, "name": name}
             # Simulate both Dokploy behaviors: auto-generated production or
             # environment creation required, depending on the test account.
-            if not name.endswith(("service-311", "service-411")):
+            if not name.endswith(("service-311", "service-411", "service-415")):
                 eid = new_id("env")
                 environments[eid] = {
                     "projectId": pid, "environmentId": eid, "name": "production"
