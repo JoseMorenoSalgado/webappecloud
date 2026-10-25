@@ -239,5 +239,92 @@ namespace {
     assertion(eclouddokploy_find_exact_service_project(
         [['name'=>'unrelated', 'projectId'=>'valid-123']], 25, 999
     ) === null, 'unrelated project cannot be adopted');
+    // Exact scenario photographed in Dokploy:
+    // ec-client-225-service-293 / production already exists before WHMCS
+    // knows its projectId. Recover both remote IDs, no second creation.
+    $existing293 = $api->post(
+        'project.create', eclouddokploy_project_create_payload(225, 293)
+    );
+    $real293 = $existing293['projectId'];
+    $production293 = eclouddokploy_find_production_environment(
+        $api->get('environment.byProjectId', ['projectId' => $real293]),
+        $real293
+    );
+    assertion(is_string($production293), 'project 225/293 already has production');
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293] = [
+        'service_id'=>293, 'owner_client_id'=>225,
+        'route_fingerprint'=>$fingerprint,
+        'state'=>'awaiting_setup', 'project_id'=>null, 'environment_id'=>null,
+    ];
+    $before293 = count($api->get('project.all', []));
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
+            === 'success',
+        'visible ec-client-225-service-293 recovered without creating another project'
+    );
+    $recovered293 = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293];
+    assertion($recovered293['project_id'] === $real293
+        && $recovered293['environment_id'] === $production293
+        && $recovered293['state'] === 'environment_ready',
+        'both Dokploy identifiers now registered against service 293');
+    assertion(count($api->get('project.all', [])) === $before293,
+        'exact existing project was adopted, not duplicated');
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
+            === 'success',
+        'same WHMCS service checks existing project IDs rather than blindly succeeding'
+    );
+    // State may be environment_ready but one of the IDs was never persisted.
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['project_id'] = null;
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['environment_id'] = null;
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
+            === 'success',
+        'recovers both missing identifiers without rewinding the valid ready state'
+    );
+    $fixed293 = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293];
+    assertion($fixed293['project_id'] === $real293
+        && $fixed293['environment_id'] === $production293,
+        'ready state restored both IDs from authoritative API');
+
+    // A stale WHMCS ID cannot be silently swapped for the real remote ID.
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['project_id'] = 'other-project-id';
+    $mismatch293 = eclouddokploy_prepare_private_project_locked(
+        $api, 293, 225, $fingerprint
+    );
+    assertion(str_contains($mismatch293, 'no corresponde'),
+        'mismatched saved project ID rejected; no reassignment by name');
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['project_id'] = $real293;
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['environment_id'] = 'other-env-id';
+    $envMismatch = eclouddokploy_prepare_private_project_locked(
+        $api, 293, 225, $fingerprint
+    );
+    assertion(str_contains($envMismatch, 'no coincide'),
+        'mismatched production ID rejected; no cross-tenant environment');
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['environment_id'] = $production293;
+
+    // A supposedly ready service whose remote project disappeared is NOT
+    // success and must not generate a replacement project automatically.
+    \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][294] = [
+        'service_id'=>294, 'owner_client_id'=>225,
+        'route_fingerprint'=>$fingerprint,'state'=>'environment_ready',
+        'project_id'=>'unknown-project-id','environment_id'=>'unknown-production',
+    ];
+    $countBeforeStale = count($api->get('project.all', []));
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 294, 225, $fingerprint)
+            !== 'success',
+        'stale ID verified remotely and flagged instead of falsely returning success'
+    );
+    assertion(count($api->get('project.all', [])) === $countBeforeStale,
+        'stale WHMCS resource not recreated or overwritten');
+    assertion(
+        eclouddokploy_prepare_private_project_locked($api, 293, 224, $fingerprint)
+            !== 'success',
+        'same numeric service ID may never be adopted for a different client'
+    );
+    assertion(count($api->get('project.all', [])) === $before293,
+        'all 225/293 reconciliation checks performed read-only');
+
     echo "WHMCS paid account creation and safe reconciliation mock contracts passed\n";
 }
