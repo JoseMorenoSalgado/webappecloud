@@ -1,17 +1,27 @@
 #!/usr/bin/env python3
-"""Local-only mock for read-only Dokploy smoke tests. NOT a deployment server."""
+"""Local-only HTTPS Dokploy API mock. Writes modify MEMORY only, never real VPS."""
 import json
 import os
 import ssl
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, urlparse
 
 KEY = "test-key-very-long"
-APP_ID = "stagingapp123"
+STAGING_APP_ID = "stagingapp123"
+projects = {}
+environments = {}
+applications = {}
+counter = {"project": 0, "env": 0, "app": 0}
+
+
+def new_id(kind):
+    counter[kind] += 1
+    return f"{kind}-{counter[kind]}-mock"
+
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
-        return  # Do not log headers/tokens.
+        return  # Never log auth headers or response bodies.
 
     def response(self, code, body):
         content = json.dumps(body).encode("utf-8")
@@ -21,26 +31,93 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(content)
 
-    def do_GET(self):
+    def authorized(self):
         if self.headers.get("x-api-key") != KEY:
-            return self.response(401, {"error": "unauthorized"})
-        route = urlparse(self.path)
-        if route.path == "/api/project.all":
-            return self.response(200, [{"projectId": "stage", "name": "test-project"}])
-        if route.path == "/api/application.one":
-            app = parse_qs(route.query).get("applicationId", [""])[0]
-            if app != APP_ID:
-                return self.response(404, {"error": "not found"})
-            return self.response(200, {"applicationId": APP_ID, "applicationStatus": "idle"})
-        if route.path == "/api/deployment.all":
-            app = parse_qs(route.query).get("applicationId", [""])[0]
-            if app != APP_ID:
-                return self.response(404, {"error": "not found"})
+            self.response(401, {"error": "unauthorized"})
+            return False
+        return True
+
+    def do_GET(self):
+        if not self.authorized():
+            return
+        url = urlparse(self.path)
+        query = parse_qs(url.query)
+        if url.path == "/api/project.all":
+            return self.response(
+                200, [{"projectId": "stage", "name": "test-project"}] + list(projects.values())
+            )
+        if url.path == "/api/environment.byProjectId":
+            pid = query.get("projectId", [""])[0]
+            if pid not in projects:
+                return self.response(404, {"error": "unknown project"})
+            return self.response(200, [e for e in environments.values() if e["projectId"] == pid])
+        if url.path == "/api/application.one":
+            app = query.get("applicationId", [""])[0]
+            if app == STAGING_APP_ID:
+                return self.response(200, {"applicationId": app, "applicationStatus": "idle"})
+            found = applications.get(app)
+            if not found:
+                return self.response(404, {"error": "unknown app"})
+            return self.response(200, found)
+        if url.path == "/api/deployment.all":
+            app = query.get("applicationId", [""])[0]
+            if app != STAGING_APP_ID and app not in applications:
+                return self.response(404, {"error": "unknown app"})
             return self.response(200, [{"status": "done", "createdAt": "2026-10-24T16:00:00Z"}])
         return self.response(404, {"error": "unknown endpoint"})
 
     def do_POST(self):
-        return self.response(405, {"error": "read-only mock; no writes permitted"})
+        if not self.authorized():
+            return
+        length = int(self.headers.get("Content-Length") or "0")
+        if length < 1 or length > 8192:
+            return self.response(400, {"error": "invalid request size"})
+        try:
+            data = json.loads(self.rfile.read(length))
+        except (ValueError, TypeError):
+            return self.response(400, {"error": "invalid json"})
+        path = urlparse(self.path).path
+        if path == "/api/project.create":
+            name = data.get("name")
+            if not isinstance(name, str) or not name.startswith("ec-client-"):
+                return self.response(400, {"error": "invalid project name"})
+            if any(p["name"] == name for p in projects.values()):
+                return self.response(409, {"error": "duplicate project name"})
+            pid = new_id("project")
+            projects[pid] = {"projectId": pid, "name": name}
+            # Simulate both Dokploy behaviors: auto-generated production or
+            # environment creation required, depending on the test account.
+            if not name.endswith("service-311"):
+                eid = new_id("env")
+                environments[eid] = {
+                    "projectId": pid, "environmentId": eid, "name": "production"
+                }
+            return self.response(200, {"projectId": pid})
+        if path == "/api/environment.create":
+            pid = data.get("projectId")
+            if pid not in projects or data.get("name") != "production":
+                return self.response(400, {"error": "invalid environment"})
+            if any(
+                env["projectId"] == pid and env["name"] == "production"
+                for env in environments.values()
+            ):
+                return self.response(409, {"error": "production already exists"})
+            eid = new_id("env")
+            environments[eid] = {"environmentId": eid, "projectId": pid, "name": "production"}
+            return self.response(200, {"environmentId": eid})
+        if path == "/api/application.create":
+            env_id = data.get("environmentId")
+            if env_id not in environments or data.get("sourceType") != "git":
+                return self.response(400, {"error": "application missing private environment"})
+            app_id = new_id("app")
+            applications[app_id] = {
+                "applicationId": app_id,
+                "environmentId": env_id,
+                "applicationStatus": "idle",
+            }
+            return self.response(200, {"applicationId": app_id})
+        return self.response(405, {"error": "unsupported operation in mock"})
+
 
 server = HTTPServer(("127.0.0.1", 443), Handler)
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
