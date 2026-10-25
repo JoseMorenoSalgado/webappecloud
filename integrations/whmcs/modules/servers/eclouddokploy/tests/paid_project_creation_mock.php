@@ -87,7 +87,7 @@ namespace {
     assertion($row['state'] === 'environment_ready', 'project ready before GitHub installation');
     assertion(is_string($row['project_id']) && is_string($row['environment_id'])
         && $row['project_id'] !== $row['environment_id'], 'both IDs persisted');
-    $projects = $api->get('project.all');
+    $projects = $api->get('project.all', []);
     $matches = array_values(array_filter($projects, static fn($p) =>
         is_array($p) && ($p['name'] ?? '') === 'ec-client-25-service-310'
     ));
@@ -97,7 +97,7 @@ namespace {
             === 'success',
         'safe repeated WHMCS module Create does not create a new project'
     );
-    $projects2 = $api->get('project.all');
+    $projects2 = $api->get('project.all', []);
     assertion(count($projects2) === count($projects), 'no duplicate project after retry');
 
     // In mock service 311 Dokploy does not make production automatically;
