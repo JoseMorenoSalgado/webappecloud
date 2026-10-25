@@ -188,6 +188,50 @@ function eclouddokploy_required_id(array $value, string $key): string
     return $id;
 }
 
+
+/**
+ * Pure payload builders are unit-tested against Dokploy's documented API fields.
+ * They do not call the remote server.
+ */
+function eclouddokploy_database_payload(
+    string $dbMode, string $envId, string $dbApp, string $dbName,
+    string $dbUser, string $password, string $rootPassword
+): array {
+    $images = [
+        'mariadb' => 'mariadb:11.4',
+        'mysql' => 'mysql:8.4',
+        'postgres' => 'postgres:17',
+    ];
+    if (!isset($images[$dbMode])) {
+        throw new InvalidArgumentException('Unsupported SQL engine.');
+    }
+    $payload = [
+        'name' => $dbApp,
+        'appName' => $dbApp,
+        'environmentId' => $envId,
+        'databaseName' => $dbName,
+        'databaseUser' => $dbUser,
+        'databasePassword' => $password,
+        'dockerImage' => $images[$dbMode],
+    ];
+    if ($dbMode !== 'postgres') $payload['databaseRootPassword'] = $rootPassword;
+    return $payload;
+}
+
+function eclouddokploy_dockerfile_payload(string $applicationId): array
+{
+    return [
+        'applicationId' => $applicationId,
+        'buildType' => 'dockerfile',
+        'dockerfile' => 'Dockerfile',
+        'dockerContextPath' => '/',
+        // Dokploy's schema requires these fields, even for Dockerfile builds.
+        'dockerBuildStage' => null,
+        'herokuVersion' => null,
+        'railpackVersion' => null,
+    ];
+}
+
 function eclouddokploy_create_locked(
     ECloudDokployClient $api, int $id, string $envId, string $gitUrl,
     string $branch, int $port, string $domain, string $seed, string $dbMode
@@ -231,22 +275,9 @@ function eclouddokploy_create_locked(
             eclouddokploy_set_state($id, 'db_deployed');
             $state = 'db_deployed';
         } else {
-            $payload = [
-                'name' => $dbApp, 'appName' => $dbApp,
-                'environmentId' => $envId,
-                'databaseName' => $dbName, 'databaseUser' => $dbUser,
-                'databasePassword' => $pass,
-            ];
-            if ($dbMode !== 'postgres') {
-                $payload['databaseRootPassword'] = $rootPass;
-            }
-            // Pin supported database images. Avoid upstream API defaults that
-            // can move between major versions or reference invalid tags.
-            $payload['dockerImage'] = [
-                'mariadb' => 'mariadb:11.4',
-                'mysql' => 'mysql:8.4',
-                'postgres' => 'postgres:17',
-            ][$dbMode];
+            $payload = eclouddokploy_database_payload(
+                $dbMode, $envId, $dbApp, $dbName, $dbUser, $pass, $rootPass
+            );
             eclouddokploy_set_state($id, 'creating_db');
             $db = $api->post($dbMode . '.create', $payload);
             $dbId = eclouddokploy_required_id($db, $dbIdKey[$dbMode]);
@@ -290,11 +321,7 @@ function eclouddokploy_create_locked(
             'watchPaths' => [],
             'enableSubmodules' => false,
         ]);
-        $api->post('application.saveBuildType', [
-            'applicationId' => $appId, 'buildType' => 'dockerfile',
-            'dockerfile' => 'Dockerfile', 'dockerContextPath' => '/', 'dockerBuildStage' => null,
-            'herokuVersion' => null, 'railpackVersion' => null,
-        ]);
+        $api->post('application.saveBuildType', eclouddokploy_dockerfile_payload($appId));
         $envLines = ['NODE_ENV=production', 'PORT=' . $port];
         if ($managed) {
             $details = $api->get($dbMode . '.one', [$dbIdKey[$dbMode] => $dbId]);
