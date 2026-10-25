@@ -45,19 +45,10 @@ function eclouddokploy_auto_seed(): string
         return strtolower($legacy);
     }
 
-    if (!class_exists(\Illuminate\Support\Facades\Crypt::class)
-        || !method_exists(\Illuminate\Support\Facades\Crypt::class, 'encryptString')
-        || !method_exists(\Illuminate\Support\Facades\Crypt::class, 'decryptString')) {
+    // Laravel Facades dispatch encryptString/decryptString through __callStatic,
+    // so method_exists() is not a reliable capability check.
+    if (!class_exists(\Illuminate\Support\Facades\Crypt::class)) {
         throw new RuntimeException('WHMCS encryption service is unavailable.');
-    }
-
-    $schema = \WHMCS\Database\Capsule::schema();
-    if (!$schema->hasTable('mod_ecloud_dokploy_runtime')) {
-        $schema->create('mod_ecloud_dokploy_runtime', static function ($table) {
-            $table->unsignedInteger('id')->primary();
-            $table->text('encrypted_seed');
-            $table->timestamps();
-        });
     }
 
     $db = \WHMCS\Database\Capsule::connection();
@@ -67,6 +58,14 @@ function eclouddokploy_auto_seed(): string
         throw new RuntimeException('Password seed setup is busy.');
     }
     try {
+        $schema = \WHMCS\Database\Capsule::schema();
+        if (!$schema->hasTable('mod_ecloud_dokploy_runtime')) {
+            $schema->create('mod_ecloud_dokploy_runtime', static function ($table) {
+                $table->unsignedInteger('id')->primary();
+                $table->text('encrypted_seed');
+                $table->timestamps();
+            });
+        }
         $table = \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_runtime');
         $row = $table->where('id', 1)->first(['encrypted_seed']);
         if ($row) {
