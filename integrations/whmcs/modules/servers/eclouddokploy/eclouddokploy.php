@@ -12,6 +12,7 @@ if (!defined('WHMCS')) {
 }
 
 require_once __DIR__ . '/lib/DokployClient.php';
+require_once __DIR__ . '/lib/ClientOperations.php';
 
 use WHMCS\Database\Capsule;
 
@@ -381,6 +382,13 @@ function eclouddokploy_ClientArea(array $params): array
         'ecDokployState' => $public[0],
         'ecDokployDescription' => $public[1],
         'ecDokployProvisioned' => false,
+        'ecDokployCanRedeploy' => false,
+        'ecDokployCsrf' => '',
+        'ecDokployLiveState' => '',
+        'ecDokployLiveDescription' => '',
+        'ecDokployLiveAvailable' => false,
+        'ecDokployHistory' => [],
+        'ecDokployLiveNotice' => '',
     ];
     if ($serviceId < 1 || $clientId < 1 || $ownerId !== $clientId) {
         return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
@@ -399,6 +407,10 @@ function eclouddokploy_ClientArea(array $params): array
         }
         $view['ecDokployAuthorized'] = true;
         $view['ecDokployServiceId'] = $serviceId;
+        $active = (string) $hosting->domainstatus === 'Active';
+        if ($active && getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1') {
+            $view['ecDokployCsrf'] = eclouddokploy_csrf($serviceId);
+        }
         if (eclouddokploy_valid_domain($domain)) {
             $view['ecDokployDomain'] = $domain;
             $view['ecDokploySiteUrl'] = 'https://' . $domain;
@@ -425,6 +437,25 @@ function eclouddokploy_ClientArea(array $params): array
                 $view['ecDokployProvisioned'] =
                     (string) $record->state === 'deployment_requested'
                     && !empty($record->application_id);
+                if ($active && $view['ecDokployProvisioned']) {
+                    $view['ecDokployCanRedeploy'] =
+                        getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1';
+                    if (getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_READS') === '1') {
+                        try {
+                            $api = new ECloudDokployClient(
+                                trim((string) getenv('ECLOUD_DOKPLOY_URL')),
+                                trim((string) getenv('ECLOUD_DOKPLOY_API_KEY'))
+                            );
+                            $live = eclouddokploy_live_overview($api, (string) $record->application_id);
+                            $view['ecDokployLiveState'] = $live['state'];
+                            $view['ecDokployLiveDescription'] = $live['description'];
+                            $view['ecDokployHistory'] = $live['history'];
+                            $view['ecDokployLiveAvailable'] = true;
+                        } catch (Throwable $e) {
+                            $view['ecDokployLiveNotice'] = 'No se pudieron consultar los datos recientes de Dokploy.';
+                        }
+                    }
+                }
             } else {
                 $public = ['Sin instalación registrada', 'Este servicio aún no tiene un despliegue registrado en Dokploy.'];
             }
@@ -440,4 +471,21 @@ function eclouddokploy_ClientArea(array $params): array
         $view['ecDokployAuthorized'] = false;
     }
     return ['tabOverviewModuleOutputTemplate' => 'templates/clientarea.tpl', 'templateVariables' => $view];
+}
+
+
+/**
+ * Exposes a client-only WHMCS custom action without adding buttons to other
+ * products. The form is rendered inside the Dokploy service's own Lagom panel.
+ */
+function eclouddokploy_ClientAreaAllowedFunctions(): array
+{
+    return getenv('ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY') === '1'
+        ? ['Redeploy']
+        : [];
+}
+
+function eclouddokploy_Redeploy(array $params): string
+{
+    return eclouddokploy_redeploy_request($params);
 }
