@@ -59,6 +59,27 @@ jobs:
           if grep -q 'wrong-token' "$TEMP_DIR/denied.txt"; then
             echo 'Diagnostic leaked auth secret'; exit 1
           fi
+      - name: Verify corporate mail UAPI over TLS (ephemeral mock only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="integrations/whmcs/modules/servers/eclouddokploy"
+          TEMP_DIR="$(mktemp -d)"
+          trap 'kill "${MAIL_MOCK_PID:-0}" 2>/dev/null || true; rm -rf "$TEMP_DIR"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TEMP_DIR/key.pem" -out "$TEMP_DIR/cert.pem" -days 1 -subj "/CN=mail.test" -addext "subjectAltName=DNS:mail.test" >/dev/null 2>&1
+          echo "127.0.0.1 mail.test" | sudo tee -a /etc/hosts >/dev/null
+          env MOCK_CERT="$TEMP_DIR/cert.pem" MOCK_KEY="$TEMP_DIR/key.pem" python3 "$ROOT/tests/mock_cpanel_mail_https.py" >/dev/null 2>&1 &
+          MAIL_MOCK_PID=$!
+          export NO_PROXY="mail.test,localhost,127.0.0.1"
+          export no_proxy="$NO_PROXY"
+          ready=0
+          for i in $(seq 1 25); do
+            if curl --silent --fail --cacert "$TEMP_DIR/cert.pem" -H 'Authorization: cpanel eclient:cpanel-staging-token-123456789' 'https://mail.test:2083/execute/Email/list_pops_with_disk?domain=empresa.test' >/dev/null; then ready=1; break; fi
+            sleep 0.5
+          done
+          if [ "$ready" -ne 1 ]; then echo 'cPanel mock TLS server failed to start'; exit 1; fi
+          ECLOUD_CPANEL_TEST_HOST="mail.test" ECLOUD_CPANEL_TEST_TOKEN="cpanel-staging-token-123456789" php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_mail_mock.php"
+
       - name: Package WHMCS Dokploy module for staging
         shell: bash
         run: |
@@ -66,7 +87,7 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
@@ -75,6 +96,9 @@ jobs:
           Seleccionar el modulo eclouddokploy en los ajustes del producto.
           Cada servicio genera su propio proyecto y entorno Dokploy.
           Este modulo NO figura en Modulos adicionales; es un modulo de servidor.
+          Correo corporativo: vincula un segundo servicio WHMCS cPanel activo,
+          usa un token UAPI por cuenta en un archivo privado fuera de public_html.
+          Funciones correo desactivadas hasta habilitar en staging.
           No activar creacion automatica de servicios ni redespliegues en produccion.
           API keys y secretos solo en el entorno privado del servidor WHMCS.
           Guias: docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub.
