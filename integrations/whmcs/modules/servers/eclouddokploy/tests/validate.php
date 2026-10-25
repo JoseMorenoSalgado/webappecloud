@@ -373,4 +373,98 @@ $_POST['ec_mail_csrf']=$ecMailCsrf;
 $_POST['ec_mail_op']='delete';
 check(str_contains(eclouddokploy_email_action(['serviceid'=>310,'userid'=>25]), 'desactivada'), 'mailbox deletion separately gated');
 
+
+// Three-step customer installer (public GitHub, no shared Dokploy credentials).
+putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=0');
+check(!in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'self-service unavailable by default');
+putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=1');
+putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0');
+check(!in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'self-service requires provisioning gate');
+putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=1');
+check(in_array('InstallApp', eclouddokploy_ClientAreaAllowedFunctions(), true), 'optional install wizard action enabled');
+$_SESSION['uid'] = 0;
+$_SERVER['REQUEST_METHOD'] = 'GET';
+check(str_contains(eclouddokploy_install_from_wizard(['serviceid'=>310,'userid'=>25]), 'no autorizada'), 'unauthenticated install denied');
+$_SESSION['uid'] = 25;
+$_SERVER['REQUEST_METHOD'] = 'POST';
+$_POST = ['id'=>'310','modop'=>'custom','a'=>'InstallApp','ec_setup_token'=>'bad','ec_setup_confirm'=>'yes'];
+check(str_contains(eclouddokploy_install_from_wizard(['serviceid'=>310,'userid'=>25]), 'no autorizada'), 'wizard CSRF enforced before DB');
+$_POST['ec_setup_token'] = eclouddokploy_setup_csrf(310);
+check(eclouddokploy_setup_csrf(310) !== eclouddokploy_setup_csrf(311), 'wizard token unique per service');
+check(eclouddokploy_setup_csrf(310) !== eclouddokploy_email_csrf(310), 'wizard token distinct from mail');
+check(eclouddokploy_setup_csrf(310) !== eclouddokploy_csrf(310), 'wizard token distinct from redeploy');
+check(eclouddokploy_setup_request_authorized(['serviceid'=>310,'userid'=>25]), 'valid session and CSRF context');
+$_SESSION['uid'] = 26;
+check(!eclouddokploy_setup_request_authorized(['serviceid'=>310,'userid'=>25]), 'cross tenant setup blocked');
+$_SESSION['uid'] = 25;
+check(eclouddokploy_setup_root('') === '/', 'empty root defaults to slash');
+check(eclouddokploy_setup_root('/apps/frontend/') === '/apps/frontend', 'monorepo root normalization');
+foreach (['../private', '/apps/../admin', '//path', '/apps/$HOME', '/apps/./other', 'https://other.com'] as $wrong) {
+    check(eclouddokploy_setup_root($wrong) === null, 'build root rejects traversal/special ' . $wrong);
+}
+check(eclouddokploy_setup_repo_parts('https://github.com/example/safe-repo.git')['repo'] === 'safe-repo', 'public GitHub repo parsed');
+check(eclouddokploy_setup_repo_parts('https://gitlab.com/x/y') === null, 'non-GitHub repo blocked');
+$setup = eclouddokploy_setup_prepare([
+    'ec_setup_git' => 'https://github.com/example/site.git',
+    'ec_setup_branch' => 'production',
+    'ec_setup_root' => '/apps/web/',
+    'ec_setup_preset' => 'nextjs',
+    'ec_setup_port' => '3000',
+    'ec_setup_env' => "APP_NAME=Ecloud\nAPI_SECRET=this-is-a-secret=with-equals\nNEXT_PUBLIC_LABEL=Public",
+]);
+check($setup['root_path'] === '/apps/web' && $setup['port'] === 3000, 'wizard validates and normalizes input');
+check(count($setup['env']) === 3, 'wizard accepts unique env names');
+check($setup['env']['API_SECRET'] === 'this-is-a-secret=with-equals', 'env values keep equals');
+$auto = eclouddokploy_setup_prepare([
+    'ec_setup_git'=>'https://github.com/example/site.git',
+    'ec_setup_branch'=>'main',
+    'ec_setup_root'=>'/',
+    'ec_setup_preset'=>'auto',
+    'ec_setup_port'=>'3000',
+], ['preset'=>'nextjs']);
+check($auto['preset'] === 'nextjs', 'framework auto-detection selected server-side');
+try {
+    eclouddokploy_setup_prepare([
+        'ec_setup_git'=>'https://github.com/example/site.git',
+        'ec_setup_branch'=>'main',
+        'ec_setup_preset'=>'auto',
+        'ec_setup_port'=>'3000',
+    ], ['preset'=>null]);
+    throw new RuntimeException('Test failed: unknown framework accepted');
+} catch (InvalidArgumentException $e) {
+    check(true, 'unknown framework requires manual selection');
+}
+foreach (["PORT=9999", "DATABASE_URL=mysql://evil", "NODE_ENV=test", "ECLOUD_PASSWORD=bad", "FOO=1\nFOO=2", "B-AD=1"] as $wrongEnv) {
+    try {
+        eclouddokploy_setup_parse_env($wrongEnv);
+        throw new RuntimeException('Test failed: unsafe env accepted');
+    } catch (InvalidArgumentException $e) {
+        check(true, 'reserved or repeated env variable blocked');
+    }
+}
+$lines = eclouddokploy_setup_env_lines(['SECRET'=>'pass"backslash\\value']);
+check(count($lines) === 1 && str_starts_with($lines[0],'SECRET="'), 'user dotenv value quoted');
+$buildNext = eclouddokploy_setup_build_payload('app-test','nextjs','/');
+$buildDocker = eclouddokploy_setup_build_payload('app-test','dockerfile','/apps/frontend');
+check($buildNext['buildType'] === 'nixpacks', 'Next.js builds without required Dockerfile');
+check($buildDocker['buildType'] === 'dockerfile'
+    && $buildDocker['dockerContextPath'] === '/apps/frontend', 'advanced monorepo docker build');
+check($buildDocker['dockerfile'] === 'Dockerfile', 'Dockerfile opt-in only');
+if (function_exists('sodium_crypto_secretbox')) {
+    $encrypted = eclouddokploy_setup_encrypt_env($setup['env'], $seed, 310);
+    check(!str_contains($encrypted['ciphertext'], 'this-is-a-secret'), 'env never stored in plaintext');
+    $decoded = eclouddokploy_setup_decrypt_env(
+        $encrypted['ciphertext'], $encrypted['nonce'], $seed, 310
+    );
+    check($decoded === $setup['env'], 'encrypted secrets round-trip');
+    try {
+        eclouddokploy_setup_decrypt_env($encrypted['ciphertext'], $encrypted['nonce'], $seed, 311);
+        throw new RuntimeException('Test failed: cross-service env decrypt');
+    } catch (RuntimeException $e) {
+        check(true, 'other service cannot decrypt secrets');
+    }
+}
+putenv('ECLOUD_DOKPLOY_ENABLE_SELF_SERVICE=0');
+putenv('ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0');
+
 echo "Dokploy provisioning validations passed\n";
