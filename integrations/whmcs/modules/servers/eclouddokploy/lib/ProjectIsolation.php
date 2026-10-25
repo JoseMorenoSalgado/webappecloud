@@ -97,6 +97,49 @@ function eclouddokploy_find_exact_service_project(
     return $matches[0] ?? null;
 }
 
+/**
+ * Discover one WHMCS tenant project without loading every Dokploy service.
+ * Dokploy project.search returns {items: [...], total: n} and is intentionally
+ * much lighter than project.all (which includes nested service records).
+ *
+ * A search result is never assumed complete if truncated; before any create
+ * the module must have an authoritative negative lookup. Unsupported older
+ * versions (HTTP 404/405) fall back to the earlier read-only project.all.
+ *
+ * @return ?string Dokploy's real projectId, or null after verified absence.
+ */
+function eclouddokploy_lookup_service_project(
+    ECloudDokployClient $api, int $clientId, int $serviceId
+): ?string {
+    $name = eclouddokploy_project_name($clientId, $serviceId);
+    try {
+        $response = $api->get('project.search', [
+            'name' => $name, 'limit' => 100, 'offset' => 0,
+        ]);
+    } catch (RuntimeException $e) {
+        // Never fall back after auth/permission errors or ambiguous 500s.
+        // Older Dokploy API releases may not expose project.search at all.
+        if (!preg_match(
+            '/^Dokploy request failed: project[.]search [(]HTTP (404|405)[)][.]$/D',
+            $e->getMessage()
+        )) {
+            throw $e;
+        }
+        return eclouddokploy_find_exact_service_project(
+            $api->get('project.all', []), $clientId, $serviceId
+        );
+    }
+    $items = $response['items'] ?? null;
+    $total = $response['total'] ?? null;
+    if (!is_array($items) || !array_is_list($items)
+        || !is_int($total) || $total < 0 || $total > count($items)
+        || count($items) > 100) {
+        // Unexpected data must never be interpreted as "no project".
+        throw new RuntimeException('Dokploy project.search returned an incomplete or unknown result.');
+    }
+    return eclouddokploy_find_exact_service_project($items, $clientId, $serviceId);
+}
+
 /** An application must be in the specific service's private environment. */
 function eclouddokploy_app_environment_matches(array $remote, string $appId, string $envId): bool
 {
@@ -168,8 +211,8 @@ function eclouddokploy_prepare_private_project_locked(
         return 'Este servicio tiene un estado desconocido. No se modificaron recursos Dokploy.';
     }
 
-    $remoteProjectId = eclouddokploy_find_exact_service_project(
-        $api->get('project.all', []), $clientId, $serviceId
+    $remoteProjectId = eclouddokploy_lookup_service_project(
+        $api, $clientId, $serviceId
     );
     if ($remoteProjectId !== null) {
         if ($projectId !== '' && !hash_equals($projectId, $remoteProjectId)) {
