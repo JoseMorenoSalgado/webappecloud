@@ -1,16 +1,16 @@
-# Elearning Cloud → Dokploy (Git + MariaDB) — piloto
+# Elearning Cloud → Dokploy (Git + bases de datos opcionales) — piloto
 
 **Estado:** primera implementación en revisión. No desplegada ni probada con las credenciales del VPS. No activar automatización de pedidos hasta validar staging.
 
 ## Qué hace
 
-Módulo de aprovisionamiento WHMCS `eclouddokploy` para instalar **WebAppECloud** en Dokploy desde un repositorio público de GitHub, con **MariaDB por cliente**.
+Módulo de aprovisionamiento WHMCS `eclouddokploy` para desplegar aplicaciones desde un repositorio público de GitHub, con base de datos **opcional y seleccionable por producto**: MariaDB, MySQL, PostgreSQL, base de datos externa o sin base de datos. WebAppECloud necesita una base de datos SQL; el modo `none` es solo para otras aplicaciones que no la requieran.
 
 1. Parte de un Environment ID **preexistente** en Dokploy; un administrador lo configura en el producto WHMCS.
 2. Por cada `serviceid` crea un registro idempotente en `mod_ecloud_dokploy_services`.
-3. Solicita `mariadb.create` con credenciales fuertes diferentes por servicio; luego `mariadb.deploy`.
+3. Para bases administradas, solicita `<motor>.create` con credenciales distintas por servicio y luego `<motor>.deploy`; para `external` reutiliza la URL SQL guardada en un archivo privado, y para `none` no crea una base de datos.
 4. Solicita `application.create`, `application.saveGitProvider`, `application.saveBuildType` (`Dockerfile`) y `application.saveEnvironment`.
-5. Configura `DATABASE_URL` usando el hostname interno de MariaDB obtenido con `mariadb.one`; no publica el puerto SQL.
+5. Configura `DATABASE_URL` usando el hostname interno devuelto por `<motor>.one` (o la conexión externa) sin publicar el puerto SQL. En modo `none` omite `DATABASE_URL`.
 6. Solicita `domain.create` y `application.deploy`.
 7. **No devuelve `success` a WHMCS**: deja el servicio pendiente hasta comprobar `https://dominio/api/health`, DNS y funcionamiento del instalador. El API de Dokploy confirma la aceptación del despliegue, no el estado final de la aplicación.
 
@@ -24,6 +24,7 @@ Los recursos de cada cliente se identifican por `serviceid`, no se mezclan bases
 - Ambiente de staging Dokploy existente; confirmar su `environmentId`.
 - Repositorio GitHub **público HTTPS** en esta fase. Git privado requiere llave/proveedor configurado en Dokploy y soporte adicional.
 - Dominio DNS apuntando al VPS, certificado HTTPS verificable y `Dockerfile` en la raíz del Git.
+- Si se elige `external`, agregar la variable privada `ECLOUD_DOKPLOY_EXTERNAL_DB_MAP_FILE=/ruta/fuera/webroot/map.json` en el entorno de WHMCS. El archivo JSON debe mapear el ID de servicio a su URL SQL, por ejemplo `{ "123": "postgresql://usuario:clave@host-privado:5432/basedatos" }`. Protegerlo con permisos del sistema, cifrado en reposo y una cuenta SQL por servicio; no introducir contraseñas en campos públicos de WHMCS. Verificar conectividad desde Dokploy hacia el servidor externo, TLS y restricciones de firewall.
 - WHMCS debe poder acceder a las variables de entorno servidor-privadas (no agregarlas al repositorio ni a campos visibles al cliente):
 
   - `ECLOUD_DOKPLOY_URL=https://dokploy.tu-dominio-seguro.com`
@@ -47,6 +48,7 @@ Crear producto que utilice módulo `eclouddokploy` y rellenar Config Options:
 - Git Repository HTTPS: `https://github.com/JoseMorenoSalgado/webappecloud.git`.
 - Git Branch: `main`.
 - App Port: `3000`.
+- Database Mode: `mariadb`, `mysql`, `postgres`, `external`, `none`. Se selecciona por **producto WHMCS**; la elección por pedido/cliente requiere una opción configurable adicional o productos separados.
 - Domain: debe estar asignado al servicio en WHMCS.
 
 **Modo piloto recomendado: aprovisionamiento manual por administrador en un solo servicio de prueba**, sin configurar ejecución automática tras el pago. El módulo actualmente deja el servicio WHMCS pendiente como medida de seguridad.
@@ -63,7 +65,7 @@ Crear producto que utilice módulo `eclouddokploy` y rellenar Config Options:
 ## Limitaciones actuales y trabajo pendiente
 
 - Pruebas de integración reales contra tu versión de Dokploy y WHMCS, incluida validación del nombre DNS interno generado por Dokploy.
-- Comprobar que MariaDB esté lista antes de ejecutar migraciones Prisma; una descarga Git e imagen Docker no crea por sí sola las tablas.
+- Comprobar que la base de datos seleccionada esté lista antes de ejecutar migraciones Prisma; una descarga Git e imagen Docker no crea por sí sola las tablas. Para WebAppECloud, MariaDB y MySQL usan el esquema Prisma MySQL, mientras PostgreSQL necesita el esquema y cliente Prisma PostgreSQL existentes; confirmar la ruta real de selección antes de declararlo compatible en producción. MongoDB y Redis pueden servir a otras aplicaciones pero **no son motores relacionales alternativos intercambiables para WebAppECloud**.
 - Estado asíncrono de deployments, espera/confirmación de healthcheck y activación automática segura.
 - Git privado, asignación WHMCS de cuentas de correo cPanel, publicación de DNS mediante proveedor autoritativo, backup/restauración.
 - Optimización de imágenes: **la opción inicial de Dockerfile compila en Dokploy**; pasar después a CI con imagen precompilada e inmutable para ahorrar disco y CPU.
@@ -71,3 +73,15 @@ Crear producto que utilice módulo `eclouddokploy` y rellenar Config Options:
 - Tests sintácticos y de validación se ejecutan en GitHub Actions para el PR, **pero no son un test de aprovisionamiento real**.
 
 Documentación de los endpoints utilizados: https://docs.dokploy.com/docs/api y https://developers.whmcs.com/provisioning-modules/.
+
+## Opciones de base de datos
+
+| Modo | Se crea base nueva en Dokploy | Conexión |
+|---|---|---|
+| MariaDB | Sí | Red interna TCP/3306, protocolo mysql |
+| MySQL | Sí | Red interna TCP/3306, protocolo mysql |
+| PostgreSQL | Sí | Red interna TCP/5432, protocolo postgresql |
+| Externa | No | URL SQL secreta por service ID, provista por administrador |
+| Sin BD | No | Omite `DATABASE_URL`; **no válido para WebAppECloud** |
+
+El módulo mantiene la modalidad elegida para cada servicio y rechaza cambios durante el aprovisionamiento a fin de impedir instalaciones duplicadas o mezclas de credenciales. Una migración entre motores es otro proceso que exige exportación, pruebas y cambio controlado de la aplicación.
