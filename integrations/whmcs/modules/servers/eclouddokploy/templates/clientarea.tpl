@@ -190,36 +190,56 @@ html[data-theme="dark"] .ec-dokploy,.dark .ec-dokploy,[data-theme="dark"] .ec-do
 <section class="ec-dokploy" aria-label="Administración de aplicación web">
   <header class="ecd-header">
     <div>
-      <p class="ecd-kicker">Elearning Cloud · Aplicaciones web</p>
-      <h3>Administrar aplicación</h3>
-      <p class="ecd-intro">Este servicio utiliza Dokploy y se administra por separado de tus cuentas de correo.</p>
+      <p class="ecd-kicker">Elearning Cloud · Hosting de aplicaciones</p>
+      <h2>Mi aplicación web</h2>
+      <p class="ecd-intro">Instala, consulta y administra tu proyecto desde un solo lugar.</p>
     </div>
+    <span class="ecd-status-chip">Servicio #{$ecDokployServiceId|escape:'html'}</span>
   </header>
   {if !$ecDokployAuthorized}
-    <div class="alert alert-warning" role="status">
-      No se pudo verificar el acceso a los detalles de esta aplicación. Contacta con soporte.
+    <div class="alert alert-warning" role="alert">
+      No podemos verificar los permisos de esta cuenta. Vuelve a Mis servicios o solicita ayuda a soporte.
     </div>
   {else}
-    <div class="ecd-state" role="status">
-      <p class="ecd-kicker">Estado de instalación</p>
-      <strong>{$ecDokployState|escape:'html'}</strong>
-      <p>{$ecDokployDescription|escape:'html'}</p>
-    </div>
+    <nav class="ecd-jumpnav" aria-label="Secciones del servicio">
+      <a href="#ecd-status">Estado</a>
+      <a href="#ecd-instalar">Mi aplicación</a>
+      <a href="#correo-corporativo">Correo</a>
+    </nav>
+    <section class="ecd-overview" id="ecd-status" aria-labelledby="ecd-status-title">
+      <div class="ecd-overview-head">
+        <div>
+          <p class="ecd-kicker">Estado de instalación</p>
+          <strong id="ecd-status-title">{$ecDokployState|escape:'html'}</strong>
+          <p>{$ecDokployDescription|escape:'html'}</p>
+        </div>
+        {if $ecDokployDomain}
+          <span class="ecd-status-chip">{$ecDokployDomain|escape:'html'}</span>
+        {/if}
+      </div>
+      <ol class="ecd-journey" aria-label="Etapas de instalación">
+        <li class="{if $ecDokployPhase >= 1}is-done{else}is-current{/if}">
+          <span class="ecd-number" aria-hidden="true">1</span>
+          <span>Proyecto privado</span>
+        </li>
+        <li class="{if $ecDokployPhase >= 2}is-done{elseif $ecDokployPhase == 1}is-current{/if}">
+          <span class="ecd-number" aria-hidden="true">2</span>
+          <span>Aplicación y datos</span>
+        </li>
+        <li class="{if $ecDokployPhase >= 3}is-done{elseif $ecDokployPhase == 2}is-current{/if}">
+          <span class="ecd-number" aria-hidden="true">3</span>
+          <span>Solicitud de despliegue</span>
+        </li>
+      </ol>
+      <p class="ecd-overview-disclaimer">Este progreso indica operaciones registradas, no una comprobación de que la web esté en línea. DNS, HTTPS y salud se verifican por separado.</p>
+    </section>
     {if $ecDokployLiveAvailable}
-      <div class="ecd-state" role="status">
-        <p class="ecd-kicker">Última consulta a Dokploy</p>
-        <strong>{$ecDokployLiveState|escape:'html'}</strong>
+      <div class="ecd-setup-note" role="status">
+        <strong>Última consulta a Dokploy: {$ecDokployLiveState|escape:'html'}</strong>
         <p>{$ecDokployLiveDescription|escape:'html'}</p>
       </div>
     {elseif $ecDokployLiveNotice}
       <div class="alert alert-info" role="status">{$ecDokployLiveNotice|escape:'html'}</div>
-    {/if}
-    {if $ecDokployIsolationLabel}
-      <div class="ecd-state" role="status">
-        <p class="ecd-kicker">Proyecto independiente</p>
-        <strong>{$ecDokployIsolationLabel|escape:'html'}</strong>
-        <p>Esta aplicación y su base de datos pertenecen a un proyecto Dokploy vinculado únicamente a tu servicio contratado.</p>
-      </div>
     {/if}
 
     {if $ecSetupEnabled}
