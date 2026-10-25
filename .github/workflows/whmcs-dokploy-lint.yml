@@ -132,6 +132,10 @@ jobs:
           No soporta GitHub privado OAuth ni dominio gratuito automatizado.
           No activar creacion automatica de servicios ni redespliegues en produccion.
           API keys y secretos solo en el entorno privado del servidor WHMCS.
+          Interfaz renovada aplicando UI/UX Pro Max: estado veridico,
+          GitHub como paso principal, ajustes avanzados opcionales,
+          panel de ayuda y correo responsive, y soporte admin compacto.
+          Guia UX: docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md.
           Guia actual: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md en GitHub.
           Ajustar WHMCS Producto > Modulo: aprovisionar tras primer pago.
           PR: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
