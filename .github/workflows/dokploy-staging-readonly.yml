@@ -1,0 +1,57 @@
+name: Dokploy staging — real read-only API check
+
+# Manual only, protected main. Never use pull_request_target on this runner.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ecloud-dokploy-staging-readonly
+  cancel-in-progress: false
+
+jobs:
+  read-only-staging:
+    name: Verify staging Dokploy API without modifying resources
+    if: github.ref == 'refs/heads/main'
+    runs-on:
+      - self-hosted
+      - linux
+      - ecloud-dokploy-ci
+    environment: dokploy-staging
+    timeout-minutes: 5
+    env:
+      ECLOUD_DOKPLOY_URL: ${{ secrets.ECLOUD_DOKPLOY_URL }}
+      ECLOUD_DOKPLOY_API_KEY: ${{ secrets.ECLOUD_DOKPLOY_API_KEY }}
+      ECLOUD_DOKPLOY_TEST_APPLICATION_ID: ${{ vars.ECLOUD_DOKPLOY_TEST_APPLICATION_ID }}
+    steps:
+      - name: Checkout trusted main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Confirm staging runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -v | head -n 1
+          php -r 'if (PHP_VERSION_ID < 80200 || !extension_loaded("curl") || !extension_loaded("json")) { exit(2); }'
+          if [[ -z "${ECLOUD_DOKPLOY_URL:-}" || -z "${ECLOUD_DOKPLOY_API_KEY:-}" ]]; then
+            echo 'Fail: Dokploy staging secrets missing in GitHub Environment'
+            exit 2
+          fi
+          case "$ECLOUD_DOKPLOY_URL" in
+            https://*) ;;
+            *) echo 'Fail: HTTPS URL required'; exit 2;;
+          esac
+      - name: Query staged Dokploy (no writes)
+        shell: bash
+        run: |
+          set -euo pipefail
+          php integrations/whmcs/modules/servers/eclouddokploy/tests/remote_readonly.php
+      - name: Show scope
+        if: always()
+        shell: bash
+        run: |
+          echo 'Test scope: HTTPS/TLS, private API key, project.all and optional staging application read.'
+          echo 'No database operations, deployments, container changes, or customer resources touched.'
