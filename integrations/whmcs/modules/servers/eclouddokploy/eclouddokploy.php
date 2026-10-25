@@ -20,6 +20,7 @@ require_once __DIR__ . '/lib/EmailOperations.php';
 require_once __DIR__ . '/lib/SelfService.php';
 require_once __DIR__ . '/lib/AutomaticSetup.php';
 require_once __DIR__ . '/lib/AutoMail.php';
+require_once __DIR__ . '/lib/OrderInstall.php';
 
 use WHMCS\Database\Capsule;
 
@@ -54,9 +55,9 @@ function eclouddokploy_ConfigOptions(): array
         ],
         'Instalación automática' => [
             'Type' => 'dropdown',
-            'Options' => 'guiado,legado',
+            'Options' => 'guiado,pedido,legado',
             'Default' => 'guiado',
-            'Description' => 'guiado: WHMCS reserva automáticamente la cuenta y el cliente importa GitHub. Sin SSH, Environment ID ni claves maestras manuales. legado: modo anterior de pruebas.',
+            'Description' => 'guiado: reserva automática y cliente publica desde WHMCS. pedido: también despliega al primer pago si el pedido incluye el campo Repositorio GitHub. legado: modo anterior.',
         ],
     ];
 }
@@ -136,9 +137,13 @@ function eclouddokploy_CreateAccount(array $params): string
     if (eclouddokploy_auto_enabled($params)) {
         try {
             $route = eclouddokploy_resolve_route($params);
-            return eclouddokploy_setup_reserve(
+            $reserved = eclouddokploy_setup_reserve(
                 $params, $route, (string) ($params['configoption5'] ?? 'none')
             );
+            if ($reserved !== 'success') return $reserved;
+            // Optional full automation when the buyer entered the public GitHub
+            // URL at checkout and this product opted into "pedido".
+            return eclouddokploy_order_auto_install($params, $route);
         } catch (Throwable $e) {
             // Never leak server tokens or internal paths to WHMCS staff.
             return 'No se pudo preparar automáticamente el servicio. Comprueba el servidor asignado y la capacidad disponible.';
