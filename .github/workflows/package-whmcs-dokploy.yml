@@ -58,8 +58,9 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    Username puede quedar vacio en servidores nuevos.
    Cada servicio crea un proyecto y entorno privado Dokploy.
    Correo corporativo es otro servicio WHMCS cPanel activo para el mismo cliente.
-   Para su gestión, vincula ambos servicios con archivo privado API Token
-   y habilita primero consultas de correo en staging.
+   El panel enlaza automáticamente cualquier hosting cPanel activo
+   del mismo propietario y dominio. Las operaciones directas UAPI siguen
+   siendo opcionales y requieren una vinculación privada autorizada.
    IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
    App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
    Modo guiado es la opción predeterminada de productos nuevos.
@@ -69,14 +70,17 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    Para servicios del piloto anterior con seed, conservarla sin cambios.
    Probar staging antes de habilitar el automático de pago en WHMCS.
    No pegues tokens en tickets, capturas o repositorios.
-5) Deja APAGADO hasta validar el VPS real:
-   ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0
-   ECLOUD_DOKPLOY_ENABLE_CLIENT_REDEPLOY=0
-   ECLOUD_DOKPLOY_ENABLE_CLIENT_READS=0
-6) El aprovisionamiento inicial todavia no valida toda la cadena
-   de instalacion y salud; NO activar pedidos automaticamente.
-7) Revisa docs/WHMCS-DOKPLOY-GIT-MARIADB.md en GitHub
-   y docs/WHMCS-DOKPLOY-STAGING-RUNNER.md.
+5) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
+   Instalacion automatica = guiado (predeterminado).
+   WHMCS prepara el servicio con CreateAccount despues del primer pago,
+   si activas «Automatically setup when first payment is received».
+   No crees variables PHP, tokens extras ni secretos manualmente.
+6) El cliente abre App Ecloud, pega GitHub publico y pulsa Publicar.
+   La creacion de proyectos, entorno, SQL y build se solicita a Dokploy.
+   La publicacion real aun necesita DNS/SSL y verificacion de salud.
+7) Mantener desactivados los cambios de correo y el redespliegue directo
+   hasta validar estas acciones por separado en staging.
+8) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
 
 Modulo de aprovisionamiento: NO aparece en Modulos adicionales.
 NO activar en produccion sin respaldo y pruebas.
