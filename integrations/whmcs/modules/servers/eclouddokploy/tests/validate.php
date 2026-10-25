@@ -218,4 +218,26 @@ check(!eclouddokploy_within_capacity(0, 1), 'unset server capacity blocked');
 check(!eclouddokploy_within_capacity(-1, 1), 'negative limit rejected');
 check(!eclouddokploy_within_capacity(10, 0), 'missing WHMCS service reservation rejected');
 
+// WHMCS stores each Dokploy connection just like a cPanel server.
+$nativeA = eclouddokploy_resolve_route([
+    'serverid' => 41,
+    'serverhostname' => 'dokploy-uno.example.net',
+    'serverusername' => 'entorno_001',
+    'serverpassword' => 'private-token-uno',
+]);
+$nativeB = eclouddokploy_resolve_route([
+    'serverid' => 42,
+    'serverhostname' => 'dokploy-dos.example.net',
+    'serverusername' => 'entorno_002',
+    'serverpassword' => 'private-token-dos',
+]);
+check($nativeA['url'] === 'https://dokploy-uno.example.net', 'native WHMCS hostname routing');
+check($nativeA['environment_id'] === 'entorno_001', 'native WHMCS username identifies Dokploy environment');
+check($nativeB['url'] === 'https://dokploy-dos.example.net', 'second WHMCS server gets separate Dokploy');
+check($nativeA['fingerprint'] !== $nativeB['fingerprint'], 'native connections pinned separately');
+check(!eclouddokploy_valid_server_hostname('https://dokploy-uno.example.net'), 'reject URL in WHMCS hostname');
+check(!eclouddokploy_valid_server_hostname('dokploy.example.net:3000'), 'reject port in WHMCS hostname');
+check(!eclouddokploy_valid_server_hostname('bad/hostname'), 'reject path injection in WHMCS hostname');
+check(eclouddokploy_TestConnection(['serverhostname'=>'https://bad.example','serverpassword'=>'x'])['success'] === false, 'invalid WHMCS server connection fails locally');
+
 echo "Dokploy provisioning validations passed\n";
