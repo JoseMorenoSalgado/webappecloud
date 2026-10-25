@@ -300,7 +300,7 @@ check(!eclouddokploy_app_environment_matches([
     'applicationId' => 'app-310'
 ], 'app-310', 'env-310'), 'unknown app environment denied');
 check(eclouddokploy_public_state('creating_project')[0] === 'Creando proyecto privado', 'project provisioning status visible');
-check(eclouddokploy_public_state('environment_ready')[0] === 'Entorno privado configurado', 'isolated environment status visible');
+check(eclouddokploy_public_state('environment_ready')[0] === 'Proyecto Dokploy creado', 'paid project and private environment visible before Git deployment');
 
 
 // cPanel email integration: all authentication and mailbox actions default OFF.
