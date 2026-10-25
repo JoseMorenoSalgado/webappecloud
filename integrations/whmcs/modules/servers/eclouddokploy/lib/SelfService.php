@@ -475,6 +475,15 @@ function eclouddokploy_install_from_wizard(array $params): string
                 $setup['port'], $domain, $seed, $dbMode,
                 $route['remote_server_id'], $route['fingerprint'], $setup
             );
+            // WHMCS custom actions accept only the literal "success" as a
+            // success response. Dokploy merely accepted an async deploy; the
+            // service page will still show "Despliegue solicitado", never live.
+            $after = \WHMCS\Database\Capsule::table('mod_ecloud_dokploy_services')
+                ->where('service_id', $id)->first(['state']);
+            if ($after && (string) $after->state === 'deployment_requested'
+                && str_starts_with($outcome, 'Despliegue solicitado.')) {
+                return 'success';
+            }
             return $outcome;
         } finally {
             $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
