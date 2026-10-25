@@ -709,13 +709,13 @@ function eclouddokploy_ClientArea(array $params): array
                 $binding = eclouddokploy_email_binding($serviceId, $clientId, $domain);
                 if ($binding !== null) {
                     $view['ecMailLinked'] = true;
-                    $view['ecMailDomain'] = $domain;
+                    $view['ecMailDomain'] = $binding['domain'];
                     $view['ecMailMailboxLimit'] = $binding['mailbox_limit'];
                     $view['ecMailMaxQuotaMb'] = $binding['max_quota_mb'];
                     $view['ecMailWebmailUrl'] = 'https://' . $binding['host'] . ':2096/';
                     if (getenv('ECLOUD_DOKPLOY_ENABLE_EMAIL_READS') === '1') {
                         $rows = eclouddokploy_email_list(
-                            eclouddokploy_email_client($binding), $domain
+                            eclouddokploy_email_client($binding), $binding['domain']
                         );
                         $view['ecMailAccounts'] = $rows;
                         $view['ecMailAccountCount'] = count($rows);
