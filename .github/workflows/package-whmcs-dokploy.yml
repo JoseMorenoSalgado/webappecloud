@@ -34,6 +34,8 @@ jobs:
           install -m 0644 "$src/lib/ClientOperations.php" package/eclouddokploy/lib/ClientOperations.php
           install -m 0644 "$src/lib/ServerRouting.php" package/eclouddokploy/lib/ServerRouting.php
           install -m 0644 "$src/lib/ProjectIsolation.php" package/eclouddokploy/lib/ProjectIsolation.php
+          install -m 0644 "$src/lib/CpanelMail.php" package/eclouddokploy/lib/CpanelMail.php
+          install -m 0644 "$src/lib/EmailOperations.php" package/eclouddokploy/lib/EmailOperations.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
@@ -52,6 +54,9 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
 4) Configura Hostname + API Key por servidor WHMCS.
    Username puede quedar vacio en servidores nuevos.
    Cada servicio crea un proyecto y entorno privado Dokploy.
+   Correo corporativo es otro servicio WHMCS cPanel activo para el mismo cliente.
+   Para su gestión, vincula ambos servicios con archivo privado API Token
+   y habilita primero consultas de correo en staging.
    No pegues tokens en tickets, capturas o repositorios.
 5) Deja APAGADO hasta validar el VPS real:
    ECLOUD_DOKPLOY_ENABLE_PROVISIONING=0
