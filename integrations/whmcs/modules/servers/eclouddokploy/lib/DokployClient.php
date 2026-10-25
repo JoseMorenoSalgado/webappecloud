@@ -98,6 +98,11 @@ final class ECloudDokployClient
             ]);
             $response = curl_exec($handle);
             $status = (int) curl_getinfo($handle, CURLINFO_HTTP_CODE);
+            if ($response === false) {
+                // cURL numeric codes are safe to log/display. Never use curl_error()
+                // because it could include internal URLs, proxies, or secrets.
+                throw new RuntimeException('Dokploy transport failed (cURL ' . (int) curl_errno($handle) . ').');
+            }
             if (!is_string($response) || $status < 200 || $status >= 300 || strlen($response) > 1048576) {
                 throw new RuntimeException('Dokploy read failed: ' . $operation . ' (HTTP ' . $status . ').');
             }
