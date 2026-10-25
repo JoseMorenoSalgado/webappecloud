@@ -21,6 +21,16 @@
 .ec-dokploy .ecd-action:hover,.ec-dokploy .ecd-action:focus{filter:brightness(.88)}
 .ec-dokploy .ecd-action-alt{color:var(--ecd-primary)!important;background:transparent;border-color:var(--ecd-border)}
 .ec-dokploy .ecd-smallprint{margin-top:16px;color:var(--ecd-muted);font-size:13px}
+.ec-dokploy .ecd-deployments{list-style:none;padding:0;margin:0}
+.ec-dokploy .ecd-deployments li{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:11px 0;border-bottom:1px solid var(--ecd-border)}
+.ec-dokploy .ecd-deployments li:last-child{border-bottom:0}
+.ec-dokploy .ecd-deployments strong{font-size:14px;color:var(--ecd-heading)}
+.ec-dokploy .ecd-deployments small{font-size:13px;color:var(--ecd-muted)}
+.ec-dokploy .ecd-action-button{font:inherit;cursor:pointer}
+.ec-dokploy .ecd-confirm{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;margin-bottom:12px}
+.ec-dokploy .ecd-confirm input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--ecd-primary)}
+.ec-dokploy .ecd-danger-note{background:var(--panel-bg,#fff);border-left:3px solid #ad6824;padding:12px 14px;margin-top:12px}
+.ec-dokploy .ecd-ops{margin-top:16px}
 .ec-dokploy a:focus-visible{outline:3px solid #579fef;outline-offset:3px}
 @media(max-width:720px){.ec-dokploy .ecd-grid{grid-template-columns:1fr}.ec-dokploy .ecd-actions{display:grid;grid-template-columns:1fr}.ec-dokploy .ecd-state,.ec-dokploy .ecd-card{padding:16px}.ec-dokploy h3{font-size:19px}}
 {/literal}
@@ -43,6 +53,15 @@
       <strong>{$ecDokployState|escape:'html'}</strong>
       <p>{$ecDokployDescription|escape:'html'}</p>
     </div>
+    {if $ecDokployLiveAvailable}
+      <div class="ecd-state" role="status">
+        <p class="ecd-kicker">Última consulta a Dokploy</p>
+        <strong>{$ecDokployLiveState|escape:'html'}</strong>
+        <p>{$ecDokployLiveDescription|escape:'html'}</p>
+      </div>
+    {elseif $ecDokployLiveNotice}
+      <div class="alert alert-info" role="status">{$ecDokployLiveNotice|escape:'html'}</div>
+    {/if}
     <div class="ecd-grid">
       <div class="ecd-card">
         <h4>Dominio de la aplicación</h4>
@@ -69,6 +88,40 @@
         <p class="ecd-note">La rama se administra conforme al plan contratado.</p>
       </div>
     </div>
+    {if $ecDokployLiveAvailable}
+      <div class="ecd-card ecd-ops">
+        <h4>Despliegues recientes</h4>
+        {if $ecDokployHistory}
+          <ul class="ecd-deployments">
+            {foreach from=$ecDokployHistory item=deployment}
+              <li><strong>{$deployment.status|escape:'html'}</strong><small>{$deployment.date|escape:'html'}</small></li>
+            {/foreach}
+          </ul>
+        {else}
+          <p class="ecd-note">Dokploy no devolvió registros recientes de despliegue.</p>
+        {/if}
+      </div>
+    {/if}
+    {if $ecDokployCanRedeploy}
+      <div class="ecd-card ecd-ops">
+        <h4>Actualizar desde Git</h4>
+        <p class="ecd-note">Se solicitará un nuevo despliegue de la rama configurada.
+        El sitio podría experimentar una interrupción durante el proceso.</p>
+        <form method="post" action="clientarea.php?action=productdetails&id={$ecDokployServiceId|escape:'html'}">
+          <input type="hidden" name="id" value="{$ecDokployServiceId|escape:'html'}">
+          <input type="hidden" name="modop" value="custom">
+          <input type="hidden" name="a" value="Redeploy">
+          <input type="hidden" name="token" value="{$token|escape:'html'}">
+          <input type="hidden" name="ec_redeploy_token" value="{$ecDokployCsrf|escape:'html'}">
+          <label class="ecd-confirm">
+            <input type="checkbox" name="ec_confirm" value="yes" required>
+            <span>Confirmo que deseo solicitar otro despliegue de mi aplicación.</span>
+          </label>
+          <button type="submit" class="ecd-action ecd-action-button">Volver a desplegar desde Git</button>
+        </form>
+        <p class="ecd-smallprint">Máximo una solicitud cada 15 minutos. El resultado se confirma desde el historial.</p>
+      </div>
+    {/if}
     <div class="ecd-actions">
       {if $ecDokployProvisioned && $ecDokploySiteUrl}
         <a class="ecd-action" href="{$ecDokploySiteUrl|escape:'html'}" target="_blank" rel="noopener noreferrer">
@@ -78,9 +131,9 @@
       <a class="ecd-action ecd-action-alt" href="submitticket.php">Solicitar asistencia</a>
     </div>
     <p class="ecd-smallprint">
-      El estado mostrado corresponde al aprovisionamiento registrado en WHMCS, no a un
-      monitoreo en tiempo real. Las actualizaciones y acciones de Dokploy requieren
-      validación antes de habilitarse para clientes.
+      El estado de instalación procede de WHMCS. Si se habilita la consulta en Dokploy,
+      verás también su estado de ejecución y despliegues recientes. Ninguno de esos
+      estados confirma por sí solo que el sitio web responda correctamente.
     </p>
   {/if}
 </section>
