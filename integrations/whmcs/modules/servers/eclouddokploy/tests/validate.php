@@ -208,4 +208,14 @@ try {
     check($e->getMessage() !== 'Test failed: global credentials silently used on assigned server', 'do not silently route WHMCS servers to global Dokploy instance');
 }
 
+// Server Groups use Maximum No. of Accounts to select a target;
+// the module additionally refuses an over-capacity manual/stale assignment.
+check(eclouddokploy_within_capacity(10, 1), 'first account fits 10-slot server');
+check(eclouddokploy_within_capacity(10, 9), 'ninth account fits');
+check(eclouddokploy_within_capacity(10, 10), 'tenth account fits exactly');
+check(!eclouddokploy_within_capacity(10, 11), 'eleventh account rejected');
+check(!eclouddokploy_within_capacity(0, 1), 'unset server capacity blocked');
+check(!eclouddokploy_within_capacity(-1, 1), 'negative limit rejected');
+check(!eclouddokploy_within_capacity(10, 0), 'missing WHMCS service reservation rejected');
+
 echo "Dokploy provisioning validations passed\n";
