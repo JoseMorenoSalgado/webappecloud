@@ -18,12 +18,12 @@ function eclouddokploy_auto_product_mode(array $params): string
 {
     $selected = strtolower(trim((string) ($params['configoption6'] ?? 'guiado')));
     if ($selected === '') return 'guiado';
-    return in_array($selected, ['guiado', 'legado'], true) ? $selected : 'desconocido';
+    return in_array($selected, ['guiado', 'pedido', 'legado'], true) ? $selected : 'desconocido';
 }
 
 function eclouddokploy_auto_enabled(array $params): bool
 {
-    return eclouddokploy_auto_product_mode($params) === 'guiado';
+    return in_array(eclouddokploy_auto_product_mode($params), ['guiado', 'pedido'], true);
 }
 
 function eclouddokploy_auto_seed_valid(string $secret): bool
