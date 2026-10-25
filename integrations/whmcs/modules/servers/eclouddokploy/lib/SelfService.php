@@ -451,7 +451,7 @@ function eclouddokploy_install_from_wizard(array $params): string
                 return 'El VPS asignado ha alcanzado su límite de cuentas.';
             }
             $state = (string) $row->state;
-            if (!in_array($state, ['awaiting_setup', 'new'], true)) {
+            if (!in_array($state, ['awaiting_setup', 'new', 'environment_ready'], true)) {
                 return 'La instalación ya está iniciada. Consulta el estado en tu panel; no se duplicarán recursos.';
             }
             if ($state === 'awaiting_setup') {
