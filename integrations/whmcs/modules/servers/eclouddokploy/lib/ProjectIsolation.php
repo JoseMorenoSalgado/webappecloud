@@ -152,81 +152,127 @@ function eclouddokploy_prepare_private_project_locked(
     $projectId = (string) ($row->project_id ?? '');
     $envId = (string) ($row->environment_id ?? '');
 
-    // "new" is the valid pre-project state used by older module versions.
-    // Before creating anything, read Dokploy's projects by exact service name.
-    // This recovers a lost project.create response without another write.
-    if (in_array($state, ['awaiting_setup', 'new', 'creating_project'], true)) {
-        $found = eclouddokploy_find_exact_service_project(
-            $api->get('project.all', []), $clientId, $serviceId
-        );
-        if ($found !== null) {
-            if ($projectId !== '' && !hash_equals($projectId, $found)) {
-                return 'El proyecto remoto no coincide con el proyecto registrado. Requiere revisión.';
-            }
-            $projectId = $found;
-            eclouddokploy_set_state(
-                $serviceId, 'project_created', ['project_id' => $projectId]
-            );
-            $state = 'project_created';
-        } elseif ($state === 'creating_project') {
-            // A lost remote response remains ambiguous if the read found
-            // nothing. Never convert it into a second project.create.
-            return 'No encontramos el proyecto pendiente en Dokploy. '
-                . 'No se creará otro automáticamente; soporte debe revisar el registro de Dokploy.';
-        } else {
-            // Fresh "awaiting_setup" or legacy "new": no matching remote
-            // project exists, so it is safe to attempt the first write.
-            eclouddokploy_set_state($serviceId, 'creating_project');
-            $project = $api->post(
-                'project.create', eclouddokploy_project_create_payload($clientId, $serviceId)
-            );
-            $projectId = eclouddokploy_required_id($project, 'projectId');
-            eclouddokploy_set_state(
-                $serviceId, 'project_created', ['project_id' => $projectId]
-            );
-            $state = 'project_created';
-        }
+    // ALL administration paths start with a read-only lookup by the exact
+    // WHMCS service name, even if local state says environment_ready. This
+    // catches orphaned/stale IDs and recovers a Dokploy project that already
+    // exists without making another project.create request.
+    $preProject = ['awaiting_setup', 'new', 'creating_project'];
+    $preEnvironment = ['project_created', 'creating_environment'];
+    $readyStates = [
+        'environment_ready', 'creating_db', 'db_created', 'deploying_db',
+        'db_deployed', 'creating_app', 'app_created', 'configuring_app',
+        'app_configured', 'creating_domain', 'domain_created',
+        'requesting_deploy', 'deployment_requested',
+    ];
+    if (!in_array($state, array_merge($preProject, $preEnvironment, $readyStates), true)) {
+        return 'Este servicio tiene un estado desconocido. No se modificaron recursos Dokploy.';
     }
 
-    if (in_array($state, ['project_created', 'creating_environment'], true)) {
-        if ($projectId === ''
-            || preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
-            return 'El proyecto creado requiere conciliación administrativa.';
+    $remoteProjectId = eclouddokploy_find_exact_service_project(
+        $api->get('project.all', []), $clientId, $serviceId
+    );
+    if ($remoteProjectId !== null) {
+        if ($projectId !== '' && !hash_equals($projectId, $remoteProjectId)) {
+            return 'El ID guardado en WHMCS no corresponde al proyecto existente en Dokploy. '
+                . 'Se requiere revisión; no se vinculó otro proyecto.';
         }
-        $found = eclouddokploy_find_production_environment(
-            $api->get('environment.byProjectId', ['projectId' => $projectId]),
-            $projectId
-        );
-        if ($found === null && $state === 'creating_environment') {
-            // The prior request may still be finishing; avoid retrying.
-            return 'El entorno production no aparece todavía en Dokploy. '
-                . 'No se creó otro entorno; soporte debe comprobar el estado de la petición.';
-        }
-        if ($found === null) {
-            eclouddokploy_set_state($serviceId, 'creating_environment');
-            $created = $api->post('environment.create', [
-                'name' => 'production', 'projectId' => $projectId,
+        $projectId = $remoteProjectId;
+        if (in_array($state, $preProject, true)) {
+            // Dokploy has the real project: reconcile the lost response first.
+            // This also covers old services saved as awaiting_setup or new.
+            eclouddokploy_set_state($serviceId, 'project_created', [
+                'project_id' => $projectId,
             ]);
-            $found = eclouddokploy_required_id($created, 'environmentId');
+            $state = 'project_created';
+        } elseif ((string) ($row->project_id ?? '') === '') {
+            // State may already be project_created/environment_ready, but
+            // the project ID was not persisted by an older installation.
+            // Restore only the missing ID; do not change an advanced state.
+            eclouddokploy_set_state($serviceId, $state, [
+                'project_id' => $projectId,
+            ]);
         }
-        if ($envId !== '' && !hash_equals($envId, $found)) {
-            return 'El entorno existente no coincide con el registrado. Requiere revisión.';
-        }
-        eclouddokploy_set_state(
-            $serviceId, 'environment_ready', ['environment_id' => $found]
+    } elseif ($projectId !== '') {
+        return 'WHMCS tiene un ID de proyecto, pero no aparece en Dokploy '
+            . 'para este servicio. No se creó otro.';
+    } elseif ($state === 'creating_project') {
+        // A missing response remains ambiguous if the read found nothing.
+        // Never turn it into another project.create blindly.
+        return 'No encontramos el proyecto pendiente en Dokploy. '
+            . 'No se creará otro automáticamente; soporte debe revisar el registro de Dokploy.';
+    } elseif (in_array($state, ['awaiting_setup', 'new'], true)) {
+        // First write only after a successful authoritative negative read.
+        eclouddokploy_set_state($serviceId, 'creating_project');
+        $created = $api->post(
+            'project.create', eclouddokploy_project_create_payload($clientId, $serviceId)
         );
+        $projectId = eclouddokploy_required_id($created, 'projectId');
+        if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
+            return 'Dokploy devolvió un identificador de proyecto no válido.';
+        }
+        eclouddokploy_set_state($serviceId, 'project_created', [
+            'project_id' => $projectId,
+        ]);
+        $state = 'project_created';
+    } else {
+        return 'El proyecto registrado no aparece en Dokploy. '
+            . 'No se crearon recursos; revisa la conexión y el estado remoto.';
+    }
+
+    if ($projectId === ''
+        || preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
+        return 'No se pudo recuperar un ID válido del proyecto Dokploy.';
+    }
+
+    // Verify production even if WHMCS already stored an environment ID.
+    // The response is strictly scoped to the reconciled projectId.
+    $remoteEnvironmentId = eclouddokploy_find_production_environment(
+        $api->get('environment.byProjectId', ['projectId' => $projectId]),
+        $projectId
+    );
+    if ($remoteEnvironmentId !== null) {
+        if ($envId !== '' && !hash_equals($envId, $remoteEnvironmentId)) {
+            return 'El entorno production no coincide con el ID registrado en WHMCS. '
+                . 'No se cambió su vinculación.';
+        }
+        $envId = $remoteEnvironmentId;
+        if (in_array($state, $preEnvironment, true)) {
+            eclouddokploy_set_state($serviceId, 'environment_ready', [
+                'environment_id' => $envId,
+            ]);
+            $state = 'environment_ready';
+        } elseif ((string) ($row->environment_id ?? '') === '') {
+            // Repair a missing ID in a later state without rewinding app/DB.
+            eclouddokploy_set_state($serviceId, $state, [
+                'environment_id' => $envId,
+            ]);
+        }
+    } elseif ($envId !== '') {
+        return 'WHMCS guarda un entorno production que no aparece en el proyecto '
+            . 'Dokploy. No se creó otro.';
+    } elseif ($state === 'creating_environment') {
+        return 'El entorno production no aparece todavía en Dokploy. '
+            . 'No se creó otro entorno; soporte debe comprobar el estado de la petición.';
+    } elseif ($state === 'project_created') {
+        // The project exists but Dokploy did not automatically add production.
+        eclouddokploy_set_state($serviceId, 'creating_environment');
+        $created = $api->post('environment.create', [
+            'name' => 'production', 'projectId' => $projectId,
+        ]);
+        $envId = eclouddokploy_required_id($created, 'environmentId');
+        if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $envId) !== 1) {
+            return 'Dokploy devolvió un identificador de entorno no válido.';
+        }
+        eclouddokploy_set_state($serviceId, 'environment_ready', [
+            'environment_id' => $envId,
+        ]);
         $state = 'environment_ready';
-        $envId = $found;
+    } else {
+        return 'Falta el entorno production del proyecto existente. '
+            . 'No se creó otro recurso automáticamente.';
     }
 
-    // An already running deployment is also an already prepared project.
-    if (in_array($state, ['environment_ready', 'db_created', 'db_deployed',
-        'app_created', 'configuring_app', 'app_configured', 'domain_created',
-        'deployment_requested'], true)
-        && preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) === 1
-        && preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $envId) === 1) {
-        return 'success';
-    }
-
-    return 'La creación del proyecto está pendiente o requiere revisión. No se ha repetido la operación.';
+    // This says only "project and environment verified"; it never claims
+    // the application, GitHub source, database or website is published.
+    return 'success';
 }
