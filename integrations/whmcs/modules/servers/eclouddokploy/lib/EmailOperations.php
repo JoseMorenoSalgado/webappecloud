@@ -213,6 +213,16 @@ function eclouddokploy_email_action(array $params): string
     }
     $quota = $_POST['ec_mail_quota'] ?? '';
     try {
+        // Revalidate module routing and product binding, not just client ownership.
+        $app = \WHMCS\Database\Capsule::table('tblhosting')
+            ->where('id', $id)->where('userid', $owner)
+            ->first(['packageid', 'server', 'domain', 'domainstatus']);
+        if (!$app || (int) $app->packageid !== (int) ($params['pid'] ?? 0)
+            || (int) $app->server !== (int) ($params['serverid'] ?? 0)
+            || (string) $app->domainstatus !== 'Active'
+            || strtolower(rtrim((string) $app->domain, '.')) !== $domain) {
+            return 'La aplicación ya no está autorizada para administrar este correo.';
+        }
         $binding = eclouddokploy_email_binding($id, $owner, $domain);
         if ($binding === null) return 'No hay un servicio de correo cPanel activo y vinculado a esta aplicación.';
         if (in_array($op, ['create', 'quota'], true)
