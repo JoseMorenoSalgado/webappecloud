@@ -18,6 +18,7 @@ function eclouddokploy_admin_audit(string $event, array $params): void
         'draft_saved' => 'Soporte guardó los ajustes GitHub del servicio',
         'project_ready' => 'Soporte creó o verificó el proyecto Dokploy',
         'deploy_requested' => 'Soporte solicitó la instalación de la aplicación',
+        'project_recreated' => 'Soporte recuperó un proyecto vacío eliminado de Dokploy',
     ];
     if (!isset($messages[$event])
         || (int) ($_SESSION['adminid'] ?? 0) <= 0
