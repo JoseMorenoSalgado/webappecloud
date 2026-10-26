@@ -21,7 +21,7 @@ export default async function Contact(){
  const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");
  const wa=tenant.whatsapp?"https://wa.me/"+tenant.whatsapp+"?text="+encodeURIComponent("Hola, deseo información sobre sus propiedades disponibles."):null;
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido" className="nexus-public-page nexus-contact-page-root">
+  <main id="contenido">
    <section className="nexus-inner-hero nexus-contact-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">CONTACTO</span>
     <div className="nexus-inner-hero-row"><div><h1>{settings.contactHeading} <em>{settings.contactHighlight}</em></h1><p>{settings.contactDescription}</p></div>

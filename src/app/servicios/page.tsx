@@ -20,7 +20,7 @@ export default async function Services(){
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"servicios");
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido" className="nexus-public-page nexus-services-page-root">
+  <main id="contenido">
    <section className="nexus-inner-hero nexus-services-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">NUESTROS SERVICIOS</span>
     <div className="nexus-inner-hero-row"><div><h1>{settings.servicesHeading}</h1><p>{settings.servicesDescription}</p></div>
