@@ -34,8 +34,10 @@ const select=async key=>{
 };
 await select("education");
 const school=await get("/admin/personalizar/paginas");
-assert.match(school,/Contenido de la plantilla/);
-assert.ok(school.includes("Editar plantilla"),"Education pages must lead to template editor");
+assert.match(school,/Página de la plantilla/);
+assert.ok(school.includes('href="/admin/personalizar/paginas/home"'),"Education pages must open their independent section editor");
+const schoolHome=await get("/admin/personalizar/paginas/home");
+assert.ok(schoolHome.includes("Editar textos de plantilla")&&schoolHome.includes("Secciones adicionales"),"Education home must provide template and blocks editing");
 const eduOverview=await get("/admin/personalizar/inicio");
 assert.match(eduOverview,/Tipo de sitio:/);
 assert.match(eduOverview,/Educación/);
