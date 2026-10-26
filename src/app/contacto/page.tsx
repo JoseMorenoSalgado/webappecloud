@@ -3,6 +3,7 @@ import {ArrowLeft,ArrowUpRight,Mail,MapPin,MessageCircle,Clock3,ShieldCheck} fro
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationContact} from "@/components/templates/organization-site";
 import {ContactForm} from "@/components/contact-form";
@@ -49,6 +50,7 @@ export default async function Contact(){
      {(await tenantModuleEnabled(tenant.id,"properties"))&&<Link href="/propiedades" className="nexus-back-link"><ArrowLeft size={15}/> Ver inmuebles disponibles</Link>}
     </div>
    </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="contacto" demo={demo}/>
   </main>
  </PublicFrame>;
 }
