@@ -1,0 +1,34 @@
+name: WHMCS Dokploy standalone checks
+
+on:
+  push:
+    paths:
+      - 'modules/servers/eclouddokploy/**'
+      - '.github/workflows/php-checks.yml'
+  pull_request:
+    paths:
+      - 'modules/servers/eclouddokploy/**'
+      - '.github/workflows/php-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout standalone repository
+        uses: actions/checkout@v4
+      - name: Verify PHP syntax
+        run: |
+          set -euo pipefail
+          find modules/servers/eclouddokploy -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Verify offline module behavior
+        run: |
+          set -euo pipefail
+          php modules/servers/eclouddokploy/tests/validate.php
+          php modules/servers/eclouddokploy/tests/automatic_seed_mock.php
+          php modules/servers/eclouddokploy/tests/order_payment_mock.php
+      - name: Check Lagom template contract
+        run: python3 modules/servers/eclouddokploy/tests/ux_template_contract.py
