@@ -1,11 +1,31 @@
 "use client";
-import {useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Images,X} from "lucide-react";
 type Media={id:string;slug:string;pageTitle:string;url:string};
 
 /** Import creates a separate tenant-scoped file owned by the target page. */
 export function CmsMediaPicker({targetSlug,onChoose,disabled=false}:{targetSlug:string;onChoose:(id:string)=>void;disabled?:boolean}){
  const [open,setOpen]=useState(false),[items,setItems]=useState<Media[]>([]);
+ const trigger=useRef<HTMLButtonElement>(null),panel=useRef<HTMLDivElement>(null),closeButton=useRef<HTMLButtonElement>(null);
+ const close=()=>{setOpen(false);trigger.current?.focus();};
+ useEffect(()=>{
+  if(!open)return;
+  const old=document.body.style.overflow;
+  document.body.style.overflow="hidden";
+  closeButton.current?.focus();
+  const keys=(event:KeyboardEvent)=>{
+   if(event.key==="Escape"){event.preventDefault();close();return;}
+   if(event.key==="Tab"&&panel.current){
+    const controls=[...panel.current.querySelectorAll<HTMLButtonElement>('button:not([disabled])')];
+    if(!controls.length)return;
+    const first=controls[0],last=controls[controls.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+    if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+   }
+  };
+  document.addEventListener("keydown",keys);
+  return ()=>{document.body.style.overflow=old;document.removeEventListener("keydown",keys);};
+ },[open]);
  const [loading,setLoading]=useState(false),[selecting,setSelecting]=useState<string|null>(null),[error,setError]=useState("");
  async function show(){
   setOpen(true);setLoading(true);setError("");
@@ -27,15 +47,15 @@ export function CmsMediaPicker({targetSlug,onChoose,disabled=false}:{targetSlug:
    });
    const v=await res.json() as {id?:string;error?:string};
    if(!res.ok||!v.id)throw Error(v.error||"No se pudo reutilizar la imagen.");
-   onChoose(v.id);setOpen(false);
+   onChoose(v.id);close();
   }catch(e){setError(e instanceof Error?e.message:"Error de conexión.");}
   finally{setSelecting(null);}
  }
  return <div className="cms-media-picker">
-  <button type="button" className="cms-media-open" onClick={()=>void show()} disabled={disabled}><Images size={16}/> Usar imagen existente</button>
-  {open&&<div className="cms-media-sheet" role="dialog" aria-modal="true" aria-label="Biblioteca de imágenes">
+  <button ref={trigger} type="button" className="cms-media-open" onClick={()=>void show()} disabled={disabled}><Images size={16}/> Usar imagen existente</button>
+  {open&&<><div className="cms-media-backdrop" aria-hidden="true"/><div ref={panel} className="cms-media-sheet" role="dialog" aria-modal="true" aria-label="Biblioteca de imágenes">
    <div className="cms-media-head"><div><strong>Biblioteca de imágenes</strong><p>Elige una imagen que ya subiste a este sitio. Se guardará una copia para esta página.</p></div>
-    <button type="button" onClick={()=>setOpen(false)} aria-label="Cerrar biblioteca"><X size={19}/></button>
+    <button ref={closeButton} type="button" onClick={close} aria-label="Cerrar biblioteca"><X size={19}/></button>
    </div>
    {loading&&<p role="status">Cargando fotografías...</p>}
    {error&&<p role="alert" className="admin-error">{error}</p>}
@@ -47,6 +67,6 @@ export function CmsMediaPicker({targetSlug,onChoose,disabled=false}:{targetSlug:
     <span>{item.pageTitle}</span>
    </button>)}</div>}
    {selecting&&<p role="status">Preparando imagen para esta página...</p>}
-  </div>}
+  </div></>}
  </div>;
 }
