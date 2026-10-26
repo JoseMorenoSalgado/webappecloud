@@ -7,7 +7,7 @@ import {parseSectionsForm,normalizePageSections} from "@/lib/page-sections";
 import {hasPageImage} from "@/lib/page-images";
 import {type Prisma} from "@prisma/client";
 export const runtime="nodejs";
-const builtins=["propiedades","nosotros","servicios","contacto"];
+const builtins=["propiedades","nosotros","servicios","contacto","asesoria-empresarial"];
 export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string}>}){
  const admin=await requireAdmin();
  const {slug}=await params;
@@ -24,7 +24,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  const destination=builtin?"/admin/personalizar/paginas":"/admin/personalizar/paginas/"+encodeURIComponent(slug);
  try{
   if(builtin){
-   const titles:Record<string,string>={propiedades:"Propiedades",nosotros:"Nosotros",servicios:"Servicios",contacto:"Contacto"};
+   const titles:Record<string,string>={propiedades:"Propiedades",nosotros:"Nosotros",servicios:"Servicios",contacto:"Contacto","asesoria-empresarial":"Asesoría Empresarial"};
    await prisma.sitePage.upsert({
     where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},
     create:{tenantId:admin.tenantId,slug:dbSlug,title:titles[slug],blocks:{} as Prisma.InputJsonValue,published},
