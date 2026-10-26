@@ -15,7 +15,7 @@ const get=async path=>{
 const overview=await get("/admin/personalizar/inicio");
 assert.match(overview,/Mi sitio web/);
 assert.match(overview,/Prepara tu sitio/);
-assert.match(overview,/Publicar y mostrar en el men/);
+assert.match(overview,/Cómo se publica una página/);
 for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/admin/personalizar/identidad","/admin/personalizar/plantilla"]){
  assert.ok(overview.includes(path),"Missing shortcut to "+path);
 }
