@@ -1,3 +1,4 @@
+import "./module-options.css";
 import {cookies, headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {installerAvailable} from "@/lib/server-config";
