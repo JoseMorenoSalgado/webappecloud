@@ -154,6 +154,8 @@ jobs:
         run: node scripts/check-public-pages.mjs
       - name: Comprobar Home premium NEXUS y aislamiento de plantillas
         run: node scripts/check-nexus-premium-home.mjs
+      - name: Comprobar diseño premium de las seis páginas públicas
+        run: node scripts/check-nexus-premium-site.mjs
       - name: Verificar galería con imagen completa y sin ampliación artificial
         run: node scripts/check-property-gallery.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
