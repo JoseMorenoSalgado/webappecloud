@@ -20,7 +20,8 @@ for(const path of ["/admin/personalizar/paginas","/admin/personalizar/menu","/ad
  assert.ok(overview.includes(path),"Missing shortcut to "+path);
 }
 assert.match(overview,/Tu espacio de trabajo/);
-assert.match(overview,/página(?:s)? publicada/);
+assert.match(overview,/Estado de configuración/);
+assert.match(overview,/página/);
 const pages=await get("/admin/personalizar/paginas");
 assert.match(pages,/Publicar y mostrar en el men/);
 assert.ok(pages.includes("Pasar a borrador"),"Unpublish must be a clear action");
