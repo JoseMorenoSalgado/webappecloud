@@ -20,7 +20,7 @@ En el modo Compose del repositorio se incluye el volumen `webapp-config:/app/.ru
 
 **MariaDB, MySQL o PostgreSQL**. Como en WordPress, la base y el usuario SQL deben existir previamente. En Dockploy crea una instancia MariaDB independiente (no utilices la de Edvorya) y asigna una base vacía con permisos para crear tablas. El nombre del host será el nombre de servicio DNS **alcanzable desde el contenedor de WebAppECloud**; si están en redes Docker distintas, primero configura una red compartida restringida a estos dos contenedores.
 
-En cPanel crearías la base, usuario y permisos desde MySQL Databases antes de abrir el instalador.
+La base, el usuario SQL y los permisos deben crearse previamente en el servicio de base de datos aislado de Dockploy, sin exponer su puerto a Internet.
 
 ## 3. Abrir el asistente
 
