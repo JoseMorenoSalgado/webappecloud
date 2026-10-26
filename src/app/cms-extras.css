@@ -30,3 +30,23 @@
 @media(max-width:900px){.admin-shell .cms-extras-workspace{grid-template-columns:minmax(0,1fr)}.admin-shell .cms-extras-workspace>.cms-live-preview{position:static}}
 @media(max-width:650px){.admin-shell .cms-media-sheet{inset:5vh 8px;max-height:88dvh;border-radius:12px;padding:12px}.admin-shell .cms-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-shell .cms-media-grid img{height:105px}.admin-shell .cms-extras-panel{padding:14px}.admin-shell .cms-extra-save .btn{flex:1}}
 @media(prefers-reduced-motion:reduce){.admin-shell .cms-media-grid button{transition:none}}
+
+
+/* Polished media modal: easy search, safe areas and keyboard-visible actions. */
+.admin-shell .cms-media-sheet{display:flex;flex-direction:column;overscroll-behavior:contain}
+.admin-shell .cms-media-head{position:sticky;top:-20px;z-index:1;background:#fff;padding:0 0 12px;margin:0 0 10px;border-bottom:1px solid #e5ecf1}
+.admin-shell .cms-media-head button{min-height:44px;min-width:44px;cursor:pointer}
+.admin-shell .cms-media-search{display:grid;gap:7px;font-size:12px;font-weight:730;color:#344d66;margin:0 0 6px}
+.admin-shell .cms-media-search input{width:100%;font-size:16px;padding:11px 13px;border:1px solid #d5e0e9;border-radius:9px;background:#fff;color:#20374d;min-height:44px}
+.admin-shell .cms-media-search input:focus-visible{outline:3px solid #2674ae;outline-offset:1px}
+.admin-shell .cms-media-result-count{margin:0 0 10px;color:#66778d;font-size:11px;font-variant-numeric:tabular-nums}
+.admin-shell .cms-media-grid button{min-height:140px}
+.admin-shell .cms-media-grid img{flex:0 0 auto}
+.admin-shell .cms-media-grid button span{white-space:normal;overflow-wrap:anywhere;max-height:3.3em;overflow:hidden}
+@media(max-width:740px){
+ .admin-shell .cms-media-sheet{inset:max(8px,env(safe-area-inset-top)) 9px max(8px,env(safe-area-inset-bottom));max-height:none;border-radius:11px;padding:14px}
+ .admin-shell .cms-media-head{top:-14px}
+ .admin-shell .cms-media-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-shell .cms-media-grid button{min-height:132px}
+}
+@media(max-width:390px){.admin-shell .cms-media-sheet{padding:12px}.admin-shell .cms-media-head{top:-12px}}
