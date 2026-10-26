@@ -156,15 +156,21 @@ jobs:
         run: node scripts/check-nexus-premium-home.mjs
       - name: Comprobar diseño premium de las seis páginas públicas
         run: node scripts/check-nexus-premium-site.mjs
-      - name: Instalar Chromium para inspección responsive en CI
+      - name: Preparar Playwright sin depender de Ubuntu del runner
         run: |
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
-          npx playwright install --with-deps chromium
+          docker pull mcr.microsoft.com/playwright:v1.56.1-noble
       - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
-        run: node scripts/check-nexus-browser-qa.mjs
-        env:
-          TEST_ORIGIN: http://localhost:3000
-          VISUAL_QA_DIR: /tmp/nexus-visual-qa
+        run: |
+          mkdir -p /tmp/nexus-visual-qa
+          docker run --rm --init --network host \
+            -e TEST_ORIGIN=http://127.0.0.1:3000 \
+            -e VISUAL_QA_DIR=/tmp/nexus-visual-qa \
+            -v "$PWD:/workspace:ro" \
+            -v /tmp/nexus-visual-qa:/tmp/nexus-visual-qa \
+            -w /workspace \
+            mcr.microsoft.com/playwright:v1.56.1-noble \
+            node scripts/check-nexus-browser-qa.mjs
       - name: Guardar capturas para aprobación visual humana
         if: always()
         uses: actions/upload-artifact@v4
