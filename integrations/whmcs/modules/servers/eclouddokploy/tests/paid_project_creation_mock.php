@@ -100,8 +100,7 @@ namespace {
     $projects2 = $api->get('project.all', []);
     assertion(count($projects2) === count($projects), 'no duplicate project after retry');
 
-    // In mock service 411 Dokploy does not make production automatically;
-    // the module creates its private environment explicitly.
+    // Dokploy v0.30.9 creates production automatically for normal projects.
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 411, 25, $fingerprint)
             === 'success',
@@ -122,15 +121,20 @@ namespace {
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][410] = $unfinished;
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 410, 25, $fingerprint)
+            === eclouddokploy_import_question(),
+        'existing project requires explicit yes rather than automatic import'
+    );
+    assertion(
+        eclouddokploy_import_existing_locked($api, 410, 25, $fingerprint, $row['project_id'])
             === 'success',
-        'project.create lost response safely recovered by exact project.all match'
+        'explicit admin confirmation restores project and production ID'
     );
     assertion(
         count($api->get('project.all', [])) === count($projects2) + 1,
         'lost response recovery did not create duplicate project'
     );
 
-    // Interrupted environment.create: recover the environment, no new write.
+    // Incomplete local environment ID: verify existing production, no new write.
     $existingEnv = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][411];
     $existingEnv['state'] = 'creating_environment';
     $existingEnv['environment_id'] = null;
@@ -181,12 +185,18 @@ namespace {
         'creating_project';
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 414, 25, $fingerprint)
-            === 'success',
-        'previously created exact service project recovered from read-only API'
+            === eclouddokploy_import_question(),
+        'existing remote project requests import confirmation, does not auto-adopt'
+    );
+    assertion(
+        eclouddokploy_import_existing_locked(
+            $api, 414, 25, $fingerprint, $precreated['project']['projectId']
+        ) === 'success',
+        'only explicit import adopts project and production IDs'
     );
     assertion(
         \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][414]['project_id']
-            === $precreated['projectId'],
+            === $precreated['project']['projectId'],
         'existing remote project ID preserved after reconciliation'
     );
 
@@ -198,14 +208,14 @@ namespace {
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][415]['state'] =
         'creating_environment';
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][415]['project_id'] =
-        $p415['projectId'];
+        $p415['project']['projectId'];
     assertion(str_contains(
         eclouddokploy_prepare_private_project_locked($api, 415, 25, $fingerprint),
         'entorno production no aparece'),
         'uncertain environment POST never retried without confirming remote ID'
     );
     $createdEnv = $api->post('environment.create', [
-        'name'=>'production', 'projectId'=>$p415['projectId']
+        'name'=>'production', 'projectId'=>$p415['project']['projectId']
     ]);
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 415, 25, $fingerprint)
@@ -245,7 +255,7 @@ namespace {
     $existing293 = $api->post(
         'project.create', eclouddokploy_project_create_payload(225, 293)
     );
-    $real293 = $existing293['projectId'];
+    $real293 = $existing293['project']['projectId'];
     $production293 = eclouddokploy_find_production_environment(
         $api->get('environment.byProjectId', ['projectId' => $real293]),
         $real293
@@ -302,8 +312,13 @@ namespace {
     $before293 = count($api->get('project.all', []));
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
+            === eclouddokploy_import_question(),
+        'project 225/293 detected: asks if administrator wants to import it'
+    );
+    assertion(
+        eclouddokploy_import_existing_locked($api, 293, 225, $fingerprint, $real293)
             === 'success',
-        'visible ec-client-225-service-293 recovered without creating another project'
+        'administrator explicitly imports existing project 225/293'
     );
     $recovered293 = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293];
     assertion($recovered293['project_id'] === $real293
@@ -322,8 +337,13 @@ namespace {
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['environment_id'] = null;
     assertion(
         eclouddokploy_prepare_private_project_locked($api, 293, 225, $fingerprint)
+            === eclouddokploy_import_question(),
+        'lost project ID prompts again rather than silently linking it'
+    );
+    assertion(
+        eclouddokploy_import_existing_locked($api, 293, 225, $fingerprint, $real293)
             === 'success',
-        'recovers both missing identifiers without rewinding the valid ready state'
+        'confirmation restores missing identifiers in ready state'
     );
     $fixed293 = \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293];
     assertion($fixed293['project_id'] === $real293
@@ -335,8 +355,8 @@ namespace {
     $mismatch293 = eclouddokploy_prepare_private_project_locked(
         $api, 293, 225, $fingerprint
     );
-    assertion(str_contains($mismatch293, 'no corresponde'),
-        'mismatched saved project ID rejected; no reassignment by name');
+    assertion($mismatch293 === eclouddokploy_import_question(),
+        'old mismatched project ID demands confirmation, not automatic reassignment');
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['project_id'] = $real293;
     \WHMCS\Database\Capsule::$tables['mod_ecloud_dokploy_services'][293]['environment_id'] = 'other-env-id';
     $envMismatch = eclouddokploy_prepare_private_project_locked(
