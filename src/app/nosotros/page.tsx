@@ -18,7 +18,7 @@ export default async function About(){
  await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" className="nexus-public-page nexus-about-page">
    <section className="nexus-inner-hero nexus-about-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">SOBRE NOSOTROS</span>
     <div className="nexus-inner-hero-row"><div><h1>Personas primero. <em>Propiedades con propósito.</em></h1>
