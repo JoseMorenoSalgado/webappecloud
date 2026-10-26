@@ -256,7 +256,7 @@ function eclouddokploy_admin_tab_fields(array $params): array
         . '</style>';
     $value = $style . '<section class="ecd-admin-panel" aria-label="Asistente de soporte Dokploy">'
         . '<span class="ecd-admin-pill">'
-        . ($hasProject ? 'Proyecto privado creado' : 'Proyecto pendiente de crear')
+        . ($hasProject ? 'Proyecto registrado en WHMCS · pendiente de verificación remota' : 'Proyecto pendiente de crear')
         . '</span>'
         . '<h4 style="margin-top:9px">' . eclouddokploy_admin_html($status[0]) . '</h4>'
         . '<p>' . eclouddokploy_admin_html($status[1]) . '</p>'
@@ -274,7 +274,7 @@ function eclouddokploy_admin_tab_fields(array $params): array
     }
     $value .= '<div class="ecd-admin-tasks">'
         . '<div class="ecd-admin-task"><strong>1. Crear / verificar proyecto</strong>'
-        . '<small>En «Comandos del módulo». Solo crea el proyecto y production. No necesita GitHub.</small></div>'
+        . '<small>Comprueba Dokploy antes de crear. Si borraste un proyecto vacío, recupera sus IDs en este mismo servicio, sin duplicar.</small></div>'
         . '<div class="ecd-admin-task"><strong>2. Instalar por el cliente</strong>'
         . '<small>Introduce GitHub abajo, guarda la ficha y pulsa «Instalar aplicación del cliente».</small></div>'
         . '</div>'
