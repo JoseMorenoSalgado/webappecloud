@@ -125,6 +125,16 @@ namespace WHMCS\Database {
                     'packageid'=>12,'domain'=>'app-511.example.test',
                     'domainstatus'=>'Active',
                 ],
+                512 => [
+                    'id'=>512,'userid'=>25,'orderid'=>101,'server'=>1,
+                    'packageid'=>12,'domain'=>'app-512.example.test',
+                    'domainstatus'=>'Active',
+                ],
+                513 => [
+                    'id'=>513,'userid'=>25,'orderid'=>101,'server'=>1,
+                    'packageid'=>12,'domain'=>'app-513.example.test',
+                    'domainstatus'=>'Active',
+                ],
             ],
             'tblorders' => [
                 101 => ['id'=>101, 'invoiceid'=>501],
@@ -250,6 +260,80 @@ namespace {
     $after = eclouddokploy_AdminServicesTabFields($params);
     must(str_contains($after['Repositorio GitHub del cliente'], 'disabled'),
         'support form rendered read-only after provisioning starts');
+
+    // Manual support recovery when Dokploy project was deleted externally:
+    // the same WHMCS paid hosting service must be kept, no duplicate or
+    // reset of billing, and only empty projects are eligible.
+    $deletedParams = array_replace($params, [
+        'serviceid'=>512, 'domain'=>'app-512.example.test',
+    ]);
+    must(eclouddokploy_AdminCreateProject($deletedParams) === 'success',
+        'setup original empty project on already paid WHMCS service');
+    $old512 = eclouddokploy_admin_state(512);
+    must($old512 !== null && $old512->state === 'environment_ready'
+        && is_string($old512->project_id) && is_string($old512->environment_id),
+        'first project and production IDs persisted');
+    $oldPid = $old512->project_id;
+    $oldEnv = $old512->environment_id;
+    must(eclouddokploy_deleted_project_recovery_eligible($old512),
+        'empty project eligible for administrative reconciliation');
+    must(!eclouddokploy_deleted_project_not_found($api, $oldPid),
+        'existing Dokploy project cannot be mistaken for deleted');
+    $api->post('project.remove', ['projectId'=>$oldPid]);
+    must(eclouddokploy_deleted_project_not_found($api, $oldPid),
+        'old Dokploy project.one now returns definitive HTTP 404');
+    $countBeforeRebuild = count($api->get('project.all', []));
+    must(eclouddokploy_AdminCreateProject($deletedParams) === 'success',
+        'manual WHMCS Create/Verify reconstructs a deleted empty project');
+    $recovered512 = eclouddokploy_admin_state(512);
+    must($recovered512->state === 'environment_ready'
+        && $recovered512->project_id !== $oldPid
+        && $recovered512->environment_id !== $oldEnv,
+        'deleted project and production replaced with fresh IDs on SAME service');
+    $listing512 = $api->get('project.search', [
+        'name'=>'ec-client-25-service-512', 'limit'=>100,'offset'=>0,
+    ]);
+    must($listing512['total'] === 1 && count($listing512['items']) === 1
+        && $listing512['items'][0]['projectId'] === $recovered512->project_id,
+        'exactly one active recovered project and no orphan duplicate');
+    must(count($api->get('project.all', [])) === $countBeforeRebuild + 1,
+        'manual recovery did not create more than one remote project');
+    must(eclouddokploy_AdminCreateProject($deletedParams) === 'success'
+        && eclouddokploy_admin_state(512)->project_id === $recovered512->project_id,
+        'repeated admin verification is idempotent following manual recovery');
+
+    // A renamed project with same old ID is NOT deleted: refuse to recreate.
+    $renamedParams = array_replace($params, [
+        'serviceid'=>513, 'domain'=>'app-513.example.test',
+    ]);
+    must(eclouddokploy_AdminCreateProject($renamedParams) === 'success',
+        'prepare separate project for renamed old-ID test');
+    $row513 = eclouddokploy_admin_state(513);
+    $old513 = $row513->project_id;
+    $api->post('mock.renameProject', [
+        'projectId'=>$old513, 'name'=>'renamed-during-support',
+    ]);
+    $priorRenameCount = count($api->get('project.all', []));
+    $renameResult = eclouddokploy_AdminCreateProject($renamedParams);
+    must($renameResult !== 'success'
+        && str_contains($renameResult, 'todavía existe con otro nombre'),
+        'project rename does not masquerade as external deletion');
+    must(eclouddokploy_admin_state(513)->project_id === $old513
+        && count($api->get('project.all', [])) === $priorRenameCount,
+        'renamed project keeps prior ID and no duplicate appears');
+
+    // App already deployed on service 510: never permit recovery by resetting
+    // linked IDs, even when the remote project is absent for any reason.
+    $live = eclouddokploy_admin_state(510);
+    must(!eclouddokploy_deleted_project_recovery_eligible($live),
+        'deployed app and prior resource IDs categorically block auto rebuild');
+    must(!eclouddokploy_deleted_project_recovery_eligible((object)[
+        'state'=>'environment_ready','project_id'=>'project-test-123',
+        'mariadb_id'=>'db-existing',
+    ]), 'database attachment prohibits empty-project recovery');
+    must(!eclouddokploy_deleted_project_recovery_eligible((object)[
+        'state'=>'deployment_requested', 'project_id'=>'project-test-123',
+    ]), 'uncertain deployment state cannot be automatically reset');
 
     must(count($GLOBALS['admin_audit_events']) >= 3,
         'WHMCS administrator save, create and install actions are auditable');
