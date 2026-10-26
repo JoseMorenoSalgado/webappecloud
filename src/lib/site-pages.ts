@@ -17,6 +17,7 @@ const staticPages=[
  {id:"servicios",slug:"servicios",title:"Servicios",href:"/servicios"},
  {id:"contacto",slug:"contacto",title:"Contacto",href:"/contacto"}
 ] as const;
+const advisoryPage={id:"asesoria-empresarial",slug:"asesoria-empresarial",title:"Asesoría empresarial",href:"/asesoria-empresarial"} as const;
 export const DEFAULT_SITE_MENU:SiteMenuItem[]=staticPages.map(p=>({id:p.id,label:p.title,href:p.href}));
 export function defaultMenuForTemplate(key:string):SiteMenuItem[]{
  if(key==="real-estate")return [...DEFAULT_SITE_MENU];
@@ -33,11 +34,13 @@ export function textBlocks(raw:unknown):{summary:string;body:string;sections:Pag
   body:typeof obj.body==="string"?obj.body.slice(0,12000):"",sections:normalizePageSections(obj.sections)};
 }
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
- const template=await getSiteTemplate(tenantId);
+ const [template,tenant]=await Promise.all([getSiteTemplate(tenantId),prisma.tenant.findUnique({where:{id:tenantId},select:{slug:true}})]);
  const available=await getTenantModules(tenantId,template.key);
- const enabledPages=template.key==="real-estate"&&available.includes("properties")?staticPages:staticPages.filter(p=>p.id!=="propiedades");
+ const basePages=template.key==="real-estate"&&available.includes("properties")?[...staticPages]:staticPages.filter(p=>p.id!=="propiedades");
+ // This additional line of business belongs to NEXUS, not every tenant using the real-estate template.
+ const enabledPages=template.key==="real-estate"&&tenant?.slug==="nexus"?[...basePages,advisoryPage]:basePages;
  const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
-  {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
+  {slug:{in:[...staticPages,advisoryPage].map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
  const builtins:PageDefinition[]=enabledPages.map(p=>({
@@ -72,7 +75,9 @@ export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[
   existingPages||getPageDefinitions(tenantId),getSiteTemplate(tenantId),
   prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
  ]);
- const defaults=()=>normalizedMenu(defaultMenuForTemplate(template.key),pages);
+ const advisory=pages.some(p=>p.id===advisoryPage.id&&p.published);
+ const advisoryLink={id:advisoryPage.id,label:advisoryPage.title,href:advisoryPage.href};
+ const defaults=()=>normalizedMenu(advisory?[...defaultMenuForTemplate(template.key),advisoryLink]:defaultMenuForTemplate(template.key),pages);
  if(!stored)return defaults();
  const raw=stored.blocks&&typeof stored.blocks==="object"&&!Array.isArray(stored.blocks)
   ?stored.blocks as {items?:unknown;byTemplate?:unknown}:null;
@@ -82,7 +87,11 @@ export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[
  // An existing customer with only legacy menu settings belongs to real-estate.
  const chosen=hasSelected?byTemplate[template.key]:template.key==="real-estate"?raw?.items:null;
  if(chosen===null||chosen===undefined)return defaults();
- return normalizedMenu(chosen,pages);
+ const parsed=normalizedMenu(chosen,pages);
+ // Existing customized menus predate this service. Show it once by default;
+ // a subsequent menu save records the rollout so an intentional removal is respected.
+ if(advisory&&!Object.hasOwn(raw||{},"advisoryMenuVersion")&&!parsed.some(x=>x.id===advisoryPage.id))return [...parsed,advisoryLink];
+ return parsed;
 }
 export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
  const pages=await getPageDefinitions(tenantId);
@@ -100,7 +109,8 @@ export async function saveSiteMenu(tenantId:string,items:MenuRecord[]){
  const byTemplate={...previous,[currentTemplate.key]:parsed};
  const updated={
   items:currentTemplate.key==="real-estate"?parsed:(currentBlocks.items??DEFAULT_SITE_MENU),
-  byTemplate
+  byTemplate,
+  advisoryMenuVersion:1
  };
  await prisma.sitePage.upsert({
   where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},
