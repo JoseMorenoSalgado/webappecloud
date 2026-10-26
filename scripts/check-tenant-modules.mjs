@@ -31,7 +31,7 @@ const modulePage=await get("/admin/modulos",true);
 assert.equal(modulePage.status,200);
 assert.match(await modulePage.text(),/Aplicaciones y módulos/);
 await configure(["website"]);
-assert.ok((await (await get("/admin/modulos",true)).text()).includes("Inactivo"));
+assert.ok((await (await get("/admin/modulos",true)).text()).includes("Desactivado"));
 for(const path of ["/admin/propiedades","/admin/leads","/admin/agenda","/admin/cierres","/admin/reportes"]){
  const res=await get(path,true);
  assert.ok([303,307,308].includes(res.status),"Expected redirect for disabled "+path+" got "+res.status);
