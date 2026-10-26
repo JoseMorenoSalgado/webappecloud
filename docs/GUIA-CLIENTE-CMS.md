@@ -110,6 +110,7 @@ adicionales** permite agregar contenido nuevo sin alterar esas plantillas.
 
 ## Biblioteca de imágenes
 
+Abra **Mi sitio web → Imágenes** para consultar la biblioteca de su organización.
 Desde un bloque de imagen elija **Usar imagen existente**. La biblioteca
 muestra imágenes almacenadas en páginas de la misma organización, incluso
 si esas páginas están en borrador. Puede elegir cualquiera de ellas; el CMS
