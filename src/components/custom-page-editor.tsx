@@ -1,5 +1,5 @@
 "use client";
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useState,type MouseEvent} from "react";
 import Link from "next/link";
 import {ArrowLeft,Eye,FileText,Globe2,LockKeyhole,Plus,Save} from "lucide-react";
 type EditorProps={mode:"create"|"edit";slug?:string;title?:string;summary?:string;body?:string;published?:boolean};
@@ -26,7 +26,7 @@ export function CustomPageEditor({mode,slug:storedSlug,title:initialTitle="",sum
   window.addEventListener("beforeunload",warn);
   return ()=>window.removeEventListener("beforeunload",warn);
  },[isEdited,submitting]);
- const confirmLeave=(event:React.MouseEvent<HTMLAnchorElement>)=>{
+ const confirmLeave=(event:MouseEvent<HTMLAnchorElement>)=>{
   if(isEdited&&!submitting&&!window.confirm("Hay cambios sin guardar. ¿Quieres salir sin guardarlos?"))event.preventDefault();
  };
  return <div className="cms-page-workspace">
