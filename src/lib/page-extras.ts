@@ -5,7 +5,7 @@ import {type PageSection,normalizePageSections} from "@/lib/page-sections";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {getSiteTemplate} from "@/lib/site-template-store";
 
-export const BUILTIN_PAGE_SLUGS=["home","propiedades","nosotros","servicios","contacto"] as const;
+export const BUILTIN_PAGE_SLUGS=["home","propiedades","nosotros","servicios","contacto","asesoria-empresarial"] as const;
 export type BuiltinPageSlug=typeof BUILTIN_PAGE_SLUGS[number];
 export function isBuiltinPageSlug(slug:string):slug is BuiltinPageSlug{
  return (BUILTIN_PAGE_SLUGS as readonly string[]).includes(slug);
