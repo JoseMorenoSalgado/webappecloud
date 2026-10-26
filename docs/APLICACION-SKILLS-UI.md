@@ -5,7 +5,7 @@ La Skill **webappecloud-design** vive en `.agents/skills/webappecloud-design/SKI
 
 Este conjunto personalizado reúne las reglas de Taste, Impeccable y Emil. **No equivale a instalar las tres herramientas CLI oficiales ni ejecuta automáticamente sus inspecciones/capturas.** Para sus herramientas completas se mantiene la opción de instalación en un entorno de desarrollo externo.
 
-## Instalación reproducible (desarrollo, NO cPanel ni Docker de producción)
+## Instalación reproducible (solo desarrollo, NO contenedores de producción)
 Desde la raíz de WebAppECloud, con Node.js 22+, ejecutar:
 
 ```bash
