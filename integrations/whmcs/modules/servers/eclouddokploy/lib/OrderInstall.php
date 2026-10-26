@@ -143,7 +143,7 @@ function eclouddokploy_safe_project_diagnostic(Throwable $e): string
         $status = (int) $match[2];
         if ($status === 401 || $status === 403) {
             return 'La API de Dokploy rechazó ' . $operation . ' (HTTP ' . $status
-                . '). Revisa que la API key tenga acceso a la organización y al proyecto. '
+                . '). Revisa los permisos de la API key para la organización y el proyecto. '
                 . 'Referencia: ' . $code . '.';
         }
         if ($status === 404 || $status === 405) {
@@ -169,7 +169,7 @@ function eclouddokploy_safe_project_diagnostic(Throwable $e): string
             35, 51, 60 => 'certificado TLS o conexión HTTPS',
             default => 'conectividad HTTPS entre WHMCS y Dokploy',
         };
-        return 'No se completó la consulta a Dokploy: ' . $reason
+        return 'No se completó la consulta a Dokploy (cURL ' . $curl . '): ' . $reason
             . '. Revisa la conectividad desde el servidor WHMCS. Referencia: '
             . $code . '.';
     }
