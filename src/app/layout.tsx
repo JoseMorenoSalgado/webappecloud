@@ -23,6 +23,7 @@ import "./page-editor-blocks.css";
 import "./cms-extras.css";
 import "./mobile-native.css";
 import "./styles/templates/nexus-classic-polish.css";
+import "./styles/templates/nexus-home-motion.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
 
