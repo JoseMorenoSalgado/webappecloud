@@ -140,6 +140,49 @@ function eclouddokploy_lookup_service_project(
     return eclouddokploy_find_exact_service_project($items, $clientId, $serviceId);
 }
 
+/**
+ * Dokploy v0.30.9 project.create returns:
+ * {project:{projectId,...}, environment:{environmentId,projectId,...}}.
+ * Older compatible releases may return a project at top level.
+ * Never create a second "production": Dokploy creates it automatically.
+ */
+function eclouddokploy_created_project_ids(
+    array $response, int $clientId, int $serviceId
+): array {
+    $project = $response['project'] ?? $response;
+    if (!is_array($project)) {
+        throw new RuntimeException('Unexpected Dokploy project.create response.');
+    }
+    $projectId = eclouddokploy_required_id($project, 'projectId');
+    if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
+        throw new RuntimeException('Invalid Dokploy project ID during creation.');
+    }
+    if (isset($project['name'])
+        && $project['name'] !== eclouddokploy_project_name($clientId, $serviceId)) {
+        throw new RuntimeException('Dokploy returned a project with an unexpected tenant name.');
+    }
+    $environment = $response['environment'] ?? null;
+    $environmentId = null;
+    if ($environment !== null) {
+        if (!is_array($environment)) {
+            throw new RuntimeException('Unexpected Dokploy production environment response.');
+        }
+        $environmentId = eclouddokploy_required_id($environment, 'environmentId');
+        if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $environmentId) !== 1) {
+            throw new RuntimeException('Invalid Dokploy environment identifier.');
+        }
+        if (isset($environment['projectId'])
+            && (!is_string($environment['projectId'])
+                || !hash_equals($projectId, $environment['projectId']))) {
+            throw new RuntimeException('Environment does not belong to the service project.');
+        }
+        if (isset($environment['name']) && $environment['name'] !== 'production') {
+            throw new RuntimeException('Dokploy returned an unexpected environment name.');
+        }
+    }
+    return ['project_id' => $projectId, 'environment_id' => $environmentId];
+}
+
 /** An application must be in the specific service's private environment. */
 function eclouddokploy_app_environment_matches(array $remote, string $appId, string $envId): bool
 {
@@ -249,12 +292,16 @@ function eclouddokploy_prepare_private_project_locked(
         $created = $api->post(
             'project.create', eclouddokploy_project_create_payload($clientId, $serviceId)
         );
-        $projectId = eclouddokploy_required_id($created, 'projectId');
-        if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $projectId) !== 1) {
-            return 'Dokploy devolvió un identificador de proyecto no válido.';
+        // The official v0.30.9 result is nested: project.projectId and
+        // environment.environmentId. Record both IDs when available.
+        $ids = eclouddokploy_created_project_ids($created, $clientId, $serviceId);
+        $projectId = $ids['project_id'];
+        if ($ids['environment_id'] !== null) {
+            $envId = $ids['environment_id'];
         }
         eclouddokploy_set_state($serviceId, 'project_created', [
             'project_id' => $projectId,
+            'environment_id' => $envId !== '' ? $envId : null,
         ]);
         $state = 'project_created';
     } else {
@@ -274,6 +321,8 @@ function eclouddokploy_prepare_private_project_locked(
         $projectId
     );
     if ($remoteEnvironmentId !== null) {
+        // Confirm any production ID supplied in the create response against
+        // a project-scoped read before claiming the command succeeded.
         if ($envId !== '' && !hash_equals($envId, $remoteEnvironmentId)) {
             return 'El entorno production no coincide con el ID registrado en WHMCS. '
                 . 'No se cambió su vinculación.';
@@ -297,19 +346,11 @@ function eclouddokploy_prepare_private_project_locked(
         return 'El entorno production no aparece todavía en Dokploy. '
             . 'No se creó otro entorno; soporte debe comprobar el estado de la petición.';
     } elseif ($state === 'project_created') {
-        // The project exists but Dokploy did not automatically add production.
-        eclouddokploy_set_state($serviceId, 'creating_environment');
-        $created = $api->post('environment.create', [
-            'name' => 'production', 'projectId' => $projectId,
-        ]);
-        $envId = eclouddokploy_required_id($created, 'environmentId');
-        if (preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $envId) !== 1) {
-            return 'Dokploy devolvió un identificador de entorno no válido.';
-        }
-        eclouddokploy_set_state($serviceId, 'environment_ready', [
-            'environment_id' => $envId,
-        ]);
-        $state = 'environment_ready';
+        // Dokploy v0.30.9 always creates its default production environment
+        // with project.create. environment.create explicitly rejects the
+        // reserved name "production". Do NOT make that invalid API call.
+        return 'El proyecto existe, pero falta el entorno production en Dokploy. '
+            . 'No se creó otro: revisa los datos y permisos de la API.';
     } else {
         return 'Falta el entorno production del proyecto existente. '
             . 'No se creó otro recurso automáticamente.';
