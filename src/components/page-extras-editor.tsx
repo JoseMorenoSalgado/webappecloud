@@ -3,6 +3,7 @@ import {useEffect,useState,type FormEvent} from "react";
 import {ArrowDown,ArrowUp,Heading2,AlignLeft,ImagePlus,Trash2,Save,Eye} from "lucide-react";
 import {type PageSection,MAX_PAGE_SECTIONS} from "@/lib/page-sections";
 import {PageSectionContent} from "@/components/page-section-content";
+import {CmsMediaPicker} from "@/components/cms-media-picker";
 
 type Variant=PageSection["type"];
 export function PageExtrasEditor({slug,initial}:{slug:string;initial:PageSection[]}){
@@ -72,6 +73,7 @@ export function PageExtrasEditor({slug,initial}:{slug:string;initial:PageSection
       <input type="file" accept="image/jpeg,image/png,image/webp" disabled={Boolean(uploading)||saving}
        onChange={e=>{void upload(block.id,e.target.files?.[0]);e.target.value="";}}/>
      </label>
+     <CmsMediaPicker targetSlug={slug} disabled={Boolean(uploading)||saving} onChoose={imageId=>edit(block.id,{imageId} as Partial<PageSection>)}/>
      {block.imageId&&<img src={"/api/admin/site-pages/"+encodeURIComponent(slug)+"/images/"+block.imageId} loading="lazy" alt={block.alt||"Imagen en edición"}/>}
      <label>Descripción de imagen para accesibilidad
       <input value={block.alt} maxLength={180} placeholder="Describe lo que se ve" onChange={e=>edit(block.id,{alt:e.target.value})}/>
