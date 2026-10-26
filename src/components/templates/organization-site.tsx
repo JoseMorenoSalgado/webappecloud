@@ -5,6 +5,7 @@ import {type SiteTemplate} from "@/lib/site-template-store";
 import {PublicFrame} from "@/components/public-frame";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {ContactForm} from "@/components/contact-form";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 type Props={tenant:PublicTenant;demo:boolean;template:SiteTemplate;heroImage?:boolean};
 const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake],ecommerce:[ShoppingBag,PackageCheck,Headphones]};
 function context(template:SiteTemplate){return template.key==="education"?{
@@ -77,8 +78,9 @@ export function OrganizationServices({tenant,demo,template}:Props){
   <section className="organization-cta"><div className="container"><div><h2>{d.contactTitle}</h2><p>{d.contactText}</p></div><Link className="btn organization-primary-button" href="/contacto">Solicitar información <ArrowRight size={17}/></Link></div></section>
  </main></PublicFrame>;
 }
-export function OrganizationContact({tenant,demo,template}:Props){
+export async function OrganizationContact({tenant,demo,template}:Props){
  const d=template.content;
+ const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");
  const phone=tenant.whatsapp?.replace(/\D/g,"");
  const wa=phone?"https://wa.me/"+phone+"?text="+encodeURIComponent("Hola, deseo información sobre "+tenant.name+"."):null;
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" className="organization-main">
@@ -90,7 +92,7 @@ export function OrganizationContact({tenant,demo,template}:Props){
     {!wa&&!tenant.contactEmail&&<p>Puedes comunicarte mediante el formulario de esta página.</p>}
    </div>
    <div className="organization-contact-form"><h2>Enviar consulta</h2><p>Utilizaremos tus datos solamente para responder tu solicitud.</p>
-    {demo?<p className="preview-form-note">El formulario se habilitará cuando esté configurada la base de datos.</p>:<ContactForm messagePlaceholder={template.key==="education"?"¿Sobre qué programa deseas información?":"¿En qué servicio estás interesado?"}/>}
+    {demo?<p className="preview-form-note">El formulario se habilitará cuando esté configurada la base de datos.</p>:inquiriesEnabled?<ContactForm messagePlaceholder={template.key==="education"?"¿Sobre qué programa deseas información?":"¿En qué servicio estás interesado?"}/>:<p className="property-help">El formulario de consultas está desactivado. Puedes utilizar los datos de contacto disponibles.</p>}
    </div>
   </div></section>
  </main></PublicFrame>;
