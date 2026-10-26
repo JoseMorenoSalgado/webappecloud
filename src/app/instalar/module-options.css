@@ -1,0 +1,14 @@
+.wizard-module-step{margin:20px 0 18px}
+.wizard-module-step h3{margin:0 0 6px;font-size:1.05rem}
+.wizard-module-step>p{margin:0 0 14px;color:#475569;font-size:.9rem;line-height:1.55}
+.wizard-module-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.wizard-module-choice{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;background:#fff;border:1px solid #d9e1eb;border-radius:12px;cursor:pointer}
+.wizard-module-choice:has(input:checked){border-color:#93c5fd;background:#f8fbff}
+.wizard-module-choice:has(input:disabled:not(:checked)){background:#f8fafc;cursor:default}
+.wizard-module-choice input{width:19px;height:19px;flex:0 0 auto;margin:2px 0 0;accent-color:#1d4ed8}
+.wizard-module-choice input:focus-visible{outline:3px solid #93c5fd;outline-offset:3px}
+.wizard-module-choice>span{min-width:0;display:flex;flex-direction:column;gap:3px}
+.wizard-module-choice strong{color:#0f172a;font-size:.89rem}
+.wizard-module-choice small{color:#64748b;font-size:.76rem;line-height:1.5}
+.wizard-module-choice>small{flex-shrink:0;font-weight:650;font-size:.7rem}
+@media(max-width:680px){.wizard-module-options{grid-template-columns:1fr}.wizard-module-choice{padding:12px}}
