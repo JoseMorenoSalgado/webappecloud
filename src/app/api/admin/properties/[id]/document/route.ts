@@ -1,3 +1,4 @@
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {randomUUID} from "node:crypto";
 import {mkdir,rename,unlink,writeFile} from "node:fs/promises";
 import {dirname} from "node:path";
@@ -12,6 +13,7 @@ const fail=(message:string,status:number)=>NextResponse.json({error:message},{st
 
 async function identify(id:string){
  const admin=await propertyEditor();
+ if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true,refCode:true}});
  return {admin,property};
 }
