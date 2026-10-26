@@ -91,3 +91,39 @@ la depuración de archivos sobrantes requiere una fase de gestión de medios.
 Los textos que existían antes de esta actualización se mantienen en el campo
 Contenido principal. No es necesario copiarlos ni recrear la página.
 Las nuevas secciones se agregan debajo de ese texto.
+
+
+## Portada y páginas predeterminadas: secciones visuales
+
+En **Mi sitio web → Páginas**, abra Inicio, Nosotros, Servicios, Contacto o
+Propiedades. La sección **Contenido de la página** conserva los textos y el
+diseño original. Más abajo encontrará **Secciones adicionales**, con el mismo
+editor de encabezados, textos y fotografías de las páginas personalizadas.
+
+Los contenidos adicionales se guardan por separado. Por ejemplo, cambiar
+un título del banner y editar una nueva fotografía requiere guardar ambos
+formularios. Ninguna de estas acciones altera las fichas inmobiliarias.
+
+En Educación, Servicios y Comercio electrónico, la opción **Editar textos
+de plantilla** administra los títulos y bloques originales. **Secciones
+adicionales** permite agregar contenido nuevo sin alterar esas plantillas.
+
+## Biblioteca de imágenes
+
+Desde un bloque de imagen elija **Usar imagen existente**. La biblioteca
+muestra imágenes almacenadas en páginas de la misma organización, incluso
+si esas páginas están en borrador. Puede elegir cualquiera de ellas; el CMS
+crea una copia para la página actual para que el contenido no dependa de otro
+archivo o enlace.
+
+Si una imagen ya no se utiliza, quitarla de una sección no elimina
+automáticamente el fichero. Una futura administración de almacenamiento
+permitirá revisar y depurar imágenes sin riesgo de perder imágenes públicas.
+La biblioteca requiere permisos de administrador o editor.
+
+## Alcance del editor
+
+Este editor añade contenido en una zona adicional de cada página. No
+convierte los diseños especiales existentes en una cuadrícula totalmente
+arrastrable ni sustituye la estructura de la plantilla; ese constructor
+visual profundo será una evolución independiente.
