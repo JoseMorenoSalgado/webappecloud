@@ -1,36 +1,39 @@
 import Link from "next/link";
-import {ArrowUpRight,Images,ImagePlus} from "lucide-react";
+import {ArrowUpRight,Images} from "lucide-react";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
+import {CmsMediaGallery} from "@/components/cms-media-gallery";
 import {requireRole} from "@/lib/auth";
-import {listTenantMedia} from "@/lib/media-library";
+import {listTenantMedia,listTrashedMedia} from "@/lib/media-library";
 import "./media-gallery.css";
 export const dynamic="force-dynamic";
 export default async function MediaLibraryPage(){
  const user=await requireRole(["admin","editor"]);
- const images=await listTenantMedia(user.tenantId);
+ const canManage=user.roles.includes("admin");
+ const [images,trashed]=await Promise.all([
+  listTenantMedia(user.tenantId),canManage?listTrashedMedia(user.tenantId):Promise.resolve([])
+ ]);
+ const used=images.filter(x=>x.used).length;
+ const unused=images.filter(x=>x.canArchive).length;
  return <>
   <div className="admin-heading"><div><h1>Biblioteca de imágenes</h1>
-   <p>Encuentra fotografías que ya cargaste en tu sitio. Puedes reutilizarlas al editar otras páginas.</p>
+   <p>Encuentra, reutiliza y organiza fotografías de tu sitio sin afectar otras páginas.</p>
   </div><Link href="/admin/personalizar/paginas" className="btn wizard-back">Editar páginas <ArrowUpRight size={16}/></Link></div>
   <SiteCustomizerNav current="media"/>
-  <section className="admin-panel cms-media-overview"><div><Images size={22} aria-hidden="true"/>
-   <div><h2>{images.length} imagen{images.length===1?"":"es"} disponible{images.length===1?"":"s"}</h2>
-    <p>Las imágenes se guardan en formato WebP dentro de esta empresa. Se muestran hasta 120 en esta vista.</p></div>
-   </div><p>Para añadir una fotografía abre una página, agrega un bloque de imagen y selecciona <strong>Subir imagen</strong>.
-   Para reutilizarla elige <strong>Usar imagen existente</strong>.</p>
+  <section className="admin-panel cms-media-overview">
+   <div className="cms-media-summary"><Images size={22} aria-hidden="true"/>
+    <div><h2>Imágenes de tu empresa</h2><p>Hasta 120 archivos WebP visibles por consulta.</p></div>
+   </div>
+   <div className="cms-media-metrics" aria-label="Estado de archivos">
+    <span><strong>{images.length}</strong> imágenes</span><span><strong>{used}</strong> en uso</span>
+    <span><strong>{unused}</strong> sin usar</span>
+   </div>
   </section>
-  {images.length>0?<section className="cms-media-gallery" aria-label="Imágenes de tu organización">
-   {images.map(item=><article key={item.slug+":"+item.id} className="cms-media-gallery-item">
-    <img src={item.url} alt={"Fotografía almacenada en la página "+item.pageTitle} loading="lazy" decoding="async"/>
-    <div><strong>{item.pageTitle}</strong><small>WebP · Imagen de la página</small>
-     <Link href={"/admin/personalizar/paginas/"+encodeURIComponent(item.slug)}>Editar página <ArrowUpRight size={14}/></Link>
-    </div>
-   </article>)}
-  </section>:<div className="admin-panel cms-media-empty"><ImagePlus size={29} aria-hidden="true"/>
-   <h2>Todavía no hay imágenes adicionales</h2>
-   <p>Puedes seguir utilizando el logotipo y el banner de tu sitio. Para crear una galería reutilizable, añade fotografías en las páginas de contenido.</p>
-   <Link href="/admin/personalizar/paginas" className="btn btn-red">Ir a mis páginas</Link>
-  </div>}
-  <p className="property-help">Las imágenes cargadas no se eliminan automáticamente al retirarlas de una página. Su limpieza se habilitará con una comprobación de uso para evitar pérdidas accidentales.</p>
+  <p className="cms-library-intro">Las imágenes <strong>En uso</strong> están protegidas, incluso en páginas en borrador.
+   Las <strong>Recientes</strong> se protegen durante 24 horas para que puedas terminar de editarlas.
+   {canManage?" Las imágenes antiguas sin usar pueden pasar a la papelera; allí se pueden restaurar.":" El administrador puede revisar las imágenes sin utilizar."}
+  </p>
+  <CmsMediaGallery images={images} trashed={trashed} canManage={canManage}/>
+  <p className="property-help">Para cargar imágenes nuevas, abre una página y selecciona un bloque de imagen.
+   Para reutilizar una fotografía utiliza <strong>Usar imagen existente</strong>. La papelera no elimina archivos automáticamente; la eliminación definitiva requiere autorización.</p>
  </>;
 }
