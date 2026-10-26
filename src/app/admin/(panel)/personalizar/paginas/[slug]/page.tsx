@@ -10,6 +10,7 @@ import {CustomPageEditor} from "@/components/custom-page-editor";
 import {SiteTextInput} from "@/components/site-text-input";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {PageExtrasEditor} from "@/components/page-extras-editor";
+import {PagePublicationAction} from "@/components/page-publication-action";
 import {readExtraSections} from "@/lib/page-extras";
 export const dynamic="force-dynamic";
 type Field={name:string;label:string;max:number;multiline?:boolean;hint?:string};
@@ -71,9 +72,9 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
      {published&&<Link href="/asesoria-empresarial" target="_blank" className="btn wizard-back">Ver página <ExternalLink size={16}/></Link>}
     </div>
     <div className="cms-publication-guide"><strong>{published?"Página publicada":"Página en borrador"}</strong>
-     <span>Para {published?"retirar":"publicar"} esta sección usa <Link href="/admin/personalizar/paginas">Páginas</Link>.
-     Cuando esté publicada podrás colocarla en <Link href="/admin/personalizar/menu">Menú principal</Link>.</span>
+     <span>{published?"Tu contenido ya es público. Puedes retirarlo cuando lo necesites.":"Puedes editar todo antes de publicarlo. Cuando publiques, añade el enlace en Menú principal."} <Link href="/admin/personalizar/menu">Organizar menú</Link>.</span>
     </div>
+    <div className="cms-advisory-editor-publication"><PagePublicationAction slug="asesoria-empresarial" title="Asesoría Empresarial" published={published}/></div>
     {q.blocksSaved&&<p role="status" className="property-success">Contenido adicional guardado correctamente.</p>}
     {q.error&&<p role="alert" className="admin-error">{q.error==="imagenes"?"La imagen ya no está disponible. Vuelve a cargarla.":q.error==="secciones"?"Revisa los textos e imágenes.":"No fue posible guardar los contenidos."}</p>}
     <section className="cms-builtins-extras-intro"><h2>Material informativo e imágenes</h2>
