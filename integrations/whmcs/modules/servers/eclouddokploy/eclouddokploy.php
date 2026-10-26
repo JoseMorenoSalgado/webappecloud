@@ -23,6 +23,7 @@ require_once __DIR__ . '/lib/AutoMail.php';
 require_once __DIR__ . '/lib/OrderInstall.php';
 require_once __DIR__ . '/lib/AdminAssistance.php';
 require_once __DIR__ . '/lib/DeletedProjectRecovery.php';
+require_once __DIR__ . '/lib/ProjectImport.php';
 
 use WHMCS\Database\Capsule;
 
@@ -918,7 +919,9 @@ function eclouddokploy_AdminServicesTabFieldsSave(array $params): void
 function eclouddokploy_AdminCustomButtonArray(): array
 {
     return [
-        'Crear / verificar proyecto Dokploy' => 'AdminCreateProject',
+        'Comprobar / crear proyecto' => 'AdminCreateProject',
+        'Sí, importar proyecto existente' => 'AdminImportProject',
+        'No, cancelar importación' => 'AdminCancelImport',
         'Instalar aplicación del cliente' => 'AdminInstallApp',
     ];
 }
@@ -927,6 +930,18 @@ function eclouddokploy_AdminCustomButtonArray(): array
 function eclouddokploy_AdminCreateProject(array $params): string
 {
     return eclouddokploy_admin_create_project($params);
+}
+
+/** Explicit customer-scoped confirmation for a pre-existing project. */
+function eclouddokploy_AdminImportProject(array $params): string
+{
+    return eclouddokploy_admin_import_existing($params);
+}
+
+/** Reject import without changing the project, WHMCS service or invoice. */
+function eclouddokploy_AdminCancelImport(array $params): string
+{
+    return eclouddokploy_admin_cancel_import($params);
 }
 
 /** Deploy the admin-saved GitHub source into that SAME project and environment. */
