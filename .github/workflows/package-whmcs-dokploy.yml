@@ -45,81 +45,81 @@ jobs:
           install -m 0644 "$src/lib/ProjectImport.php" package/eclouddokploy/lib/ProjectImport.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
-Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
-
-Version: rama de pruebas PR #38, NO APTO PARA PRODUCCION.
-Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
-
-1) Extrae la carpeta eclouddokploy en:
-   <WHMCS_ROOT>/modules/servers/eclouddokploy/
-2) En WHMCS, crea UN PRODUCTO DE PRUEBA independiente:
-   Configuracion > Productos/Servicios > Productos/Servicios
-   Modulo: eclouddokploy
-   No modifiques los productos existentes de correo/cPanel.
-3) El servidor WHMCS debe disponer de PHP 8.2+, cURL y acceso HTTPS
-   al entorno Dokploy de pruebas.
-4) Configura Hostname + API Key por servidor WHMCS.
-   Username puede quedar vacio en servidores nuevos.
-   Cada servicio crea un proyecto y entorno privado Dokploy.
-   Correo corporativo es otro servicio WHMCS cPanel activo para el mismo cliente.
-   El panel enlaza automáticamente cualquier hosting cPanel activo
-   del mismo propietario y dominio. Las operaciones directas UAPI siguen
-   siendo opcionales y requieren una vinculación privada autorizada.
-   IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
-   App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
-   Modo guiado es la opción predeterminada de productos nuevos.
-   Modo pedido (opcional): añadir campo de compra Repositorio GitHub;
-   tras recibir el primer pago solicita despliegue en el VPS asignado.
-   No requiere variables de entorno SSH ni contraseña maestra manual.
-   Al primer uso genera un secreto cifrado mediante el Crypt de WHMCS,
-   almacena en mod_ecloud_dokploy_runtime y lo reutiliza en adelante.
-   Para servicios del piloto anterior con seed, conservarla sin cambios.
-   Probar staging antes de habilitar el automático de pago en WHMCS.
-   No pegues tokens en tickets, capturas o repositorios.
-5) El modulo verifica la primera factura pagada y crea el proyecto
-   + entorno production inmediatamente al aprovisionar en WHMCS.
-   VERDE = proyecto y entorno creados, no necesariamente web publicada.
-   Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
-   usar "Comprobar / crear proyecto" (requiere
-   primera factura pagada, no duplica un proyecto existente).
-   Si YA EXISTE, no se crea ni vincula automaticamente:
-   WHMCS pregunta "El proyecto ya existe. Deseas importarlo?"
-   En Comandos del modulo: "Si, importar proyecto existente"
-   para confirmar, o "No, cancelar importacion" para rechazar.
-   Si NO existe, WHMCS crea proyecto y production automaticamente.
-   Si ya esta vinculado correctamente, solo verifica su ID.
-   Si ELIMINASTE desde Dokploy un proyecto VACIO del mismo servicio:
-   el comando comprueba que el proyecto anterior ya no exista
-   (project.search sin resultado + project.one HTTP 404). Solo entonces
-   recrea proyecto + production sin borrar el servicio ni su factura.
-   NO se recuperan automaticamente proyectos con aplicaciones, DB o dominios
-   vinculados, ni proyectos que solo cambiaron de nombre.
-   Ante un error de permisos, red o API no se cambia ningun ID.
-   Asistencia tecnica sin ingresar a la cuenta del cliente:
-   En ficha del servicio WHMCS > campos del modulo, introducir GitHub,
-   rama, carpeta, tipo app, puerto y variables opcionales, y GUARDAR.
-   En Comandos del modulo pulsa "Instalar aplicacion del cliente".
-   El modulo conserva propietario, VPS, dominio y proyecto existentes.
-   Guía: docs/WHMCS-DOKPLOY-SOPORTE-ADMIN.md.
-6) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
-   Instalacion automatica = guiado (predeterminado).
-   WHMCS prepara el servicio con CreateAccount despues del primer pago,
-   si activas «Automatically setup when first payment is received».
-   No crees variables PHP, tokens extras ni secretos manualmente.
-7) El cliente abre App Ecloud, pega GitHub publico y pulsa Publicar.
-   La creacion de proyectos, entorno, SQL y build se solicita a Dokploy.
-   La publicacion real aun necesita DNS/SSL y verificacion de salud.
-8) Mantener desactivados los cambios de correo y el redespliegue directo
-   hasta validar estas acciones por separado en staging.
-9) Cliente: vista Lagom rediseñada con navegacion Estado/Aplicacion/Correo,
-   GitHub como campo principal y opciones tecnicas desplegables.
-   Soporte: dos recorridos claros, campos accesibles y panel responsive.
-   Diseño: docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md.
-10) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
-
-Modulo de aprovisionamiento: NO aparece en Modulos adicionales.
-NO activar en produccion sin respaldo y pruebas.
-EOF
+          Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
+          
+          Version: rama de pruebas PR #38, NO APTO PARA PRODUCCION.
+          Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
+          
+          1) Extrae la carpeta eclouddokploy en:
+             <WHMCS_ROOT>/modules/servers/eclouddokploy/
+          2) En WHMCS, crea UN PRODUCTO DE PRUEBA independiente:
+             Configuracion > Productos/Servicios > Productos/Servicios
+             Modulo: eclouddokploy
+             No modifiques los productos existentes de correo/cPanel.
+          3) El servidor WHMCS debe disponer de PHP 8.2+, cURL y acceso HTTPS
+             al entorno Dokploy de pruebas.
+          4) Configura Hostname + API Key por servidor WHMCS.
+             Username puede quedar vacio en servidores nuevos.
+             Cada servicio crea un proyecto y entorno privado Dokploy.
+             Correo corporativo es otro servicio WHMCS cPanel activo para el mismo cliente.
+             El panel enlaza automáticamente cualquier hosting cPanel activo
+             del mismo propietario y dominio. Las operaciones directas UAPI siguen
+             siendo opcionales y requieren una vinculación privada autorizada.
+             IMPORTADOR PUBLICO DE GITHUB: el cliente puede pegar un repo en su ficha
+             App Ecloud, elegir Next.js/Node.js/Dockerfile y solicitar instalación.
+             Modo guiado es la opción predeterminada de productos nuevos.
+             Modo pedido (opcional): añadir campo de compra Repositorio GitHub;
+             tras recibir el primer pago solicita despliegue en el VPS asignado.
+             No requiere variables de entorno SSH ni contraseña maestra manual.
+             Al primer uso genera un secreto cifrado mediante el Crypt de WHMCS,
+             almacena en mod_ecloud_dokploy_runtime y lo reutiliza en adelante.
+             Para servicios del piloto anterior con seed, conservarla sin cambios.
+             Probar staging antes de habilitar el automático de pago en WHMCS.
+             No pegues tokens en tickets, capturas o repositorios.
+          5) El modulo verifica la primera factura pagada y crea el proyecto
+             + entorno production inmediatamente al aprovisionar en WHMCS.
+             VERDE = proyecto y entorno creados, no necesariamente web publicada.
+             Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
+             usar "Comprobar / crear proyecto" (requiere
+             primera factura pagada, no duplica un proyecto existente).
+             Si YA EXISTE, no se crea ni vincula automaticamente:
+             WHMCS pregunta "El proyecto ya existe. Deseas importarlo?"
+             En Comandos del modulo: "Si, importar proyecto existente"
+             para confirmar, o "No, cancelar importacion" para rechazar.
+             Si NO existe, WHMCS crea proyecto y production automaticamente.
+             Si ya esta vinculado correctamente, solo verifica su ID.
+             Si ELIMINASTE desde Dokploy un proyecto VACIO del mismo servicio:
+             el comando comprueba que el proyecto anterior ya no exista
+             (project.search sin resultado + project.one HTTP 404). Solo entonces
+             recrea proyecto + production sin borrar el servicio ni su factura.
+             NO se recuperan automaticamente proyectos con aplicaciones, DB o dominios
+             vinculados, ni proyectos que solo cambiaron de nombre.
+             Ante un error de permisos, red o API no se cambia ningun ID.
+             Asistencia tecnica sin ingresar a la cuenta del cliente:
+             En ficha del servicio WHMCS > campos del modulo, introducir GitHub,
+             rama, carpeta, tipo app, puerto y variables opcionales, y GUARDAR.
+             En Comandos del modulo pulsa "Instalar aplicacion del cliente".
+             El modulo conserva propietario, VPS, dominio y proyecto existentes.
+             Guía: docs/WHMCS-DOKPLOY-SOPORTE-ADMIN.md.
+          6) Para pruebas, Configuracion > Productos/Servicios > Module Settings:
+             Instalacion automatica = guiado (predeterminado).
+             WHMCS prepara el servicio con CreateAccount despues del primer pago,
+             si activas «Automatically setup when first payment is received».
+             No crees variables PHP, tokens extras ni secretos manualmente.
+          7) El cliente abre App Ecloud, pega GitHub publico y pulsa Publicar.
+             La creacion de proyectos, entorno, SQL y build se solicita a Dokploy.
+             La publicacion real aun necesita DNS/SSL y verificacion de salud.
+          8) Mantener desactivados los cambios de correo y el redespliegue directo
+             hasta validar estas acciones por separado en staging.
+          9) Cliente: vista Lagom rediseñada con navegacion Estado/Aplicacion/Correo,
+             GitHub como campo principal y opciones tecnicas desplegables.
+             Soporte: dos recorridos claros, campos accesibles y panel responsive.
+             Diseño: docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md.
+          10) Guia: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md
+          
+          Modulo de aprovisionamiento: NO aparece en Modulos adicionales.
+          NO activar en produccion sin respaldo y pruebas.
+          EOF
           cd package
           zip -qr ../eclouddokploy-whmcs-staging.zip eclouddokploy LEEME-INSTALACION.txt
       - name: Upload installer artifact
