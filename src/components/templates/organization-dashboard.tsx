@@ -1,10 +1,13 @@
 import Link from "next/link";
 import {ArrowUpRight,FileText,UsersRound,Eye,MessageCircle,Settings} from "lucide-react";
 import {prisma} from "@/lib/prisma";
+import {getTenantModules} from "@/lib/tenant-modules";
 import {leadWhere,type AgentScope} from "@/lib/agent-scope";
 
 /** General-purpose dashboard; contacts remain tenant/agent scoped. */
 export async function OrganizationDashboard({user}:{user:AgentScope&{tenantName:string}}){
+ const modules=await getTenantModules(user.tenantId);
+ const inquiriesEnabled=modules.includes("inquiries");
  const month=new Date(Date.now()-30*86400000);
  const scope=leadWhere(user);
  const [inquiries,views,whatsApp,pages,latest]=await Promise.all([
@@ -20,7 +23,7 @@ export async function OrganizationDashboard({user}:{user:AgentScope&{tenantName:
   {label:"Visitas",value:views,hint:"Últimos 30 días",Icon:Eye},
   {label:"WhatsApp",value:whatsApp,hint:"Clics en 30 días",Icon:MessageCircle},
   {label:"Páginas",value:Math.max(pages,1),hint:"Sitio de la organización",Icon:FileText}
- ];
+ ].filter(c=>c.label!=="Consultas"||inquiriesEnabled);
  return <>
   <div className="admin-heading"><div><h1>Resumen de {user.tenantName}</h1>
    <p>Consultas de visitantes, actividad del sitio y accesos para administrar tu contenido.</p></div>
@@ -30,12 +33,12 @@ export async function OrganizationDashboard({user}:{user:AgentScope&{tenantName:
    <div className="metric-label"><span>{c.label}</span><span className="metric-icon"><c.Icon size={19}/></span></div>
    <strong>{c.value.toLocaleString("es")}</strong><small>{c.hint}</small>
   </div>)}</div>
-  <div className="admin-panels"><section className="admin-panel">
+  <div className="admin-panels">{inquiriesEnabled&&<section className="admin-panel">
    <div className="heading-row"><h2>Consultas recientes</h2><Link href="/admin/leads" className="inline-link">Ver todas <ArrowUpRight size={16}/></Link></div>
    {latest.length?<div className="dashboard-simple-list">{latest.map(lead=><Link href={"/admin/leads/"+encodeURIComponent(lead.id)} key={lead.id}>
     <span><strong>{lead.name}</strong><small>{lead.createdAt.toLocaleDateString("es",{timeZone:"UTC"})} · {lead.message?.slice(0,75)||"Solicitud de información"}</small></span><ArrowUpRight size={16}/></Link>)}</div>:
     <p className="admin-empty">Las solicitudes enviadas desde el formulario aparecerán aquí.</p>}
-  </section>
+  </section>}
   {user.roles.some(r=>r==="admin"||r==="editor")&&<section className="admin-panel">
    <div className="heading-row"><h2>Administrar web</h2><Link href="/" target="_blank" rel="noopener noreferrer" className="inline-link">Ver sitio <ArrowUpRight size={16}/></Link></div>
    <div className="dashboard-simple-list">
