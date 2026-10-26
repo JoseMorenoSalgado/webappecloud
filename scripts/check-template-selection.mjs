@@ -48,6 +48,19 @@ const offerings=await get("/servicios");assert.equal(offerings.status,200);
 assert.match(await offerings.text(),/PROGRAMAS EDUCATIVOS/);
 const contact=await get("/contacto");assert.equal(contact.status,200);
 assert.match(await contact.text(),/Enviar consulta/);
+const extras=new FormData();
+extras.set("sections",JSON.stringify([{id:"section-programs-example",type:"heading",text:"Conoce nuestros programas flexibles"}]));
+const extraSaved=await fetch(origin+"/api/admin/site-extras/servicios",{method:"POST",
+ headers:{Origin:origin,Cookie:cookie},body:extras,redirect:"manual"});
+assert.equal(extraSaved.status,303,"Institutional extra sections should be editable");
+assert.match(extraSaved.headers.get("location")||"",/blocksSaved=1/);
+assert.match(await (await get("/servicios")).text(),/Conoce nuestros programas flexibles/);
+extras.set("sections","[]");
+const extraCleared=await fetch(origin+"/api/admin/site-extras/servicios",{method:"POST",
+ headers:{Origin:origin,Cookie:cookie},body:extras,redirect:"manual"});
+assert.equal(extraCleared.status,303);
+assert.ok(!(await (await get("/servicios")).text()).includes("Conoce nuestros programas flexibles"));
+
 const submission=await fetch(origin+"/api/leads",{
  method:"POST",headers:{Origin:origin,"Content-Type":"application/json"},
  body:JSON.stringify({name:"Solicitante educación",phone:"88887777",email:"educacion@example.com",message:"Quiero conocer los programas",consent:"yes"})
