@@ -1,13 +1,15 @@
 "use client";
 import {useState,type FormEvent} from "react";
-export function ContactForm({propertyId,messagePlaceholder="¿Qué propiedad te interesa?"}:{propertyId?:string;messagePlaceholder?:string}){
+export function ContactForm({propertyId,messagePlaceholder="¿Qué propiedad te interesa?",contextLabel}:{propertyId?:string;messagePlaceholder?:string;contextLabel?:string}){
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState("");
  async function submit(e:FormEvent<HTMLFormElement>){
    e.preventDefault();setBusy(true);setNotice("");
    const f=e.currentTarget;
    const body=Object.fromEntries(new FormData(f).entries());
+   const typedMessage=typeof body.message==="string"?body.message.trim():"";
+   const message=contextLabel?`[${contextLabel}]${typedMessage?"\n"+typedMessage:""}`:typedMessage;
    try{
-     const r=await fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,propertyId})});
+     const r=await fetch("/api/leads",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...body,message,propertyId})});
      const data=await r.json();if(!r.ok)throw new Error(data.error||"No se pudo enviar");
      setNotice("Recibimos tu consulta. Gracias por contactarnos.");f.reset();
    }catch(e){setNotice(e instanceof Error?e.message:"Error de comunicación");}
