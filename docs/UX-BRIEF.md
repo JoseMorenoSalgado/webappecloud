@@ -1,7 +1,7 @@
 # Referencia de producto y diseño — WebAppECloud
 
 ## Alcance
-**Producto:** plataforma multi-tenant de sitios web administrables. **Primer cliente:** inmobiliaria NEXUS REAL ESTATE. **Arquitectura:** Next.js + MySQL/MariaDB + cPanel/Node.js.
+**Producto:** plataforma multi-tenant de sitios web administrables. **Primer cliente:** inmobiliaria NEXUS REAL ESTATE. **Arquitectura:** Next.js + TypeScript + MySQL/MariaDB/PostgreSQL + Docker/Dockploy.
 
 ## Referencias aportadas por el cliente
 - https://kwnicaragua.kw.com/es-419/
