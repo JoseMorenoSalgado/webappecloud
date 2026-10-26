@@ -1,5 +1,10 @@
 # Aplicación de Taste Skill, Impeccable y Emil Kowalski
 
+## Sin usar terminal: Skill local desde GitHub
+La Skill **webappecloud-design** vive en `.agents/skills/webappecloud-design/SKILL.md` con referencias propias. Los agentes que reconocen Skills del repositorio pueden cargarla al trabajar directamente en el código desde un chat conectado con GitHub. Esta ruta no requiere instalar paquetes en el servidor y funciona como guía ejecutable para el agente, no como extensión de tiempo de ejecución de Next.js.
+
+Este conjunto personalizado reúne las reglas de Taste, Impeccable y Emil. **No equivale a instalar las tres herramientas CLI oficiales ni ejecuta automáticamente sus inspecciones/capturas.** Para sus herramientas completas se mantiene la opción de instalación en un entorno de desarrollo externo.
+
 ## Instalación reproducible (desarrollo, NO cPanel ni Docker de producción)
 Desde la raíz de WebAppECloud, con Node.js 22+, ejecutar:
 
