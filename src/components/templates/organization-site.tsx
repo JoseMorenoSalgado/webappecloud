@@ -3,6 +3,7 @@ import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusin
 import {type PublicTenant} from "@/lib/demo";
 import {type SiteTemplate} from "@/lib/site-template-store";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {ContactForm} from "@/components/contact-form";
 import {tenantModuleEnabled} from "@/lib/tenant-modules";
@@ -49,6 +50,7 @@ export async function OrganizationHome({tenant,demo,template,heroImage}:Props){
    {visible.has("contacto")&&<section className="organization-cta"><div className="container"><div><span>ESTAMOS PARA AYUDARTE</span><h2>{data.contactTitle}</h2><p>{data.contactText}</p></div>
     <Link href="/contacto" className="btn organization-primary-button">Contactar <ArrowRight size={17}/></Link>
    </div></section>}
+  <PageExtraSections tenantId={tenant.id} slug="home" demo={demo}/>
   </main>
  </PublicFrame>;
 }
@@ -61,6 +63,7 @@ export function OrganizationAbout({tenant,demo,template}:Props){
    <Link href="/servicios" className="organization-text-link">{template.key==="education"?"Conocer programas":"Conocer servicios"} <ArrowUpRight size={17}/></Link>
   </div></section>
   <section className="organization-cta"><div className="container"><div><h2>{d.contactTitle}</h2><p>{d.contactText}</p></div><Link className="btn organization-primary-button" href="/contacto">Contáctanos <ArrowRight size={17}/></Link></div></section>
+  <PageExtraSections tenantId={tenant.id} slug="nosotros" demo={demo}/>
  </main></PublicFrame>;
 }
 export function OrganizationServices({tenant,demo,template}:Props){
@@ -76,6 +79,7 @@ export function OrganizationServices({tenant,demo,template}:Props){
    </article>;})}</div>
   </div></section>
   <section className="organization-cta"><div className="container"><div><h2>{d.contactTitle}</h2><p>{d.contactText}</p></div><Link className="btn organization-primary-button" href="/contacto">Solicitar información <ArrowRight size={17}/></Link></div></section>
+  <PageExtraSections tenantId={tenant.id} slug="servicios" demo={demo}/>
  </main></PublicFrame>;
 }
 export async function OrganizationContact({tenant,demo,template}:Props){
@@ -95,5 +99,6 @@ export async function OrganizationContact({tenant,demo,template}:Props){
     {demo?<p className="preview-form-note">El formulario se habilitará cuando esté configurada la base de datos.</p>:inquiriesEnabled?<ContactForm messagePlaceholder={template.key==="education"?"¿Sobre qué programa deseas información?":"¿En qué servicio estás interesado?"}/>:<p className="property-help">El formulario de consultas está desactivado. Puedes utilizar los datos de contacto disponibles.</p>}
    </div>
   </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="contacto" demo={demo}/>
  </main></PublicFrame>;
 }
