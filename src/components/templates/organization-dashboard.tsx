@@ -27,7 +27,7 @@ export async function OrganizationDashboard({user}:{user:AgentScope&{tenantName:
  return <>
   <div className="admin-heading"><div><h1>Resumen de {user.tenantName}</h1>
    <p>Consultas de visitantes, actividad del sitio y accesos para administrar tu contenido.</p></div>
-   {user.roles.some(r=>r==="admin"||r==="editor")&&<Link href="/admin/personalizar/plantilla" className="btn btn-red"><Settings size={17}/> Personalizar sitio</Link>}
+   {user.roles.some(r=>r==="admin"||r==="editor")&&<Link href="/admin/personalizar/inicio" className="btn btn-red"><Settings size={17}/> Mi sitio web</Link>}
   </div>
   <div className="metric-grid">{cards.map(c=><div className="metric-card" key={c.label}>
    <div className="metric-label"><span>{c.label}</span><span className="metric-icon"><c.Icon size={19}/></span></div>
