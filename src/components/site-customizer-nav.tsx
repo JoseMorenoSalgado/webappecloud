@@ -1,9 +1,10 @@
 import Link from "next/link";
-import {ExternalLink,FileText,ListTree,Palette,LayoutTemplate} from "lucide-react";
+import {ExternalLink,FileText,ListTree,Palette,LayoutTemplate,PanelTop} from "lucide-react";
 
 /** A single navigation for all customization screens; never mix independent editors. */
-export function SiteCustomizerNav({current}:{current:"pages"|"menu"|"identity"|"template"}){
+export function SiteCustomizerNav({current}:{current:"overview"|"pages"|"menu"|"identity"|"template"}){
  const links=[
+  {key:"overview" as const,href:"/admin/personalizar/inicio",label:"Mi sitio web",Icon:PanelTop},
   {key:"pages" as const,href:"/admin/personalizar/paginas",label:"Páginas",Icon:FileText},
   {key:"menu" as const,href:"/admin/personalizar/menu",label:"Menú principal",Icon:ListTree},
   {key:"template" as const,href:"/admin/personalizar/plantilla",label:"Plantilla",Icon:LayoutTemplate},
