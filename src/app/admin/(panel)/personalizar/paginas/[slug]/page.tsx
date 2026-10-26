@@ -69,7 +69,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
      <Link href="/admin/personalizar/plantilla" className="btn wizard-back">Editar textos de plantilla <ExternalLink size={16}/></Link>
     </div>
     {q.blocksSaved&&<p role="status" className="property-success">Secciones guardadas correctamente.</p>}
-    {q.error&&<p role="alert" className="admin-error">No se pudieron guardar las secciones. Revisa las imágenes y los campos.</p>}
+    {q.error&&<p role="alert" className="admin-error">{q.error==="imagenes"?"La fotografía seleccionada ya no está disponible. Cárgala de nuevo.":q.error==="secciones"?"Completa los encabezados y las descripciones de imágenes.":"No se pudieron guardar las secciones. Revisa tus permisos y vuelve a intentarlo."}</p>}
     <PageExtrasEditor slug={slug} initial={extra}/>
     <p className="property-help">Para cambiar el encabezado, los programas o los servicios principales, utiliza la edición de plantilla.</p>
    </>;
@@ -126,7 +126,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
    <h1>Editar: {page.title}</h1><p>Página independiente con su propio contenido y estado de publicación.</p></div>
    {page.published&&<Link href={"/pagina/"+slug} target="_blank" className="btn wizard-back">Ver página <ExternalLink size={16}/></Link>}</div>
   {(q.saved||q.created)&&<p className="property-success" role="status">Página {q.created?"creada":"actualizada"} correctamente.</p>}
-  {q.error&&<p className="admin-error" role="alert">No se pudo guardar la página. Comprueba los textos y el estado de publicación.</p>}
+  {q.error&&<p className="admin-error" role="alert">{q.error==="imagenes"?"La imagen elegida no se encuentra guardada en esta página. Cárgala nuevamente.":q.error==="secciones"?"Revisa los textos y las descripciones de los bloques.": "No se pudo guardar la página. Comprueba los textos y el estado de publicación."}</p>}
   {canEdit?<CustomPageEditor mode="edit" slug={slug} title={page.title}
     summary={blocks.summary} body={blocks.body} sections={blocks.sections} published={page.published}/>:
     <p className="admin-error">No tienes permisos para editar.</p>}
