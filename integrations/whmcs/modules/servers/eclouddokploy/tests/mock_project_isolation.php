@@ -25,18 +25,15 @@ $applications = [];
 
 foreach ([310 => 25, 311 => 25, 312 => 26] as $service => $client) {
     $created = $api->post('project.create', eclouddokploy_project_create_payload($client, $service));
-    $project = eclouddokploy_required_id($created, 'projectId');
+    $parsed = eclouddokploy_created_project_ids($created, $client, $service);
+    $project = $parsed['project_id'];
+    expect(is_string($parsed['environment_id']), 'Dokploy v0.30.9 creates production with project');
     expect(!in_array($project, $projects, true), 'unique project per client service');
 
     $listed = $api->get('environment.byProjectId', ['projectId' => $project]);
     $environment = eclouddokploy_find_production_environment($listed, $project);
-    if ($environment === null) {
-        $new = $api->post('environment.create', [
-            'name' => 'production',
-            'projectId' => $project,
-        ]);
-        $environment = eclouddokploy_required_id($new, 'environmentId');
-    }
+    expect($environment === $parsed['environment_id'],
+        'project-scoped production ID matches nested create response');
 
     $appResponse = $api->post('application.create',
         eclouddokploy_application_create_payload($environment, 'mockapp-' . $service, '')
