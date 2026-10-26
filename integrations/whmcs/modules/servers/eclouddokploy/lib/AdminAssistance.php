@@ -435,6 +435,14 @@ function eclouddokploy_admin_create_project(array $params): string
         );
         if ($reserved !== 'success') return $reserved;
         $result = eclouddokploy_order_prepare_project($params, $route);
+        if ($result === 'WHMCS tiene un ID de proyecto, pero no aparece en Dokploy '
+            . 'para este servicio. No se creó otro.') {
+            // Admin deliberately invoked Create/Verify after remote deletion.
+            // Rebuild only if the project was empty, original ID is confirmed
+            // absent (project.one 404), and exact name search finds nothing.
+            // This path is NEVER available to client or unattended automation.
+            return eclouddokploy_admin_recreate_deleted_project($params, $route);
+        }
         if ($result === 'success') {
             eclouddokploy_admin_audit('project_ready', $params);
         }
