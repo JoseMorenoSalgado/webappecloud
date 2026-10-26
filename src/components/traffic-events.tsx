@@ -13,6 +13,6 @@ export function WhatsAppButton({tenant,property}:{tenant:PublicTenant;property?:
 export function FloatingWhatsapp({tenant,property,templateKey="real-estate"}:{tenant:PublicTenant;property?:PublicProperty;templateKey?:SiteTemplateKey}){
  const pathname=usePathname();
  if(!tenant.whatsapp)return null;
- const href=pathname==="/asesoria-empresarial"?`https://wa.me/${tenant.whatsapp.replace(/\\D/g,"")}?text=${encodeURIComponent("Hola, deseo información sobre sus servicios de asesoría empresarial y cumplimiento normativo LA/FT/FP.")}`:contactUrl(tenant,property,templateKey);
+ const href=pathname==="/asesoria-empresarial"?`https://wa.me/${tenant.whatsapp.replace(/\D/g,"")}?text=${encodeURIComponent("Hola, deseo información sobre sus servicios de asesoría empresarial y cumplimiento normativo LA/FT/FP.")}`:contactUrl(tenant,property,templateKey);
  return <a className="floating-wa" href={href} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp" onClick={()=>log("whatsapp")}><MessageCircle size={28}/></a>;
 }
