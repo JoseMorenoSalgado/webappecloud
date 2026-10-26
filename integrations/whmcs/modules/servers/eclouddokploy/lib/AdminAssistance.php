@@ -19,6 +19,7 @@ function eclouddokploy_admin_audit(string $event, array $params): void
         'project_ready' => 'Soporte creó o verificó el proyecto Dokploy',
         'deploy_requested' => 'Soporte solicitó la instalación de la aplicación',
         'project_recreated' => 'Soporte recuperó un proyecto vacío eliminado de Dokploy',
+        'project_imported' => 'Soporte confirmó e importó un proyecto Dokploy existente',
     ];
     if (!isset($messages[$event])
         || (int) ($_SESSION['adminid'] ?? 0) <= 0
@@ -297,6 +298,18 @@ function eclouddokploy_admin_tab_fields(array $params): array
 
     $message = $_SESSION['ec_dokploy_admin_notice'][$id] ?? '';
     unset($_SESSION['ec_dokploy_admin_notice'][$id]);
+    $pending = $_SESSION['ec_dokploy_import_pending'][$id] ?? null;
+    if (is_array($pending) && (int) ($pending['expires_at'] ?? 0) >= time()
+        && (int) ($pending['owner_id'] ?? 0) === (int) $service['owner_id']) {
+        $value .= '<div class="alert alert-info" role="status" aria-live="polite">'
+            . '<strong>Proyecto ya existe en Dokploy. ¿Deseas importarlo?</strong>'
+            . '<p>Se encontró el proyecto de este cliente y servicio. '
+            . 'Para confirmar, selecciona en <strong>Comandos del módulo</strong> '
+            . 'la opción <strong>«Sí, importar proyecto existente»</strong>. '
+            . 'Para cancelar, usa «No, cancelar importación». '
+            . 'Solo se vincularán el proyecto y su entorno production; no se copiarán aplicaciones.</p>'
+            . '</div>';
+    }
     if (is_string($message) && $message !== '') {
         $noticeClass = str_starts_with($message, 'Configuración de soporte guardada.')
             ? 'alert-success' : 'alert-warning';
@@ -435,6 +448,27 @@ function eclouddokploy_admin_create_project(array $params): string
         );
         if ($reserved !== 'success') return $reserved;
         $result = eclouddokploy_order_prepare_project($params, $route);
+        if ($result === eclouddokploy_import_question()) {
+            // Read a second time only to pin the remotely verified projectId
+            // to this admin's short-lived confirmation. No write occurs here.
+            $api = new ECloudDokployClient($route['url'], $route['api_key']);
+            $id = (int) $service['service_id'];
+            $found = eclouddokploy_lookup_service_project(
+                $api, (int) $service['owner_id'], $id
+            );
+            if ($found === null) {
+                return 'El proyecto dejó de aparecer en Dokploy. Vuelve a comprobarlo.';
+            }
+            $_SESSION['ec_dokploy_import_pending'][$id] = [
+                'service_id' => $id,
+                'owner_id' => (int) $service['owner_id'],
+                'project_id' => $found,
+                'fingerprint' => $route['fingerprint'],
+                'expires_at' => time() + 900,
+            ];
+            return 'success'; // WHMCS green = CHECK succeeded, NOT import done.
+        }
+        eclouddokploy_admin_import_pending_clear((int) $service['service_id']);
         if ($result === 'WHMCS tiene un ID de proyecto, pero no aparece en Dokploy '
             . 'para este servicio. No se creó otro.') {
             // Admin deliberately invoked Create/Verify after remote deletion.
@@ -448,8 +482,20 @@ function eclouddokploy_admin_create_project(array $params): string
         }
         return $result;
     } catch (Throwable $e) {
-        return 'No se pudo crear o verificar el proyecto privado. Comprueba el pago y conexión.';
+        eclouddokploy_log_project_diagnostic(
+            $e, (int) ($params['serviceid'] ?? 0), (int) ($params['userid'] ?? 0)
+        );
+        return eclouddokploy_safe_project_diagnostic($e);
     }
+}
+
+/** Explicit «No» confirmation branch; does not change WHMCS or Dokploy. */
+function eclouddokploy_admin_cancel_import(array $params): string
+{
+    $service = eclouddokploy_admin_service($params, false);
+    if ($service === null) return 'Solo soporte puede cancelar esta importación.';
+    eclouddokploy_admin_import_pending_clear((int) $service['service_id']);
+    return 'success';
 }
 
 function eclouddokploy_admin_install_app(array $params): string
