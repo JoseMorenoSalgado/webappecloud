@@ -4,6 +4,9 @@ import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {getTenantModules} from "@/lib/tenant-modules";
+import {normalizePageSections,type PageSection} from "@/lib/page-sections";
+import {validCustomSlug} from "@/lib/page-slug";
+export {validCustomSlug} from "@/lib/page-slug";
 
 export type SiteMenuItem={id:string;label:string;href:string};
 export type PageDefinition={id:string;slug:string;title:string;href:string;published:boolean;builtIn:boolean;summary:string};
@@ -23,14 +26,11 @@ export function defaultMenuForTemplate(key:string):SiteMenuItem[]{
 }
 export const CUSTOM_PAGE_PREFIX="pagina-";
 export const MENU_SLUG="site-navigation";
-const customSlug=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export function validCustomSlug(slug:string){return slug.length>=3&&slug.length<=65&&customSlug.test(slug)
- &&!["nueva","editar","menu","admin","api","instalar"].includes(slug);}
-export function textBlocks(raw:unknown):{summary:string;body:string}{
- if(!raw||typeof raw!=="object"||Array.isArray(raw))return {summary:"",body:""};
+export function textBlocks(raw:unknown):{summary:string;body:string;sections:PageSection[]}{
+ if(!raw||typeof raw!=="object"||Array.isArray(raw))return {summary:"",body:"",sections:[]};
  const obj=raw as Record<string,unknown>;
  return {summary:typeof obj.summary==="string"?obj.summary.slice(0,240):"",
-  body:typeof obj.body==="string"?obj.body.slice(0,12000):""};
+  body:typeof obj.body==="string"?obj.body.slice(0,12000):"",sections:normalizePageSections(obj.sections)};
 }
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
  const template=await getSiteTemplate(tenantId);
