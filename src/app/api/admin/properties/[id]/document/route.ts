@@ -13,14 +13,16 @@ const fail=(message:string,status:number)=>NextResponse.json({error:message},{st
 
 async function identify(id:string){
  const admin=await propertyEditor();
- if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
+ if(!await tenantModuleEnabled(admin.tenantId,"properties"))return {admin,property:null,disabled:true};
  const property=await prisma.property.findFirst({where:{id,tenantId:admin.tenantId},select:{id:true,refCode:true}});
  return {admin,property};
 }
 
 export async function GET(_req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
- const {admin,property}=await identify(id);
+ const resolved=await identify(id);
+ if("disabled" in resolved)return fail("Módulo desactivado",403);
+ const {admin,property}=resolved;
  if(!property)return fail("Documento no encontrado.",404);
  const bytes=await readCustomPdf(admin.tenantId,property.id);
  if(!bytes)return fail("Documento no encontrado.",404);
@@ -29,7 +31,9 @@ export async function GET(_req:NextRequest,{params}:{params:Promise<{id:string}>
 
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
- const {admin,property}=await identify(id);
+ const resolved=await identify(id);
+ if("disabled" in resolved)return fail("Módulo desactivado",403);
+ const {admin,property}=resolved;
  if(!admin.canEdit)return fail("No tienes permisos para modificar esta propiedad.",403);
  if(!property)return fail("Inmueble no encontrado.",404);
  if(!validMutationOrigin(req))return fail("Origen de solicitud no autorizado.",403);
@@ -69,7 +73,9 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>
 
 export async function DELETE(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
- const {admin,property}=await identify(id);
+ const resolved=await identify(id);
+ if("disabled" in resolved)return fail("Módulo desactivado",403);
+ const {admin,property}=resolved;
  if(!admin.canEdit)return fail("No tienes permisos para modificar esta propiedad.",403);
  if(!property)return fail("Inmueble no encontrado.",404);
  if(!validMutationOrigin(req))return fail("Origen de solicitud no autorizado.",403);
