@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
 import {getSiteTemplate} from "@/lib/site-template-store";
+import {getTenantModules} from "@/lib/tenant-modules";
 
 export type SiteMenuItem={id:string;label:string;href:string};
 export type PageDefinition={id:string;slug:string;title:string;href:string;published:boolean;builtIn:boolean;summary:string};
@@ -33,7 +34,8 @@ export function textBlocks(raw:unknown):{summary:string;body:string}{
 }
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
  const template=await getSiteTemplate(tenantId);
- const enabledPages=template.key==="real-estate"?staticPages:staticPages.filter(p=>p.id!=="propiedades");
+ const available=await getTenantModules(tenantId,template.key);
+ const enabledPages=template.key==="real-estate"&&available.includes("properties")?staticPages:staticPages.filter(p=>p.id!=="propiedades");
  const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
