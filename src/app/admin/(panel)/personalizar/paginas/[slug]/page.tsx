@@ -9,6 +9,8 @@ import {prisma} from "@/lib/prisma";
 import {CustomPageEditor} from "@/components/custom-page-editor";
 import {SiteTextInput} from "@/components/site-text-input";
 import {getPageDefinitions} from "@/lib/site-pages";
+import {PageExtrasEditor} from "@/components/page-extras-editor";
+import {readExtraSections} from "@/lib/page-extras";
 export const dynamic="force-dynamic";
 type Field={name:string;label:string;max:number;multiline?:boolean;hint?:string};
 type Builtin="home"|"propiedades"|"nosotros"|"servicios"|"contacto";
@@ -60,14 +62,24 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
   const template=await getSiteTemplate(admin.tenantId);
   if(template.key!=="real-estate"){
    if(slug==="propiedades")notFound();
-   redirect("/admin/personalizar/plantilla");
+   const extra=await readExtraSections(admin.tenantId,slug);
+   return <>
+    <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Todas las páginas</Link>
+     <h1>Editar: {sections[slug].title}</h1><p>Agrega contenido adicional a esta página sin alterar los bloques y textos de tu plantilla.</p></div>
+     <Link href="/admin/personalizar/plantilla" className="btn wizard-back">Editar textos de plantilla <ExternalLink size={16}/></Link>
+    </div>
+    {q.blocksSaved&&<p role="status" className="property-success">Secciones guardadas correctamente.</p>}
+    {q.error&&<p role="alert" className="admin-error">No se pudieron guardar las secciones. Revisa las imágenes y los campos.</p>}
+    <PageExtrasEditor slug={slug} initial={extra}/>
+    <p className="property-help">Para cambiar el encabezado, los programas o los servicios principales, utiliza la edición de plantilla.</p>
+   </>;
   }
-  const [settings,properties,tenant,pageDefinitions]=await Promise.all([
+  const [settings,properties,tenant,pageDefinitions,extraSections]=await Promise.all([
    getSiteSettings(admin.tenantId),
    slug==="propiedades"?prisma.property.findMany({where:{tenantId:admin.tenantId,published:true},
     select:{id:true,refCode:true,title:true},orderBy:{createdAt:"desc"},take:200}):Promise.resolve([]),
    slug==="contacto"?prisma.tenant.findUniqueOrThrow({where:{id:admin.tenantId},select:{contactEmail:true,whatsapp:true}}):Promise.resolve(null),
-   getPageDefinitions(admin.tenantId)
+   getPageDefinitions(admin.tenantId),readExtraSections(admin.tenantId,slug)
   ]);
   const section=sections[slug];
   const isPublished=pageDefinitions.find(x=>x.id===slug)?.published!==false;
@@ -100,6 +112,9 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
     <div className="site-page-form-actions"><button type="submit" className="btn btn-red"><Save size={17}/> Guardar esta página</button>
      <Link className="btn wizard-back" href="/admin/personalizar/paginas">Volver a páginas</Link></div>
    </form>:<p className="admin-error">Tu cuenta no tiene permisos de edición.</p>}
+   <section className="cms-builtins-extras-intro"><h2>Agregar contenido visual</h2><p>Estas secciones son independientes del formulario anterior. Puedes añadir encabezados, textos o imágenes sin modificar el contenido del banner ni otras páginas.</p></section>
+   {q.blocksSaved&&<p role="status" className="property-success">Secciones adicionales guardadas correctamente.</p>}
+   <PageExtrasEditor slug={slug} initial={extraSections}/>
    <p className="property-help">Las propiedades, menú y colores corporativos se administran por separado para evitar modificaciones accidentales.</p>
   </>;
  }
