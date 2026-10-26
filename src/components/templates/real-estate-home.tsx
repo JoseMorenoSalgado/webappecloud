@@ -8,6 +8,7 @@ import {PropertyCard} from "@/components/property-card";
 import {PublicFrame} from "@/components/public-frame";
 import {ContactForm} from "@/components/contact-form";
 import {PageExtraSections} from "@/components/page-extra-sections";
+import {NexusHomeMotion} from "@/components/nexus-home-motion";
 const DEFAULT_EYEBROW="NEXUS REAL ESTATE · NICARAGUA";
 const services=[
  {href:"/servicios#comprar",Icon:Building2,title:"Compra y venta",desc:"Opciones para encontrar una vivienda o explorar oportunidades inmobiliarias."},
@@ -32,7 +33,8 @@ export async function RealEstateHome(){
    return rows.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(photo=>photo.url)}));
   })();
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" data-nexus-home-motion>
+   <NexusHomeMotion/>
    <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
     <div className="container nexus-hero-layout nexus-hero-layout-simple">
      <div className="nexus-hero-copy">
