@@ -5,7 +5,7 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 
 ## Diseño y UI UX Pro Max
 - En trabajos que alteren la interfaz usar como referencia la skill: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.
-- Instalarla con el CLI oficial (`npm install -g ui-ux-pro-max-cli`; `uipro init --ai codex`) **en el entorno de desarrollo**, no en cPanel.
+- Instalarla con el CLI oficial (`npm install -g ui-ux-pro-max-cli`; `uipro init --ai codex`) **solo en el entorno de desarrollo**, nunca en servidores de producción.
 - Antes de cada página nueva consultar el design system generado por la skill; preservar la identidad del cliente y los diseños ya aprobados por encima de recomendaciones genéricas.
 - Cuando exista `design-system/webappecloud/MASTER.md`, leerlo antes de modificar UI. Las reglas de `pages/<pagina>.md` prevalecen como ajustes locales. No regenerar ni sobrescribir master sin aprobación.
 - Usar Tailwind CSS, componentes accesibles, Lucide y tokens de diseño reutilizables; evitar emojis decorativos, animaciones excesivas, degradados arbitrarios y dashboards recargados.
@@ -16,7 +16,7 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 ## Arquitectura no negociable
 - Next.js + TypeScript + Tailwind CSS.
 - MariaDB, MySQL y PostgreSQL mediante dos clientes Prisma (mysql/postgresql); mantener los modelos equivalentes y probar ambos motores.
-- Despliegue orientado a WHM/cPanel con Node.js/Passenger validado antes de asegurar compatibilidad.
+- Despliegue exclusivamente con Docker en Dockploy; no mantener scripts, instrucciones ni tareas de despliegue cPanel/WHM/Passenger. Conservar MySQL/MariaDB y PostgreSQL porque funcionan en Docker.
 - Autenticación, autorización y acceso a cada recurso restringidos por tenant en el servidor; nunca depender del filtrado visual.
 - Los módulos sectoriales no deben contaminar los componentes núcleo.
 - No afirmar que existen funcionalidades, instalaciones, pruebas o despliegues hasta implementarlos y verificarlos.
@@ -28,7 +28,7 @@ Home editable, buscador, propiedades, imágenes, fichas PDF, formulario de conta
 ## Diseño: Taste Skill, Impeccable y Emil Kowalski
 - **Skill local integrada en el repositorio:** `.agents/skills/webappecloud-design/SKILL.md` y sus referencias. Leerla y aplicarla en cambios de UI. Está disponible al abrir el repositorio en un agente compatible con Skills, sin ejecutar un instalador externo.
 - La Skill local agrupa criterios comprobados de las tres fuentes, pero no instala ni ejecuta los analizadores oficiales. La instalación opcional completa sigue disponible mediante `scripts/setup-design-skills.sh`.
-- Los agentes Codex pueden instalarlas en la raíz del proyecto con `bash scripts/setup-design-skills.sh` (Node 22+ y red; únicamente en desarrollo). Se usan los instaladores oficiales; no se ejecutan en cPanel ni en contenedores de producción.
+- Los agentes Codex pueden instalarlas en la raíz del proyecto con `bash scripts/setup-design-skills.sh` (Node 22+ y red; únicamente en desarrollo). Se usan los instaladores oficiales; no se ejecutan en contenedores de producción.
 - Leer `PRODUCT.md`, `DESIGN.md` y `docs/APLICACION-SKILLS-UI.md` antes de modificar pantallas. Tras la instalación, reiniciar el agente y aprobar los hooks según el proveedor.
 - Revisar https://www.tasteskill.dev/ como referencia de dirección artística, jerarquía tipográfica y composiciones no genéricas.
 - Consultar https://impeccable.style/ para crítica de interfaz, accesibilidad, densidad informativa y pulido de formularios, estados y navegación.
