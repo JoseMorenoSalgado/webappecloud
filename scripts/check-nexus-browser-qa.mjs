@@ -71,6 +71,10 @@ try{
      if(metrics.editorLeak)problems.push("Administration UI leaked into public page");
      if(route.startsWith("/propiedades/")&&metrics.imageFit&&metrics.imageFit!=="contain")problems.push("Gallery image distorted or cropped: "+metrics.imageFit);
      if(pageErrors.length)problems.push("Client error: "+pageErrors.join(" | "));
+     if(name==="inicio"){
+      const animationName=await page.locator("[data-nexus-home-motion] .nexus-hero-copy h1").evaluate(el=>getComputedStyle(el).animationName);
+      if(animationName!=="none")problems.push("Reduced-motion Home still animates: "+animationName);
+     }
      if(width===375){
       const summary=page.locator(".nexus-mobile-menu summary");
       if(await summary.count()){
@@ -94,11 +98,39 @@ try{
    }
   }finally{await context.close();}
  }
+
+ // Check that the classic Home really animates when the OS permits motion;
+ // the 24 responsive screenshots above deliberately run with reduced motion.
+ const motionContext=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1,reducedMotion:"no-preference"});
+ try{
+  const page=await motionContext.newPage();
+  try{
+   await page.addInitScript(()=>{
+    window.__nexusHomeAnimations=0;
+    const original=Element.prototype.animate;
+    Element.prototype.animate=function(...args){
+     if(this.closest("[data-nexus-home-motion]"))window.__nexusHomeAnimations++;
+     return original.apply(this,args);
+    };
+   });
+   const response=await page.goto(origin+"/",{waitUntil:"domcontentloaded",timeout:30000});
+   assert.equal(response?.status(),200,"Motion QA Home HTTP");
+   const name=await page.locator("[data-nexus-home-motion] .nexus-hero-copy h1").evaluate(el=>getComputedStyle(el).animationName);
+   assert.ok(name.includes("nexus-home-arrive"),"Classic hero has no CSS entrance animation");
+   await page.waitForTimeout(850);
+   await page.locator(".nexus-services-preview .nexus-service-card").first().scrollIntoViewIfNeeded();
+   await page.waitForFunction(()=>window.__nexusHomeAnimations>0,null,{timeout:10000});
+   const played=await page.evaluate(()=>window.__nexusHomeAnimations);
+   assert.ok(played>0,"IntersectionObserver failed to reveal the Home sections");
+   console.log("Home motion QA: hero CSS animation and scroll-based WAAPI reveal passed ("+played+" elements)");
+  }finally{await page.close();}
+ }finally{await motionContext.close();}
 }finally{await browser.close();}
 await writeFile(`${output}/report.json`,JSON.stringify({date:new Date().toISOString(),routes:findings,notes:[
  "Captured the CI-seeded property pages, not the actual Dockploy production deployment.",
  "Rendering may differ if external image hosts are unavailable or real customer media varies.",
- "A human must still review captured screenshots before approving PR #41."
+ "The Home motion is tested separately with no-preference and reduced-motion browser contexts.",
+ "A human must still review screenshots before approving a new animation PR."
 ]},null,2));
 const errors=findings.flatMap(row=>row.problems.map(problem=>`${row.width}px ${row.route}: ${problem}`));
 assert.equal(errors.length,0,`Visual QA found ${errors.length} issue(s):\n${errors.join("\n")}`);
