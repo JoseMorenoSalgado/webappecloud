@@ -20,7 +20,7 @@
  color:var(--home-ink);
 }
 .public-site .nexus-home-premium .nexus-hero::before{
- left:52%;right:0;top:26px;bottom:0;inset:auto 0 0 52%;
+ inset:26px 0 0 52%;
  border-top-left-radius:20px;
  background-position:center center;
  background-size:cover;
