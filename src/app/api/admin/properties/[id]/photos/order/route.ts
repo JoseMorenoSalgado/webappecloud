@@ -1,3 +1,4 @@
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {NextRequest,NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {propertyEditor,validMutationOrigin} from "@/lib/admin-property-request";
@@ -6,6 +7,7 @@ export const runtime="nodejs";
 const error=(message:string,status:number)=>NextResponse.json({error:message},{status,headers:{"Cache-Control":"no-store"}});
 export async function PATCH(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const admin=await propertyEditor();
+ if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  if(!admin.canEdit)return error("No autorizado.",403);
  if(!validMutationOrigin(req))return error("Origen no permitido.",403);
  const {id}=await params;
