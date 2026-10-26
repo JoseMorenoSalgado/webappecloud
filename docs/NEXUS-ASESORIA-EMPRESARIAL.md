@@ -41,7 +41,8 @@ Para habilitarla exclusivamente en la instalación de NEXUS:
    **Asesoría Empresarial** y pulsar **Guardar menú principal**.
 5. Abrir `/asesoria-empresarial` y comprobar el formulario, iconos y
    enlaces. Al publicar también aparece automáticamente una franja de
-   **Asesoría Empresarial** en el Home clásico, sin cambiar su banner.
+   **Asesoría Empresarial** en el Home clásico y un acceso desde
+   **Servicios**, sin cambiar el banner inmobiliario.
 
 ## Cargar infografías e imágenes
 Desde `Personalizar → Páginas → Asesoría Empresarial` abrir el editor
