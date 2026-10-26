@@ -1,4 +1,4 @@
-import type {Metadata} from "next";
+import type {Metadata,Viewport} from "next";
 import {headers} from "next/headers";
 import {hasDatabaseConfig} from "@/lib/server-config";
 import {tenantFromHost} from "@/lib/tenant";
@@ -18,6 +18,9 @@ import "./editor-tidy.css";
 import "./cms-tidy.css";
 import "./template-editor.css";
 import "./organization-site.css";
+import "./mobile-native.css";
+
+export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
 
 /** Metadata is always resolved by the current site host, never from NEXUS constants. */
 export async function generateMetadata():Promise<Metadata>{
