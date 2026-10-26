@@ -24,3 +24,13 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 
 ## Funciones prioritarias inmobiliarias
 Home editable, buscador, propiedades, imágenes, fichas PDF, formulario de contacto, WhatsApp por propiedad, seguimiento de leads y estadísticas diferenciadas (visita/clic/contacto).
+
+## Diseño: Taste Skill, Impeccable y Emil Kowalski
+- Revisar https://www.tasteskill.dev/ como referencia de dirección artística, jerarquía tipográfica y composiciones no genéricas.
+- Consultar https://impeccable.style/ para crítica de interfaz, accesibilidad, densidad informativa y pulido de formularios, estados y navegación.
+- Consultar https://emilkowal.ski/skill para criterios de movimiento, navegación móvil y rendimiento de animaciones.
+- Estas referencias **no equivalen a Skills instaladas**. Cada agente debe verificar disponibilidad local e instalación antes de afirmar que ejecutó una Skill, y anotar los comandos realmente usados en la PR.
+- Criterios de aceptación UI: mobile-first 375px, adaptaciones 768/1024/1440, contrastes, teclado, focus visible, controles accesibles, textos reales largos, estados vacíos/error/carga y prefers-reduced-motion.
+- Dirección por pantalla: sitio público con personalidad de marca; dashboard compacto orientado a tareas; instalador con selección clara de sector y módulos; nunca reutilizar una composición única para sectores distintos.
+- No sacrificar rendimiento web, compatibilidad de MariaDB/MySQL y PostgreSQL ni el diseño NEXUS aprobado por efectos visuales.
+- Antes de integrar cambios, documentar revisión UI manual y pruebas automáticas; no declarar conformidad visual sin captura comparativa en móvil y escritorio.
