@@ -164,7 +164,7 @@ jobs:
         run: |
           mkdir -p /tmp/nexus-visual-qa
           docker run --rm --init --network host \
-            -e TEST_ORIGIN=http://127.0.0.1:3000 \
+            -e TEST_ORIGIN=http://localhost:3000 \
             -e VISUAL_QA_DIR=/tmp/nexus-visual-qa \
             -v "$PWD:/workspace:ro" \
             -v /tmp/nexus-visual-qa:/tmp/nexus-visual-qa \
