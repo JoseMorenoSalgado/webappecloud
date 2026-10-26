@@ -274,8 +274,8 @@ function eclouddokploy_admin_tab_fields(array $params): array
             . '</code></p>';
     }
     $value .= '<div class="ecd-admin-tasks">'
-        . '<div class="ecd-admin-task"><strong>1. Crear / verificar proyecto</strong>'
-        . '<small>Comprueba Dokploy antes de crear. Si borraste un proyecto vacío, recupera sus IDs en este mismo servicio, sin duplicar.</small></div>'
+        . '<div class="ecd-admin-task"><strong>1. Comprobar / crear proyecto</strong>'
+        . '<small>Si no existe, lo crea. Si ya existe, pregunta si deseas importarlo. Nunca lo duplica.</small></div>'
         . '<div class="ecd-admin-task"><strong>2. Instalar por el cliente</strong>'
         . '<small>Introduce GitHub abajo, guarda la ficha y pulsa «Instalar aplicación del cliente».</small></div>'
         . '</div>'
@@ -319,7 +319,7 @@ function eclouddokploy_admin_tab_fields(array $params): array
     $note = $editable
         ? 'Guardar cambios registra únicamente la configuración GitHub en WHMCS; '
             . 'no instala ni borra recursos en Dokploy. Para instalar, usa «Comandos del módulo» '
-            . 'y elige «Instalar aplicación del cliente». El comando «Crear / verificar proyecto Dokploy» '
+            . 'y elige «Instalar aplicación del cliente». El comando «Comprobar / crear proyecto» '
             . 'funciona incluso con GitHub vacío.'
         : 'Este servicio ya tiene una instalación guardada o en curso: el repositorio original '
             . 'se mantiene bloqueado para impedir una reinstalación accidental. '
