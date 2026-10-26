@@ -42,6 +42,7 @@ jobs:
           install -m 0644 "$src/lib/OrderInstall.php" package/eclouddokploy/lib/OrderInstall.php
           install -m 0644 "$src/lib/AdminAssistance.php" package/eclouddokploy/lib/AdminAssistance.php
           install -m 0644 "$src/lib/DeletedProjectRecovery.php" package/eclouddokploy/lib/DeletedProjectRecovery.php
+          install -m 0644 "$src/lib/ProjectImport.php" package/eclouddokploy/lib/ProjectImport.php
           install -m 0644 "$src/templates/clientarea.tpl" package/eclouddokploy/templates/clientarea.tpl
           cat > package/LEEME-INSTALACION.txt <<'EOF'
 Elearning Cloud — Módulo WHMCS a Dokploy (PILOTO / STAGING)
@@ -79,8 +80,14 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    + entorno production inmediatamente al aprovisionar en WHMCS.
    VERDE = proyecto y entorno creados, no necesariamente web publicada.
    Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
-   usar el comando "Crear / verificar proyecto Dokploy" (requiere
+   usar "Comprobar / crear proyecto" (requiere
    primera factura pagada, no duplica un proyecto existente).
+   Si YA EXISTE, no se crea ni vincula automaticamente:
+   WHMCS pregunta "El proyecto ya existe. Deseas importarlo?"
+   En Comandos del modulo: "Si, importar proyecto existente"
+   para confirmar, o "No, cancelar importacion" para rechazar.
+   Si NO existe, WHMCS crea proyecto y production automaticamente.
+   Si ya esta vinculado correctamente, solo verifica su ID.
    Si ELIMINASTE desde Dokploy un proyecto VACIO del mismo servicio:
    el comando comprueba que el proyecto anterior ya no exista
    (project.search sin resultado + project.one HTTP 404). Solo entonces
