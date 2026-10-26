@@ -3,6 +3,7 @@ import {ArrowRight,ArrowUpRight,HeartHandshake,ShieldCheck,Compass,CheckCircle2,
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationAbout} from "@/components/templates/organization-site";
@@ -18,7 +19,7 @@ export default async function About(){
  await assertPagePublished(tenant.id,demo,"nosotros");
  const image=properties.find(p=>p.image)?.image;
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" data-nexus-inner-motion="nosotros"><NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-about-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">SOBRE NOSOTROS</span>
     <div className="nexus-inner-hero-row"><div><h1>Personas primero. <em>Propiedades con propósito.</em></h1>
