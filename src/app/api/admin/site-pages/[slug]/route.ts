@@ -3,6 +3,8 @@ import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 import {CUSTOM_PAGE_PREFIX,validCustomSlug} from "@/lib/site-pages";
+import {parseSectionsForm} from "@/lib/page-sections";
+import {hasPageImage} from "@/lib/page-images";
 import {type Prisma} from "@prisma/client";
 export const runtime="nodejs";
 const builtins=["propiedades","nosotros","servicios","contacto"];
@@ -12,7 +14,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return propertyRedirect("/admin/personalizar/paginas?error=permisos");
  if(!validMutationOrigin(req))return propertyRedirect("/admin/personalizar/paginas?error=origen");
  const size=Number(req.headers.get("content-length")||0);
- if(!Number.isSafeInteger(size)||size<1||size>22000)return propertyRedirect("/admin/personalizar/paginas?error=datos");
+ if(!Number.isSafeInteger(size)||size<1||size>48000)return propertyRedirect("/admin/personalizar/paginas?error=datos");
  if(!builtins.includes(slug)&&!validCustomSlug(slug))return propertyRedirect("/admin/personalizar/paginas?error=datos");
  let form:FormData;
  try{form=await req.formData();}catch{return propertyRedirect("/admin/personalizar/paginas?error=datos");}
@@ -29,7 +31,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
     update:{published}
    });
   }else{
-   const existing=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},select:{id:true}});
+   const existing=await prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},select:{id:true,blocks:true}});
    if(!existing)return propertyRedirect("/admin/personalizar/paginas?error=noexiste");
    if(form.get("intent")==="status"){
     await prisma.sitePage.update({where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},data:{published}});
@@ -39,9 +41,21 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
    if(typeof title!=="string"||title.trim().length<3||title.length>90||
     typeof summary!=="string"||summary.length>240||typeof body!=="string"||body.length>10000)
     return propertyRedirect(destination+"?error=datos");
+   let sections;
+   try{
+    const input=parseSectionsForm(form.get("sections"));
+    const stored=existing.blocks&&typeof existing.blocks==="object"&&!Array.isArray(existing.blocks)
+     ?existing.blocks as Record<string,unknown>:{};
+    // Older clients that edit plain text must not silently delete saved sections.
+    sections=input===null?(await import("@/lib/page-sections")).normalizePageSections(stored.sections):input;
+   }catch{return propertyRedirect(destination+"?error=secciones");}
+   for(const section of sections){
+    if(section.type==="image"&&!(await hasPageImage(admin.tenantId,slug,section.imageId)))
+     return propertyRedirect(destination+"?error=imagenes");
+   }
    await prisma.sitePage.update({
     where:{tenantId_slug:{tenantId:admin.tenantId,slug:dbSlug}},
-    data:{title:title.trim(),published,blocks:{summary:summary.trim(),body:body.trim()} as Prisma.InputJsonValue}
+    data:{title:title.trim(),published,blocks:{summary:summary.trim(),body:body.trim(),sections} as Prisma.InputJsonValue}
    });
   }
   return propertyRedirect(destination+"?saved=1");
