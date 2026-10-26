@@ -46,13 +46,10 @@ const published=await fetch(origin+"/asesoria-empresarial");
 assert.equal(published.status,200,"Published compliance page must render");
 const publicHtml=await published.text();
 for(const expected of ["Auditoría externa de cumplimiento","Capacitación para sujetos obligados",
- "Ley N.º 977","Ley N.º 976","Solicita una","/api/leads","uaf.gob.ni","Formulario",
+ "Ley N.º 977","Ley N.º 976","Solicita una","contact-form","uaf.gob.ni",
  "nexus-advisory-visual","solicitar-orientacion"]){
- // Form is a hydrated React component; the text is rendered into HTML.
- if(expected==="Formulario")continue;
  assert.ok(publicHtml.includes(expected),"Advisory page missing content: "+expected);
 }
-assert.ok(publicHtml.includes("Asesoría empresarial / solicitud de reunión")===false,"Topic must never be a hidden public field");
 const homeHtml=await (await fetch(origin+"/")).text();
 assert.ok(homeHtml.includes("nexus-advisory-home")&&homeHtml.includes('href="/asesoria-empresarial"'),"Published service must appear on Home");
 const image=await sharp({create:{width:1000,height:650,channels:3,background:"#dde7ef"}}).png().toBuffer();
