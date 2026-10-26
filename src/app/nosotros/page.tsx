@@ -3,6 +3,7 @@ import {ArrowRight,ArrowUpRight,HeartHandshake,ShieldCheck,Compass,CheckCircle2,
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationAbout} from "@/components/templates/organization-site";
 export const dynamic="force-dynamic";
@@ -57,6 +58,7 @@ export default async function About(){
     <h2>Conversemos sobre lo que <em>estás buscando.</em></h2></div>
     <Link href="/contacto" className="btn nexus-hero-primary">Contactar a la inmobiliaria <ArrowRight size={18}/></Link>
    </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="nosotros" demo={demo}/>
   </main>
  </PublicFrame>;
 }
