@@ -52,6 +52,7 @@ export default async function SiteHub(){
     <div className="site-hub-summary-actions">
      <Link href="/admin/personalizar/paginas" className="btn btn-red"><FileText size={17} aria-hidden="true"/> Editar páginas</Link>
      <Link href="/admin/personalizar/plantilla" className="site-hub-text-link"><LayoutTemplate size={16} aria-hidden="true"/> Cambiar plantilla</Link>
+     <Link href="/admin/personalizar/medios" className="site-hub-text-link"><ImageIcon size={16} aria-hidden="true"/> Biblioteca de imágenes</Link>
     </div>
    </div>
    <div className="site-hub-status" aria-label="Estado de configuración">
