@@ -19,7 +19,8 @@ const routes=[
  ["ficha","/propiedades/casa-zona-ejecutiva"],
  ["nosotros","/nosotros"],
  ["servicios","/servicios"],
- ["contacto","/contacto"]
+ ["contacto","/contacto"],
+ ["asesoria","/asesoria-empresarial"]
 ];
 const widths=[375,768,1024,1440];
 const findings=[];
@@ -143,7 +144,8 @@ try{
    ["/propiedades/casa-zona-ejecutiva",".property-detail-description",".property-detail-header"],
    ["/nosotros",".nexus-principles-grid > article",".nexus-inner-hero h1"],
    ["/servicios",".nexus-service-details > article",".nexus-inner-hero h1"],
-   ["/contacto",".nexus-contact-methods > .nexus-contact-method",".nexus-inner-hero h1"]
+   ["/contacto",".nexus-contact-methods > .nexus-contact-method",".nexus-inner-hero h1"],
+   ["/asesoria-empresarial",".nexus-advisory-service-grid > .nexus-advisory-service",".nexus-inner-hero h1"]
   ]){
    const page=await innerContext.newPage();
    try{
@@ -173,7 +175,7 @@ await writeFile(`${output}/report.json`,JSON.stringify({date:new Date().toISOStr
  "Captured the CI-seeded property pages, not the actual Dockploy production deployment.",
  "Rendering may differ if external image hosts are unavailable or real customer media varies.",
  "The Home motion is tested separately with no-preference and reduced-motion browser contexts.",
- "Motion is verified in Chromium for all five inner-page routes with reduced motion off and on.",
+ "Motion is verified in Chromium for all six inner-page routes including the opt-in compliance page, with reduced motion off and on.",
  "A human must still review screenshots before approving a new animation PR."
 ]},null,2));
 const errors=findings.flatMap(row=>row.problems.map(problem=>`${row.width}px ${row.route}: ${problem}`));
