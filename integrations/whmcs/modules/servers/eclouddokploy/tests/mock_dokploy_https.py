@@ -63,6 +63,12 @@ class Handler(BaseHTTPRequestHandler):
                 "items": filtered[offset:offset + limit],
                 "total": len(filtered),
             })
+        if url.path == "/api/project.one":
+            pid = query.get("projectId", [""])[0]
+            item = projects.get(pid)
+            if item is None:
+                return self.response(404, {"error": "project not found"})
+            return self.response(200, dict(item))
         if url.path == "/api/project.all":
             return self.response(
                 200, [{"projectId": "stage", "name": "test-project"}] + list(projects.values())
@@ -98,6 +104,24 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, TypeError):
             return self.response(400, {"error": "invalid json"})
         path = urlparse(self.path).path
+        if path == "/api/project.remove":
+            pid = data.get("projectId")
+            if pid not in projects:
+                return self.response(404, {"error": "unknown project"})
+            related = [e["environmentId"] for e in environments.values()
+                       if e["projectId"] == pid]
+            if any(app.get("environmentId") in related for app in applications.values()):
+                return self.response(409, {"error": "project still contains applications"})
+            for eid in related:
+                del environments[eid]
+            del projects[pid]
+            return self.response(200, {"success": True})
+        if path == "/api/mock.renameProject":
+            pid = data.get("projectId")
+            if pid not in projects or not data.get("name"):
+                return self.response(404, {"error": "unknown project"})
+            projects[pid]["name"] = data["name"]
+            return self.response(200, {"success": True})
         if path == "/api/project.create":
             name = data.get("name")
             if not isinstance(name, str) or not name.startswith("ec-client-"):
