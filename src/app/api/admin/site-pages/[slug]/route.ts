@@ -3,7 +3,7 @@ import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 import {CUSTOM_PAGE_PREFIX,validCustomSlug} from "@/lib/site-pages";
-import {parseSectionsForm} from "@/lib/page-sections";
+import {parseSectionsForm,normalizePageSections} from "@/lib/page-sections";
 import {hasPageImage} from "@/lib/page-images";
 import {type Prisma} from "@prisma/client";
 export const runtime="nodejs";
@@ -47,7 +47,7 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
     const stored=existing.blocks&&typeof existing.blocks==="object"&&!Array.isArray(existing.blocks)
      ?existing.blocks as Record<string,unknown>:{};
     // Older clients that edit plain text must not silently delete saved sections.
-    sections=input===null?(await import("@/lib/page-sections")).normalizePageSections(stored.sections):input;
+    sections=input===null?normalizePageSections(stored.sections):input;
    }catch{return propertyRedirect(destination+"?error=secciones");}
    for(const section of sections){
     if(section.type==="image"&&!(await hasPageImage(admin.tenantId,slug,section.imageId)))
