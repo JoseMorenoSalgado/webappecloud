@@ -22,6 +22,7 @@ import "./page-content.css";
 import "./page-editor-blocks.css";
 import "./cms-extras.css";
 import "./mobile-native.css";
+import "./styles/templates/nexus-home-premium.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
 
