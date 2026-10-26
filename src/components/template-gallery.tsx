@@ -2,7 +2,7 @@
 import {useState} from "react";
 import {
  ArrowRight,BookOpen,BriefcaseBusiness,Building2,Check,Eye,
- LayoutTemplate,Monitor,Smartphone,GraduationCap
+ LayoutTemplate,Monitor,Smartphone,GraduationCap,ShoppingBag
 } from "lucide-react";
 import {
  SITE_TEMPLATES,type SiteTemplateKey,type TemplateContent
@@ -21,7 +21,8 @@ type Props={
 const illustrations={
  "real-estate":{label:"Catálogo inmobiliario",Icon:Building2},
  education:{label:"Institución educativa",Icon:GraduationCap},
- services:{label:"Empresa de servicios",Icon:BriefcaseBusiness}
+ services:{label:"Empresa de servicios",Icon:BriefcaseBusiness},
+ ecommerce:{label:"Comercio electrónico",Icon:ShoppingBag}
 };
 
 /**
