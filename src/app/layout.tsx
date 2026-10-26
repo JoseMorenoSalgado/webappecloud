@@ -18,6 +18,7 @@ import "./editor-tidy.css";
 import "./cms-tidy.css";
 import "./template-editor.css";
 import "./organization-site.css";
+import "./page-content.css";
 import "./mobile-native.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
