@@ -6,6 +6,7 @@ import {PublicFrame} from "@/components/public-frame";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationContact} from "@/components/templates/organization-site";
 import {ContactForm} from "@/components/contact-form";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 export const dynamic="force-dynamic";
 export default async function Contact(){
  const lighter=await getPublicContext({loadProperties:false});
@@ -16,6 +17,7 @@ export default async function Contact(){
  }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"contacto");
+ const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");
  const wa=tenant.whatsapp?"https://wa.me/"+tenant.whatsapp+"?text="+encodeURIComponent("Hola, deseo información sobre sus propiedades disponibles."):null;
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido">
@@ -43,8 +45,8 @@ export default async function Contact(){
     <div className="nexus-contact-form-card">
      <span className="nexus-section-kicker">SOLICITAR INFORMACIÓN</span><h2>Cuéntanos qué estás buscando.</h2>
      <p>Completa el formulario y envíanos tu consulta.</p>
-     {demo?<p className="preview-form-note">El formulario estará disponible cuando el sitio esté configurado.</p>:<ContactForm/>}
-     <Link href="/propiedades" className="nexus-back-link"><ArrowLeft size={15}/> Ver inmuebles disponibles</Link>
+     {demo?<p className="preview-form-note">El formulario estará disponible cuando el sitio esté configurado.</p>:inquiriesEnabled?<ContactForm/>:<p className="property-help">El formulario de consultas está desactivado. Puedes contactarnos mediante WhatsApp o correo electrónico.</p>}
+     {(await tenantModuleEnabled(tenant.id,"properties"))&&<Link href="/propiedades" className="nexus-back-link"><ArrowLeft size={15}/> Ver inmuebles disponibles</Link>}
     </div>
    </div></section>
   </main>
