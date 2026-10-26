@@ -22,13 +22,15 @@ export default async function SiteHub(){
   hasSiteAsset(user.tenantId,"logo"),
   prisma.tenant.findUniqueOrThrow({where:{id:user.tenantId},select:{contactEmail:true,whatsapp:true}})
  ]);
+ const logoFromTheme=template.key==="real-estate"&&user.tenantName.trim().toLowerCase()==="nexus real estate";
+ const logoReady=hasLogo||logoFromTheme;
  const menu=await getSiteMenu(user.tenantId,pages);
  const totalPublished=pages.filter(page=>page.published).length;
  const drafts=pages.filter(page=>!page.published);
  const hasContact=Boolean(tenant.contactEmail?.trim()||tenant.whatsapp?.trim());
  const templateLabel=SITE_TEMPLATES.find(entry=>entry.key===template.key)?.label||"Sitio web";
  const checks=[
-  {name:"Identidad de tu marca",ready:hasLogo,detail:hasLogo?"Ya tienes un logotipo cargado.":"Añade tu logotipo para identificar tu sitio.",href:"/admin/personalizar/identidad",action:hasLogo?"Revisar identidad":"Agregar logotipo",Icon:ImageIcon},
+  {name:"Identidad de tu marca",ready:logoReady,detail:hasLogo?"Ya tienes un logotipo cargado.":logoFromTheme?"Tu sitio utiliza el logotipo de NEXUS.":"Añade tu logotipo para identificar tu sitio.",href:"/admin/personalizar/identidad",action:logoReady?"Revisar identidad":"Agregar logotipo",Icon:ImageIcon},
   {name:"Páginas públicas",ready:totalPublished>1,detail:totalPublished+" publicadas · "+drafts.length+" en borrador",href:"/admin/personalizar/paginas",action:"Gestionar páginas",Icon:FileText},
   {name:"Menú de navegación",ready:menu.length>0,detail:menu.length+" enlace"+(menu.length===1?"":"s")+" visible"+(menu.length===1?"":"s")+" en el menú principal",href:"/admin/personalizar/menu",action:"Organizar menú",Icon:ListTree},
   {name:"Canal de contacto",ready:hasContact,detail:hasContact?"Tus visitantes pueden encontrar un canal de contacto.":"Añade un correo o WhatsApp de atención.",href:"/admin/personalizar/identidad",action:"Configurar contacto",Icon:Mail}
