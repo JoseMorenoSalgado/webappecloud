@@ -65,3 +65,29 @@ pero no son funcionalidades operativas de esta etapa.
 - Si una herramienta está desactivada, consulte al administrador de su empresa
   en **Aplicaciones y módulos**.
 - Si no se guardan los cambios, revise las validaciones de campos y vuelva a intentarlo.
+
+
+## Editor visual de páginas personalizadas
+
+Las páginas nuevas y adicionales cuentan con un editor de bloques:
+- **Encabezado:** título de una sección.
+- **Texto:** explicación, instrucciones o contenido institucional.
+- **Imagen:** fotografía convertida automáticamente a WebP, con descripción accesible y pie opcional.
+
+Use las flechas para cambiar el orden de las secciones. El botón de quitar
+retira la sección de la página, sin eliminar toda la página. La vista previa
+se actualiza antes de guardar, pero sigue siendo orientativa: revise el
+sitio real después de publicar.
+
+Si es una página recién creada, **guárdela primero como borrador**. Después
+ábrala en Editar y podrá subir imágenes JPG, PNG o WebP de hasta 8 MB.
+Cada fotografía debe llevar una descripción breve para lectores de pantalla.
+
+Al quitar una imagen de una página no se borra inmediatamente su archivo,
+para evitar que desaparezca accidentalmente de la versión aún publicada.
+Las imágenes almacenadas tienen un límite preventivo de 50 por página;
+la depuración de archivos sobrantes requiere una fase de gestión de medios.
+
+Los textos que existían antes de esta actualización se mantienen en el campo
+Contenido principal. No es necesario copiarlos ni recrear la página.
+Las nuevas secciones se agregan debajo de ese texto.
