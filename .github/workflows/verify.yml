@@ -152,6 +152,8 @@ jobs:
         run: node scripts/check-site-cms.mjs
       - name: Probar editor visual, bloques y privacidad de imágenes
         run: node scripts/check-page-blocks.mjs
+      - name: Probar portada, páginas predeterminadas y biblioteca multicliente
+        run: node scripts/check-builtin-media.mjs
       - name: Validar editores independientes y administrador compacto
         run: node scripts/check-independent-pages.mjs
       - name: Comprobar vistas previas y experiencia CMS mejorada
