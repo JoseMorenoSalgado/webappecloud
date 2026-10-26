@@ -81,8 +81,8 @@ export function CustomPageEditor({
    });
    const json=await response.json() as {id?:string;error?:string};
    if(!response.ok||!json.id)throw Error(json.error||"No fue posible subir la imagen.");
-   const defaultAlt=file.name.replace(/\.[^.]+$/,"").replace(/[-_]+/g," ").trim().slice(0,180);
-   update(id,{imageId:json.id,alt:defaultAlt.length>=3?defaultAlt:""} as Partial<PageSection>);
+   // Require an intentional description instead of assuming the file name is accessible.
+   update(id,{imageId:json.id} as Partial<PageSection>);
   }catch(e){setEditorError(e instanceof Error?e.message:"Error al subir la imagen.");}
   finally{setBusyImage(null);}
  }
