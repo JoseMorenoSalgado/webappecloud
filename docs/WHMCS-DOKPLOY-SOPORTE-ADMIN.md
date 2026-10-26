@@ -126,3 +126,23 @@ Fuentes públicas:
 - https://github.com/Dokploy/dokploy/issues/3793
 
 **Estado:** CI automatizada verificada con simulación HTTPS, todavía no probado sobre el servidor real; staging, no desplegar masivamente sin validación.
+
+
+## Reparación administrativa cuando se eliminó el proyecto desde Dokploy
+
+**Caso real:** se eliminó de Dokploy el proyecto ec-client-225-service-293 y se ejecutó «Crear / verificar proyecto» en WHMCS. El error «WHMCS tiene un ID de proyecto, pero no aparece en Dokploy para este servicio» era esperado en la versión anterior: MySQL WHMCS conservaba el projectId antiguo aunque el proyecto remoto hubiera desaparecido.
+
+**Nueva recuperación en el mismo comando administrativo:**
+
+1. La ficha debe pertenecer a un administrador WHMCS autenticado, al cliente 225 / servicio 293, estar Active, contar con primera factura Paid, dominio y VPS asignado con huella inmutable.
+2. El módulo comprueba en MySQL que el servicio únicamente tiene proyecto y production preparados, con estados project_created o environment_ready, y ninguna aplicación, MariaDB o recurso de dominio previamente provisionado. Si el sistema ya instaló una aplicación, debe utilizarse un procedimiento de restauración con backups; jamás se reinicializa automáticamente.
+3. La verificación remota es doble y de solo lectura: GET project.search por nombre exacto ec-client-225-service-293 debe confirmar ausencia; GET project.one?projectId=ID_ANTIGUO debe responder HTTP 404. Si el proyecto simplemente fue renombrado, project.one todavía lo encontrará y no se crea otro. HTTP 401/403/500, fallos TLS, respuestas incompletas o permisos incorrectos no prueban la eliminación, así que se aborta sin alterar la BD.
+4. Solo tras las dos pruebas y dentro del mismo lock de servicio, limpia exclusivamente project_id y environment_id, conserva facturación, propietario, dominio, plan, DB mode, claves y VPS, y ejecuta el creador idempotente de proyecto y entorno production. La operación no elimina más recursos.
+5. El nuevo ID puede ser diferente del anterior: es correcto para un proyecto recreado. La auditoría WHMCS registra que un administrador realizó la recuperación sin secretos.
+6. Si la API no puede certificar la eliminación o existen datos de una aplicación anterior, se devuelve la causa; no borrar filas ni usar SQL manual.
+
+**Cómo probarlo tras actualizar el ZIP STAGING:** primero respaldar WHMCS y confirmar que el proyecto realmente fue eliminado. Abrir ficha del servicio 293 → Comandos del módulo → Crear / verificar proyecto Dokploy, una sola vez. Si pasa las validaciones, crea un proyecto nuevo con el mismo nombre, nuevo projectId y production, sin añadir otro servicio WHMCS. Luego instalar GitHub desde WHMCS; recuperar proyecto no instala aplicaciones ni bases de datos.
+
+**Nota v0.30.9:** el router de Dokploy admite project.search y project.one. La confirmación de borrado se basa en HTTP 404 de project.one; si el servidor responde de otra forma, se conserva el bloqueo por seguridad.
+
+**Pruebas:** simulador HTTPS verifica eliminación externa, reconstrucción una vez, cambio de identificadores, rechazo al renombrar proyecto existente, rechazo ante apps/DB y no duplicación. No sustituye la prueba real del servidor.
