@@ -3,6 +3,7 @@ import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2} from 
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationServices} from "@/components/templates/organization-site";
@@ -20,7 +21,7 @@ export default async function Services(){
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"servicios");
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" data-nexus-inner-motion="servicios"><NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-services-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">NUESTROS SERVICIOS</span>
     <div className="nexus-inner-hero-row"><div><h1>{settings.servicesHeading}</h1><p>{settings.servicesDescription}</p></div>

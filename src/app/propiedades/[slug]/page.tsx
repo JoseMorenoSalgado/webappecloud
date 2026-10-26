@@ -9,6 +9,7 @@ import {notFound} from "next/navigation";
 import {assertPagePublished} from "@/lib/site-pages";
 import {formatPrice} from "@/lib/demo";
 import {PublicFrame} from "@/components/public-frame";
+import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {ContactForm} from "@/components/contact-form";
 import {PropertyGallery} from "@/components/property-gallery";
 import {hasCustomPdf} from "@/lib/property-document";
@@ -33,7 +34,7 @@ export default async function Detail({params}:{params:Promise<{slug:string}>}){
  if(!p)notFound();
  const customPdfAvailable=!demo&&await hasCustomPdf(tenant.id,p.id);
  return <PublicFrame tenant={tenant} demo={demo} property={p}>
-  <main className="container property-detail-page" id="contenido">
+  <main className="container property-detail-page" id="contenido" data-nexus-inner-motion="detalle"><NexusInnerMotion/>
    <nav className="property-detail-breadcrumb" aria-label="Ubicación de página">
     <Link href="/propiedades"><ArrowLeft size={15}/> Volver a propiedades</Link>
     <span aria-hidden="true">/</span><span>{p.refCode}</span>

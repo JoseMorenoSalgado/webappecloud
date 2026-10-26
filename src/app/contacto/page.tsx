@@ -3,6 +3,7 @@ import {ArrowLeft,ArrowUpRight,Mail,MapPin,MessageCircle,Clock3,ShieldCheck} fro
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationContact} from "@/components/templates/organization-site";
@@ -21,7 +22,7 @@ export default async function Contact(){
  const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");
  const wa=tenant.whatsapp?"https://wa.me/"+tenant.whatsapp+"?text="+encodeURIComponent("Hola, deseo información sobre sus propiedades disponibles."):null;
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" data-nexus-inner-motion="contacto"><NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-contact-hero"><div className="container">
     <span className="nexus-section-kicker nexus-kicker-light">CONTACTO</span>
     <div className="nexus-inner-hero-row"><div><h1>{settings.contactHeading} <em>{settings.contactHighlight}</em></h1><p>{settings.contactDescription}</p></div>

@@ -71,6 +71,15 @@ try{
      if(metrics.editorLeak)problems.push("Administration UI leaked into public page");
      if(route.startsWith("/propiedades/")&&metrics.imageFit&&metrics.imageFit!=="contain")problems.push("Gallery image distorted or cropped: "+metrics.imageFit);
      if(pageErrors.length)problems.push("Client error: "+pageErrors.join(" | "));
+     if(name!=="inicio"){
+      const root=page.locator("[data-nexus-inner-motion]");
+      if(await root.count()!==1)problems.push("Inner-page motion scope missing or duplicated");
+      const heading=page.locator(name==="ficha"?"[data-nexus-inner-motion] .property-detail-header":"[data-nexus-inner-motion] .nexus-inner-hero h1");
+      if(await heading.count()){
+       const motionName=await heading.evaluate(el=>getComputedStyle(el).animationName);
+       if(motionName!=="none")problems.push("Reduced-motion inner page still animates: "+motionName);
+      }else problems.push("Inner-page motion heading missing");
+     }
      if(name==="inicio"){
       const animationName=await page.locator("[data-nexus-home-motion] .nexus-hero-copy h1").evaluate(el=>getComputedStyle(el).animationName);
       if(animationName!=="none")problems.push("Reduced-motion Home still animates: "+animationName);
@@ -125,11 +134,46 @@ try{
    console.log("Home motion QA: hero CSS animation and scroll-based WAAPI reveal passed ("+played+" elements)");
   }finally{await page.close();}
  }finally{await motionContext.close();}
+ // Verify each inner page runs a real, one-time scroll reveal when motion
+ // is enabled. The screenshots above run with reducedMotion=reduce.
+ const innerContext=await browser.newContext({viewport:{width:1440,height:900},deviceScaleFactor:1,reducedMotion:"no-preference"});
+ try{
+  for(const [route,target,heading] of [
+   ["/propiedades",".nexus-catalog-results",".nexus-inner-hero h1"],
+   ["/propiedades/casa-zona-ejecutiva",".property-detail-description",".property-detail-header"],
+   ["/nosotros",".nexus-principles-grid > article",".nexus-inner-hero h1"],
+   ["/servicios",".nexus-service-details > article",".nexus-inner-hero h1"],
+   ["/contacto",".nexus-contact-methods > .nexus-contact-method",".nexus-inner-hero h1"]
+  ]){
+   const page=await innerContext.newPage();
+   try{
+    await page.addInitScript(()=>{
+     window.__nexusInnerAnimations=0;
+     const previous=Element.prototype.animate;
+     Element.prototype.animate=function(...args){
+      if(this.closest("[data-nexus-inner-motion]"))window.__nexusInnerAnimations++;
+      return previous.apply(this,args);
+     };
+    });
+    const response=await page.goto(origin+route,{waitUntil:"domcontentloaded",timeout:30000});
+    assert.equal(response?.status(),200,route+" HTTP");
+    const heroAnimation=await page.locator("[data-nexus-inner-motion] "+heading).evaluate(el=>getComputedStyle(el).animationName);
+    assert.ok(heroAnimation.includes("nexus-inner-enter"),route+" lacks classic hero motion");
+    await page.waitForTimeout(600);
+    await page.locator("[data-nexus-inner-motion] "+target).first().scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>window.__nexusInnerAnimations>0,null,{timeout:10000});
+    const count=await page.evaluate(()=>window.__nexusInnerAnimations);
+    assert.ok(count>0,route+" has no progressive scroll animation");
+    console.log("Inner-page motion passed "+route+" ("+count+" elements)");
+   }finally{await page.close();}
+  }
+ }finally{await innerContext.close();}
 }finally{await browser.close();}
 await writeFile(`${output}/report.json`,JSON.stringify({date:new Date().toISOString(),routes:findings,notes:[
  "Captured the CI-seeded property pages, not the actual Dockploy production deployment.",
  "Rendering may differ if external image hosts are unavailable or real customer media varies.",
  "The Home motion is tested separately with no-preference and reduced-motion browser contexts.",
+ "Motion is verified in Chromium for all five inner-page routes with reduced motion off and on.",
  "A human must still review screenshots before approving a new animation PR."
 ]},null,2));
 const errors=findings.flatMap(row=>row.problems.map(problem=>`${row.width}px ${row.route}: ${problem}`));
