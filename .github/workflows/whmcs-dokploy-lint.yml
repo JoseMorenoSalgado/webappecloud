@@ -100,7 +100,7 @@ jobs:
           SRC="integrations/whmcs/modules/servers/eclouddokploy"
           mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
           cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
-          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" "$SRC/lib/OrderInstall.php" "$SRC/lib/AdminAssistance.php" "$SRC/lib/DeletedProjectRecovery.php" dist/eclouddokploy/lib/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" "$SRC/lib/OrderInstall.php" "$SRC/lib/AdminAssistance.php" "$SRC/lib/DeletedProjectRecovery.php" "$SRC/lib/ProjectImport.php" dist/eclouddokploy/lib/
           cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
           cat > dist/LEEME-INSTALACION.txt <<'EOF'
           MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
@@ -120,7 +120,14 @@ jobs:
           Sin variables PHP para habilitar; WHMCS verifica el primer pago
           y CREA el proyecto y entorno Dokploy antes de devolver verde.
           Si es un pedido anterior con solo reserva, usar
-          "Crear / verificar proyecto Dokploy" desde Comandos del modulo.
+          "Comprobar / crear proyecto" desde Comandos del modulo.
+          Si existe: no se importa ni duplica. WHMCS pregunta
+          "El proyecto ya existe. Deseas importarlo?" y muestra
+          "Si, importar proyecto existente" o "No, cancelar importacion".
+          Al confirmar Si, vincula los IDs del proyecto y production,
+          revalidando propietario, VPS y el ID remoto bajo lock MySQL.
+          Si NO existe: crea proyecto nuevo y su production.
+          Si ya esta vinculado: solo lo verifica.
           Si un proyecto VACIO se elimino desde Dokploy, el mismo comando
           puede recrearlo automaticamente SIN borrar el servicio WHMCS,
           SOLO tras confirmar project.search vacio y project.one HTTP 404,
