@@ -1,0 +1,26 @@
+# Sensitive files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.sql
+*.sql.gz
+*.bak
+*.log
+
+# Dependencies and local editors
+vendor/
+node_modules/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Built archives and temp data
+*.zip
+dist/
+tmp/
+cache/
