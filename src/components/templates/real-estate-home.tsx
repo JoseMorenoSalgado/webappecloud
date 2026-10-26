@@ -32,7 +32,7 @@ export async function RealEstateHome(){
    return rows.map(p=>({id:p.id,slug:p.slug,refCode:p.refCode,title:p.title,description:p.description,city:p.city,neighborhood:p.neighborhood||"",type:p.type,operation:p.operation==="alquiler"?"alquiler" as const:"venta" as const,price:Number(p.price),bedrooms:p.bedrooms||0,bathrooms:p.bathrooms||0,areaM2:p.areaM2||0,image:p.photos[0]?.url||"",photos:p.photos.map(photo=>photo.url)}));
   })();
  return <PublicFrame tenant={tenant} demo={demo}>
-  <main id="contenido">
+  <main id="contenido" className="nexus-home-premium">
    <section className={"nexus-hero"+(heroImage?" nexus-hero-custom":"")}>
     <div className="container nexus-hero-layout nexus-hero-layout-simple">
      <div className="nexus-hero-copy">
@@ -44,6 +44,7 @@ export async function RealEstateHome(){
        {visible("nosotros")&&<Link href="/nosotros" className="nexus-hero-secondary">Conócenos <ArrowRight size={17}/></Link>}
       </div>
      </div>
+     <div className="nexus-hero-photo-note" aria-hidden="true"><span>UNA NUEVA PERSPECTIVA</span><strong>Encuentra tu espacio.</strong></div>
     </div>
    </section>
 
@@ -59,7 +60,7 @@ export async function RealEstateHome(){
     </div>
    </section>}
 
-   {visible("propiedades")&&<section className="nexus-section nexus-featured" aria-labelledby="featured-title">
+   {visible("propiedades")&&<section id="propiedades-destacadas" className="nexus-section nexus-featured" aria-labelledby="featured-title">
     <div className="container">
      <div className="nexus-section-heading">
       <div><span className="nexus-section-kicker">{settings.sectionEyebrow}</span>
@@ -74,10 +75,10 @@ export async function RealEstateHome(){
     </div>
    </section>}
 
-   {visible("servicios")&&<section className="nexus-section nexus-services-preview">
+   {visible("servicios")&&<section className="nexus-section nexus-services-preview" aria-labelledby="services-preview-title">
     <div className="container">
      <div className="nexus-section-heading nexus-services-heading"><div><span className="nexus-section-kicker">A TU LADO EN CADA PASO</span>
-      <h2>Más que propiedades, <em>soluciones.</em></h2>
+      <h2 id="services-preview-title">Más que propiedades, <em>soluciones.</em></h2>
       <p>Un servicio inmobiliario cercano, con opciones para tus diferentes objetivos.</p></div>
       <Link href="/servicios" className="nexus-text-link">Conocer servicios <ArrowUpRight size={18}/></Link>
      </div>
@@ -88,11 +89,11 @@ export async function RealEstateHome(){
     </div>
    </section>}
 
-   {visible("nosotros")&&<section className="nexus-section nexus-story">
+   {visible("nosotros")&&<section className="nexus-section nexus-story" aria-labelledby="story-preview-title">
     <div className="container nexus-story-layout">
      <div className="nexus-story-panel">
       <span className="nexus-section-kicker">CONOCE NUESTRA ESENCIA</span>
-      <h2>La propiedad importa. <em>Las personas, más.</em></h2>
+      <h2 id="story-preview-title">La propiedad importa. <em>Las personas, más.</em></h2>
       <p>{settings.aboutDescription}</p>
       <Link href="/nosotros" className="btn nexus-story-button">Descubre quiénes somos <ArrowUpRight size={17}/></Link>
      </div>

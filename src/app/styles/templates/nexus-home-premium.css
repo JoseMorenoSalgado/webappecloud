@@ -1,0 +1,402 @@
+/*
+ * NEXUS real-estate Home · Persuade surface
+ * Taste: editorial hierarchy & real architecture photograph, fewer cards.
+ * Impeccable: clear CTA, consistent section rhythm, keyboard-visible controls.
+ * Emil: mobile-first touch targets, reduced motion & no layout animations.
+ * This file is deliberately scoped to .nexus-home-premium; it never changes
+ * CMS administration or institutional sites of other sectors.
+ */
+.public-site .nexus-home-premium{
+ --home-ink:#1e3041;
+ --home-muted:#5b6979;
+ --home-paper:#f8f6f2;
+ --home-border:#e5e8e9;
+ color:var(--home-ink);
+}
+.public-site .nexus-home-premium .nexus-hero{
+ background:var(--home-paper);
+ min-height:0;
+ isolation:isolate;
+ color:var(--home-ink);
+}
+.public-site .nexus-home-premium .nexus-hero::before{
+ inset:26px 0 0 52%;
+ border-top-left-radius:20px;
+ background-position:center center;
+ background-size:cover;
+ background-repeat:no-repeat;
+ z-index:-2;
+}
+.public-site .nexus-home-premium .nexus-hero::after{
+ inset:26px 0 0 52%;
+ z-index:-1;
+ border-top-left-radius:20px;
+ background:linear-gradient(180deg,transparent 52%,rgba(13,30,39,.51) 100%);
+ pointer-events:none;
+}
+.public-site .nexus-home-premium .nexus-hero-layout{
+ position:relative;
+ display:grid;
+ grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+ align-items:center;
+ gap:clamp(28px,4vw,66px);
+ min-height:640px;
+ padding-top:68px;
+ padding-bottom:116px;
+}
+.public-site .nexus-home-premium .nexus-hero-copy{
+ max-width:660px;
+ min-width:0;
+ position:relative;
+ z-index:1;
+}
+.public-site .nexus-home-premium .nexus-eyebrow-on-dark{
+ color:#70454a;
+ font-size:11px;
+ font-weight:780;
+ letter-spacing:.16em;
+ margin-bottom:23px;
+ line-height:1.6;
+}
+.public-site .nexus-home-premium .nexus-eyebrow-line{background:var(--red);width:33px;height:2px;flex:0 0 auto}
+.public-site .nexus-home-premium .nexus-hero h1{
+ color:var(--home-ink);
+ font-size:clamp(44px,4.6vw,74px);
+ line-height:1.035;
+ letter-spacing:-.065em;
+ font-weight:770;
+ max-width:660px;
+ margin-bottom:26px;
+ overflow-wrap:break-word;
+}
+.public-site .nexus-home-premium .nexus-hero h1 em{
+ display:inline;
+ color:var(--red);
+}
+.public-site .nexus-home-premium .nexus-hero-lead{
+ color:#516172;
+ max-width:520px;
+ font-size:16px;
+ line-height:1.8;
+ margin-bottom:29px;
+}
+.public-site .nexus-home-premium .nexus-hero-actions{gap:14px}
+.public-site .nexus-home-premium .nexus-hero-primary{
+ min-height:54px;
+ padding:14px 22px;
+ border-radius:7px;
+ box-shadow:0 9px 20px rgba(50,38,41,.12);
+}
+.public-site .nexus-home-premium .nexus-hero-secondary{
+ color:var(--home-ink);
+ padding:11px 4px;
+ min-height:48px;
+ font-weight:750;
+}
+.public-site .nexus-home-premium .nexus-hero-secondary:hover{color:var(--red)}
+.public-site .nexus-home-premium .nexus-hero-photo-note{
+ position:absolute;
+ bottom:138px;
+ right:23px;
+ z-index:2;
+ display:grid;
+ gap:7px;
+ color:#fff;
+ border-left:2px solid #fff;
+ padding:0 0 0 17px;
+ max-width:min(290px,40%);
+ text-shadow:0 1px 10px rgba(0,0,0,.38);
+ pointer-events:none;
+}
+.public-site .nexus-home-premium .nexus-hero-photo-note span{
+ font-size:10px;
+ line-height:1.4;
+ letter-spacing:.18em;
+ font-weight:760;
+}
+.public-site .nexus-home-premium .nexus-hero-photo-note strong{
+ font-size:clamp(19px,2.2vw,29px);
+ font-weight:690;
+ line-height:1.16;
+ letter-spacing:-.035em;
+}
+
+/* Search strip: one purposeful action directly below the promise. */
+.public-site .nexus-home-premium .nexus-search-wrap{margin-top:-59px;z-index:4}
+.public-site .nexus-home-premium .nexus-search-wrap>.container{
+ max-width:1180px;
+ background:#fff;
+ border:1px solid var(--home-border);
+ border-radius:11px;
+ padding:20px 24px 24px;
+ box-shadow:0 23px 54px rgba(16,37,51,.11);
+}
+.public-site .nexus-home-premium .nexus-search-header{
+ border-color:#edf0f1;
+ padding-bottom:15px;
+}
+.public-site .nexus-home-premium .nexus-search-header strong{
+ color:#233548;
+ font-size:17px;
+ font-weight:770;
+ letter-spacing:-.025em;
+}
+.public-site .nexus-home-premium .nexus-search-header span{color:#677588;font-size:12px}
+.public-site .nexus-home-premium .nexus-search-form{
+ grid-template-columns:1fr 1fr 1.2fr auto;
+ gap:12px;
+ margin-top:17px;
+}
+.public-site .nexus-home-premium .nexus-search-form label{
+ gap:8px;
+ font-weight:750;
+ color:#4b5d6d;
+ font-size:12px;
+}
+.public-site .nexus-home-premium .nexus-search-form :is(input,select){
+ height:51px;
+ border-color:#d8e0e6;
+ border-radius:7px;
+ background:#fbfcfc;
+ color:#263748;
+ font-size:14px;
+}
+.public-site .nexus-home-premium .nexus-search-form :is(input,select):focus-visible{
+ outline:3px solid rgba(159,42,56,.22);
+ outline-offset:1px;
+ border-color:var(--red);
+}
+.public-site .nexus-home-premium .nexus-search-form .btn{
+ min-height:51px;
+ border-radius:7px;
+ padding-inline:21px;
+}
+
+/* Section pacing & gallery; do not crop photo detail on listing pages. */
+.public-site .nexus-home-premium .nexus-section{padding-block:clamp(64px,7vw,93px)}
+.public-site .nexus-home-premium .nexus-featured{padding-top:93px}
+.public-site .nexus-home-premium .nexus-section-heading{margin-bottom:34px}
+.public-site .nexus-home-premium .nexus-section-heading h2{
+ max-width:710px;
+ font-size:clamp(34px,3.5vw,50px);
+ font-weight:750;
+ letter-spacing:-.055em;
+ line-height:1.08;
+}
+.public-site .nexus-home-premium .nexus-section-heading p{
+ color:var(--home-muted);
+ font-size:14px;
+ line-height:1.77;
+}
+.public-site .nexus-home-premium .nexus-text-link{
+ min-height:44px;
+ gap:10px;
+ align-items:center;
+ font-size:13px;
+ transition:color .15s ease;
+}
+.public-site .nexus-home-premium .nexus-text-link:hover{gap:10px;color:var(--home-ink)}
+.public-site .nexus-home-premium .nexus-featured-grid{gap:22px}
+.public-site .nexus-home-premium .nexus-featured-grid .property-card{
+ border:1px solid #e6eaed;
+ border-radius:11px;
+ overflow:hidden;
+ box-shadow:0 5px 16px rgba(20,43,55,.04);
+ transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+@media(hover:hover) and (pointer:fine){
+ .public-site .nexus-home-premium .nexus-featured-grid .property-card:hover{
+  border-color:#d7dfe4;
+  transform:translateY(-3px);
+  box-shadow:0 16px 34px rgba(20,43,55,.10);
+ }
+}
+.public-site .nexus-home-premium .nexus-empty-listing{
+ border-radius:11px;
+ padding:clamp(24px,4vw,43px);
+ background:var(--home-paper);
+}
+
+/* Services are a clean three-column editorial list, not cards within cards. */
+.public-site .nexus-home-premium .nexus-services-preview{
+ background:#f8f8f6;
+ border-top:1px solid #ececea;
+ border-bottom:1px solid #ececea;
+}
+.public-site .nexus-home-premium .nexus-services-grid{gap:0}
+.public-site .nexus-home-premium .nexus-service-card{
+ position:relative;
+ display:flex;
+ flex-direction:column;
+ min-height:252px;
+ border:0;
+ border-top:1px solid #cbd4d9;
+ border-radius:0;
+ background:transparent;
+ padding:27px clamp(18px,2.5vw,35px) 2px 0;
+ gap:10px;
+ transition:none;
+}
+.public-site .nexus-home-premium .nexus-service-card + .nexus-service-card{
+ padding-left:clamp(20px,2.5vw,35px);
+ border-left:1px solid #e3e7e8;
+}
+.public-site .nexus-home-premium .nexus-service-card:hover{
+ transform:none;
+ border-top-color:var(--red);
+}
+.public-site .nexus-home-premium .nexus-service-top{
+ margin:0 0 14px;
+ color:var(--red);
+}
+.public-site .nexus-home-premium .nexus-service-card h3{
+ color:var(--home-ink);
+ font-size:clamp(21px,2vw,26px);
+ letter-spacing:-.042em;
+ font-weight:740;
+}
+.public-site .nexus-home-premium .nexus-service-card p{
+ color:var(--home-muted);
+ font-size:13px;
+ max-width:340px;
+ line-height:1.75;
+}
+.public-site .nexus-home-premium .nexus-service-more{
+ margin-top:auto;
+ min-height:44px;
+ display:inline-flex;
+ align-items:center;
+ font-size:12px;
+ font-weight:760;
+}
+.public-site .nexus-home-premium .nexus-story{background:#fff}
+.public-site .nexus-home-premium .nexus-story-layout{gap:clamp(24px,5vw,68px);align-items:center}
+.public-site .nexus-home-premium .nexus-story-panel{
+ padding:clamp(28px,4.5vw,59px);
+ border-radius:10px;
+ background:#1d3141;
+ min-height:420px;
+}
+.public-site .nexus-home-premium .nexus-story-panel h2{
+ font-size:clamp(35px,3.4vw,49px);
+ line-height:1.11;
+}
+.public-site .nexus-home-premium .nexus-story-steps{gap:0}
+.public-site .nexus-home-premium .nexus-story-steps>div{padding:22px 0}
+.public-site .nexus-home-premium .nexus-story-steps>div>span{
+ border-radius:50%;
+ background:#fcf0f0;
+ color:var(--red);
+}
+.public-site .nexus-home-premium .nexus-contact-home{
+ background:#162b3d;
+}
+.public-site .nexus-home-premium .nexus-contact-home-layout{gap:clamp(30px,5vw,76px)}
+.public-site .nexus-home-premium .nexus-lead-panel{
+ border-radius:11px;
+ padding:clamp(22px,2.8vw,36px);
+}
+.public-site .nexus-home-premium .nexus-contact-page-link{min-height:44px}
+.public-site .nexus-home-premium .nexus-story-button{min-height:48px}
+
+/* Tablet: photo first, then readable full-width value proposition. */
+@media(max-width:960px){
+ .public-site .nexus-home-premium .nexus-hero-layout{
+  display:block;
+  min-height:0;
+  padding-top:360px;
+  padding-bottom:99px;
+ }
+ .public-site .nexus-home-premium .nexus-hero::before{
+  inset:0 0 auto;
+  height:318px;
+  border-radius:0;
+  background-position:center 52%;
+ }
+ .public-site .nexus-home-premium .nexus-hero::after{
+  inset:0 0 auto;
+  height:318px;
+  border-radius:0;
+  background:linear-gradient(180deg,transparent 45%,rgba(13,30,39,.43));
+ }
+ .public-site .nexus-home-premium .nexus-hero-copy{max-width:750px}
+ .public-site .nexus-home-premium .nexus-hero h1{max-width:690px;font-size:clamp(45px,6.2vw,67px)}
+ .public-site .nexus-home-premium .nexus-hero-photo-note{
+  top:215px;bottom:auto;right:36px;max-width:350px;
+ }
+ .public-site .nexus-home-premium .nexus-search-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .public-site .nexus-home-premium .nexus-search-form .btn{width:100%}
+ .public-site .nexus-home-premium .nexus-featured-grid{gap:15px}
+}
+@media(max-width:700px){
+ .public-site .nexus-home-premium .nexus-services-grid{grid-template-columns:minmax(0,1fr)}
+ .public-site .nexus-home-premium .nexus-service-card,
+ .public-site .nexus-home-premium .nexus-service-card + .nexus-service-card{
+  min-height:0;
+  border-left:0;
+  border-top:1px solid #d2d9dd;
+  padding:23px 0 18px;
+ }
+ .public-site .nexus-home-premium .nexus-service-top{margin-bottom:3px}
+ .public-site .nexus-home-premium .nexus-service-more{margin-top:5px}
+ .public-site .nexus-home-premium .nexus-section-heading{display:grid;gap:10px}
+ .public-site .nexus-home-premium .nexus-section-heading .nexus-text-link{justify-self:start}
+ .public-site .nexus-home-premium .nexus-story-layout{grid-template-columns:minmax(0,1fr)}
+ .public-site .nexus-home-premium .nexus-story-panel{min-height:0}
+}
+@media(max-width:610px){
+ .public-site .nexus-home-premium .nexus-hero-layout{
+  padding-top:285px;
+  padding-bottom:66px;
+ }
+ .public-site .nexus-home-premium .nexus-hero::before,
+ .public-site .nexus-home-premium .nexus-hero::after{height:245px}
+ .public-site .nexus-home-premium .nexus-hero-photo-note{
+  top:163px;
+  right:20px;
+  max-width:70%;
+  padding-left:12px;
+ }
+ .public-site .nexus-home-premium .nexus-hero-photo-note strong{font-size:20px}
+ .public-site .nexus-home-premium .nexus-hero-photo-note span{font-size:9px}
+ .public-site .nexus-home-premium .nexus-hero h1{
+  font-size:clamp(38px,9vw,52px);
+  margin-bottom:18px;
+  letter-spacing:-.058em;
+ }
+ .public-site .nexus-home-premium .nexus-eyebrow-on-dark{font-size:10px;margin-bottom:17px}
+ .public-site .nexus-home-premium .nexus-hero-lead{font-size:15px;line-height:1.7;margin-bottom:21px}
+ .public-site .nexus-home-premium .nexus-hero-actions{gap:11px}
+ .public-site .nexus-home-premium .nexus-hero-primary{
+  min-height:49px;
+  padding:12px 16px;
+  flex:1 1 100%;
+ }
+ .public-site .nexus-home-premium .nexus-hero-secondary{min-height:46px}
+ .public-site .nexus-home-premium .nexus-search-wrap{margin-top:-26px}
+ .public-site .nexus-home-premium .nexus-search-wrap>.container{
+  padding:18px;
+  width:calc(100% - 24px);
+ }
+ .public-site .nexus-home-premium .nexus-search-header{display:grid;gap:3px}
+ .public-site .nexus-home-premium .nexus-search-form{grid-template-columns:minmax(0,1fr)}
+ .public-site .nexus-home-premium .nexus-search-form :is(input,select){font-size:16px;min-height:51px}
+ .public-site .nexus-home-premium .nexus-featured{padding-top:65px}
+ .public-site .nexus-home-premium .nexus-section{padding-bottom:67px}
+ .public-site .nexus-home-premium .nexus-section-heading h2{font-size:clamp(32px,8vw,41px)}
+ .public-site .nexus-home-premium .nexus-featured-grid{gap:18px}
+ .public-site .nexus-home-premium .nexus-story-panel{padding:32px 25px}
+ .public-site .nexus-home-premium .nexus-contact-home-layout{gap:25px}
+ .public-site .nexus-home-premium .nexus-lead-panel{padding:21px}
+}
+@media(max-width:375px){
+ .public-site .nexus-home-premium .nexus-hero-layout{padding-top:272px}
+ .public-site .nexus-home-premium .nexus-hero h1{font-size:37px}
+ .public-site .nexus-home-premium .nexus-eyebrow-on-dark{letter-spacing:.09em}
+ .public-site .nexus-home-premium .nexus-hero-photo-note{right:16px}
+}
+@media(prefers-reduced-motion:reduce){
+ .public-site .nexus-home-premium .nexus-featured-grid .property-card,
+ .public-site .nexus-home-premium .nexus-text-link{transition:none}
+ .public-site .nexus-home-premium .nexus-featured-grid .property-card:hover{transform:none}
+}

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const layout=readFileSync("src/app/layout.tsx","utf8");
-const modules=["src/app/globals.css","src/app/styles/legacy/admin-shell.css","src/app/styles/legacy/real-estate-admin.css","src/app/styles/templates/nexus-public.css","src/app/styles/legacy/cms.css","src/app/styles/templates/nexus-property.css","src/app/styles/legacy/agent-admin.css","src/app/styles/templates/nexus-property-cover.css","src/app/styles/legacy/commercial-workflows.css"];
+const modules=["src/app/globals.css","src/app/styles/legacy/admin-shell.css","src/app/styles/legacy/real-estate-admin.css","src/app/styles/templates/nexus-public.css","src/app/styles/legacy/cms.css","src/app/styles/templates/nexus-property.css","src/app/styles/legacy/agent-admin.css","src/app/styles/templates/nexus-property-cover.css","src/app/styles/legacy/commercial-workflows.css","src/app/styles/templates/nexus-home-premium.css","src/app/styles/templates/nexus-site-premium.css"];
 let last=-1;
 for(const file of modules){
  const content=readFileSync(file,"utf8");

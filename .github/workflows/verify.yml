@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       mariadb:
         image: mariadb:11.4
@@ -152,6 +152,34 @@ jobs:
         run: node scripts/check-site-customization.mjs
       - name: Verificar diseño público y páginas independientes
         run: node scripts/check-public-pages.mjs
+      - name: Comprobar Home premium NEXUS y aislamiento de plantillas
+        run: node scripts/check-nexus-premium-home.mjs
+      - name: Comprobar diseño premium de las seis páginas públicas
+        run: node scripts/check-nexus-premium-site.mjs
+      - name: Preparar Playwright sin depender de Ubuntu del runner
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          docker pull mcr.microsoft.com/playwright:v1.56.1-noble
+      - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
+        run: |
+          mkdir -p /tmp/nexus-visual-qa
+          docker run --rm --init --network host \
+            -e TEST_ORIGIN=http://localhost:3000 \
+            -e VISUAL_QA_DIR=/tmp/nexus-visual-qa \
+            -v "$PWD:/workspace:ro" \
+            -v /tmp/nexus-visual-qa:/tmp/nexus-visual-qa \
+            -w /workspace \
+            mcr.microsoft.com/playwright:v1.56.1-noble \
+            node scripts/check-nexus-browser-qa.mjs
+      - name: Guardar capturas para aprobación visual humana
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-visual-qa
+          path: /tmp/nexus-visual-qa/
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Verificar galería con imagen completa y sin ampliación artificial
         run: node scripts/check-property-gallery.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
