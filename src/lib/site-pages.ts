@@ -76,7 +76,7 @@ export async function getSiteMenu(tenantId:string,existingPages?:PageDefinition[
   prisma.sitePage.findUnique({where:{tenantId_slug:{tenantId,slug:MENU_SLUG}},select:{blocks:true}})
  ]);
  const advisory=pages.some(p=>p.id===advisoryPage.id&&p.published);
- const advisoryLink={id:advisoryPage.id,label:advisoryPage.title,href:advisoryPage.href};
+ const advisoryLink={id:advisoryPage.id,label:"Asesoría",href:advisoryPage.href};
  const defaults=()=>normalizedMenu(advisory?[...defaultMenuForTemplate(template.key),advisoryLink]:defaultMenuForTemplate(template.key),pages);
  if(!stored)return defaults();
  const raw=stored.blocks&&typeof stored.blocks==="object"&&!Array.isArray(stored.blocks)
