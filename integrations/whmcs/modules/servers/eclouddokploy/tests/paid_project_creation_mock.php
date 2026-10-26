@@ -277,6 +277,18 @@ namespace {
     assertion(str_contains($diagnostic, 'HTTP 500')
         && str_contains($diagnostic, 'project.search'),
         'safe admin error exposes API endpoint/status, not generic error');
+    $readDiagnostic = eclouddokploy_safe_project_diagnostic(
+        new RuntimeException('Dokploy read failed: project.search (HTTP 500).')
+    );
+    assertion(str_contains($readDiagnostic, 'HTTP 500')
+        && str_contains($readDiagnostic, 'project.search'),
+        'GET read failure surfaces endpoint and HTTP status rather than generic error');
+    $curlDiagnostic = eclouddokploy_safe_project_diagnostic(
+        new RuntimeException('Dokploy transport failed (cURL 60).')
+    );
+    assertion(str_contains($curlDiagnostic, 'cURL 60')
+        && str_contains($curlDiagnostic, 'TLS'),
+        'TLS certificate transport failures are actionable');
     $authDiagnostic = eclouddokploy_safe_project_diagnostic(
         new RuntimeException('Dokploy request failed: project.search (HTTP 403).')
     );
