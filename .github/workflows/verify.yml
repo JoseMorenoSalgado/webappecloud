@@ -12,7 +12,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       mariadb:
         image: mariadb:11.4
@@ -156,6 +156,24 @@ jobs:
         run: node scripts/check-nexus-premium-home.mjs
       - name: Comprobar diseño premium de las seis páginas públicas
         run: node scripts/check-nexus-premium-site.mjs
+      - name: Instalar Chromium para inspección responsive en CI
+        run: |
+          npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
+        run: node scripts/check-nexus-browser-qa.mjs
+        env:
+          TEST_ORIGIN: http://localhost:3000
+          VISUAL_QA_DIR: /tmp/nexus-visual-qa
+      - name: Guardar capturas para aprobación visual humana
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-visual-qa
+          path: /tmp/nexus-visual-qa/
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Verificar galería con imagen completa y sin ampliación artificial
         run: node scripts/check-property-gallery.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
