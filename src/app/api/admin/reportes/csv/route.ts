@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {generateReport,resolveReportPeriod} from "@/lib/real-estate-reports";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -12,6 +13,7 @@ function csvCell(value:string|number|boolean){
 function line(values:Array<string|number|boolean>){return values.map(csvCell).join(",");}
 export async function GET(req:NextRequest){
  const admin=await requireAdmin();
+ if(!await tenantModuleEnabled(admin.tenantId,"analytics"))return new Response("Módulo desactivado",{status:403});
  if(!admin.roles.some(r=>["admin","editor"].includes(r)))return new Response("No autorizado",{status:403});
  const days=resolveReportPeriod(new URL(req.url).searchParams.get("periodo")||undefined);
  const report=await generateReport(admin.tenantId,days);
