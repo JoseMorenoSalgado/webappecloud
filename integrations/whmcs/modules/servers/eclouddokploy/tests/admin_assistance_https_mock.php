@@ -135,6 +135,16 @@ namespace WHMCS\Database {
                     'packageid'=>12,'domain'=>'app-513.example.test',
                     'domainstatus'=>'Active',
                 ],
+                514 => [
+                    'id'=>514,'userid'=>25,'orderid'=>101,'server'=>1,
+                    'packageid'=>12,'domain'=>'app-514.example.test',
+                    'domainstatus'=>'Active',
+                ],
+                515 => [
+                    'id'=>515,'userid'=>25,'orderid'=>101,'server'=>1,
+                    'packageid'=>12,'domain'=>'app-515.example.test',
+                    'domainstatus'=>'Active',
+                ],
             ],
             'tblorders' => [
                 101 => ['id'=>101, 'invoiceid'=>501],
@@ -334,6 +344,66 @@ namespace {
     must(!eclouddokploy_deleted_project_recovery_eligible((object)[
         'state'=>'deployment_requested', 'project_id'=>'project-test-123',
     ]), 'uncertain deployment state cannot be automatically reset');
+
+    // Customer's exact Dokploy project exists BEFORE the WHMCS reservation:
+    // Check must ask first; only the admin's explicit Yes writes the binding.
+    $importParams = array_replace($params, [
+        'serviceid'=>514, 'domain'=>'app-514.example.test',
+    ]);
+    $preexisting = $api->post('project.create',
+        eclouddokploy_project_create_payload(25, 514)
+    );
+    $preexistingIds = eclouddokploy_created_project_ids($preexisting, 25, 514);
+    $beforeImportCount = count($api->get('project.all', []));
+    must(eclouddokploy_AdminImportProject($importParams) !== 'success',
+        'import command without prior check and confirmation is refused');
+    must(eclouddokploy_AdminCreateProject($importParams) === 'success',
+        'check existing project is a successful non-destructive operation');
+    $pending = $_SESSION['ec_dokploy_import_pending'][514] ?? null;
+    must(is_array($pending) && $pending['project_id'] === $preexistingIds['project_id'],
+        'check pins exact remote projectId for 15 minutes in admin session');
+    $notYet = eclouddokploy_admin_state(514);
+    must($notYet !== null && empty($notYet->project_id),
+        'project not silently linked until explicit Yes');
+    $question = eclouddokploy_AdminServicesTabFields($importParams);
+    must(str_contains($question['Proyecto Dokploy · Centro de ayuda'], '¿Deseas importarlo?')
+        && str_contains($question['Proyecto Dokploy · Centro de ayuda'],
+            'Sí, importar proyecto existente'),
+        'admin tab shows visible question and confirmation action');
+    must(eclouddokploy_AdminImportProject($importParams) === 'success',
+        'admin confirmed Yes, real project and production imported');
+    $imported = eclouddokploy_admin_state(514);
+    must($imported->state === 'environment_ready'
+        && $imported->project_id === $preexistingIds['project_id']
+        && $imported->environment_id === $preexistingIds['environment_id'],
+        'import preserves remote IDs and owner-scoped production binding');
+    must(count($api->get('project.all', [])) === $beforeImportCount,
+        'no second project created during explicit import');
+    must(eclouddokploy_AdminCreateProject($importParams) === 'success',
+        'already imported project verifies idempotently without reprompting');
+
+    // User chooses No: no remote writes or account linking.
+    $cancelParams = array_replace($params, [
+        'serviceid'=>515, 'domain'=>'app-515.example.test',
+    ]);
+    $cancelRemote = $api->post('project.create',
+        eclouddokploy_project_create_payload(25, 515)
+    );
+    $cancelCount = count($api->get('project.all', []));
+    must(eclouddokploy_AdminCreateProject($cancelParams) === 'success',
+        'existing service offers import prompt before cancel');
+    must(eclouddokploy_AdminCancelImport($cancelParams) === 'success',
+        'No cancels pending import without mutation');
+    must(eclouddokploy_AdminImportProject($cancelParams) !== 'success',
+        'cancelled import cannot be approved using old confirmation');
+    must(empty(eclouddokploy_admin_state(515)->project_id),
+        'No leaves WHMCS project ID unlinked');
+    must(count($api->get('project.all', [])) === $cancelCount,
+        'No leaves Dokploy project untouched');
+    $_SESSION['adminid'] = 0;
+    must(eclouddokploy_AdminImportProject($importParams) !== 'success',
+        'client/non-admin cannot import existing Dokploy project');
+    $_SESSION['adminid'] = 9;
 
     must(count($GLOBALS['admin_audit_events']) >= 3,
         'WHMCS administrator save, create and install actions are auditable');
