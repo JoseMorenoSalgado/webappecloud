@@ -22,7 +22,8 @@ export function NexusHomeMotion(){
    ".nexus-services-grid > .nexus-service-card",
    ".nexus-story-panel",
    ".nexus-story-steps > div",
-   ".nexus-contact-home-layout > div"
+   ".nexus-contact-home-layout > div",
+   ".nexus-advisory-home-row"
   ];
   const targets=Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
   const animations=new Set<Animation>();
