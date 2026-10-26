@@ -81,6 +81,13 @@ Fuente: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
    Si un pedido anterior solo quedo reservado, desde la ficha WHMCS
    usar el comando "Crear / verificar proyecto Dokploy" (requiere
    primera factura pagada, no duplica un proyecto existente).
+   Si ELIMINASTE desde Dokploy un proyecto VACIO del mismo servicio:
+   el comando comprueba que el proyecto anterior ya no exista
+   (project.search sin resultado + project.one HTTP 404). Solo entonces
+   recrea proyecto + production sin borrar el servicio ni su factura.
+   NO se recuperan automaticamente proyectos con aplicaciones, DB o dominios
+   vinculados, ni proyectos que solo cambiaron de nombre.
+   Ante un error de permisos, red o API no se cambia ningun ID.
    Asistencia tecnica sin ingresar a la cuenta del cliente:
    En ficha del servicio WHMCS > campos del modulo, introducir GitHub,
    rama, carpeta, tipo app, puerto y variables opcionales, y GUARDAR.
