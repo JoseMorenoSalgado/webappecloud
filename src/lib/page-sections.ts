@@ -22,7 +22,7 @@ export function normalizePageSections(raw:unknown,strict=false):PageSection[]{
   }
   let block:PageSection|undefined;
   if(v.type==="heading"||v.type==="text"){
-   if(typeof v.text==="string"&&v.text.length<=(v.type==="heading"?140:1800)){
+   if(typeof v.text==="string"&&v.text.trim().length>=(v.type==="heading"?2:1)&&v.text.length<=(v.type==="heading"?140:1800)){
     block={id:v.id,type:v.type,text:v.text.trim()};
    }
   }else if(v.type==="image"){
