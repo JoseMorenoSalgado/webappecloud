@@ -12,6 +12,7 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
  const admin=await requireAdmin(),q=await searchParams;
  const [pages,template]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteTemplate(admin.tenantId)]);
  const editingLocation=(page:PageDefinition)=>"/admin/personalizar/paginas/"+page.slug;
+ const advisory=pages.find(p=>p.id==="asesoria-empresarial");
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
@@ -27,6 +28,20 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
   </div>
   <SiteCustomizerNav current="pages"/>
   <div className="cms-publication-guide"><strong>Publicar y mostrar en el menú son acciones diferentes.</strong><span>Una página publicada se puede abrir mediante su enlace. Para mostrarla en la navegación superior, agrégala en <Link href="/admin/personalizar/menu">Menú principal</Link>.</span></div>
+  {advisory&&<section className="admin-panel cms-advisory-highlight" aria-labelledby="cms-advisory-title">
+   <div className="cms-advisory-highlight-copy">
+    <span className="cms-advisory-kicker">SERVICIO EMPRESARIAL</span>
+    <h2 id="cms-advisory-title">Asesoría Empresarial</h2>
+    <p>Auditorías externas de cumplimiento, prevención LA/FT/FP y capacitación para sujetos obligados. La página ya está incluida en el sistema, incluso si todavía está en borrador.</p>
+    <Link href="/admin/personalizar/paginas/asesoria-empresarial" className="inline-link">Editar página, textos e imágenes <ArrowUpRight size={16}/></Link>
+   </div>
+   <div className="cms-advisory-highlight-actions">
+    <span className={"cms-status "+(advisory.published?"cms-status-live":"cms-status-draft")}>{advisory.published?"Publicada":"Borrador"}</span>
+    {advisory.published?<Link className="btn wizard-back" href="/asesoria-empresarial" target="_blank" rel="noopener noreferrer">Ver página <ArrowUpRight size={15}/></Link>:
+     canEdit&&<PagePublicationAction slug={advisory.slug} title={advisory.title} published={false}/>}
+    {!advisory.published&&<small>Disponible también en la pestaña «Borradores». Publicarla y añadirla al menú son acciones independientes.</small>}
+   </div>
+  </section>}
   {q.saved&&<p className="property-success" role="status">Estado de publicación actualizado correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudieron actualizar los datos. Comprueba los permisos.</p>}
   <section className="admin-panel cms-list-panel">
