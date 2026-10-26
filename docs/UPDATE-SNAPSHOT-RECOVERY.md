@@ -15,8 +15,8 @@ La interfaz de `UpdateManagerDemo` contiene **solo snapshots simulados en memori
 9. En caso de fallo, restaurar archivos y base de datos **solo** mediante procedimiento confirmado y probado, con mantenimiento y protección contra escrituras concurrentes. Migraciones destructivas pueden impedir rollback seguro: exigir respaldo y prueba de restauración.
 10. Mantener auditoría y política de retención. Limitar permisos de restauración a administradores autorizados; requerir confirmación y un snapshot de seguridad adicional antes de restaurar cuando sea viable.
 
-## Passenger / cPanel
-El worker de backups/restauración debe ejecutarse del lado del servidor, con acceso explícito a las rutas y a MySQL, no desde el navegador. El proceso de restauración no debe depender de la aplicación que va a reemplazar; usar un runner externo o un mecanismo de recuperación separado. Confirmar compatibilidad con el proveedor cPanel antes de habilitarlo.
+## Docker / Dockploy
+El worker de respaldos y restauración debe ejecutarse del lado del servidor, con permisos mínimos de lectura de volúmenes y acceso restringido a la base de datos, nunca desde el navegador. La recuperación no debe depender del contenedor que va a reemplazar: utilizar un runner independiente o un mecanismo de recuperación externo. Comprobar acceso a los volúmenes persistentes y ejecutar una restauración real de prueba antes de habilitar la función.
 
 ## Integración pendiente
 - Ruta administrativa protegida y navegación del dashboard.
