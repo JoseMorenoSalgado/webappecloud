@@ -1,6 +1,7 @@
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {AGENDA_DURATIONS,agendaScope,isAgendaStatus,parseAgendaStartsAt} from "@/lib/agenda";
 import {propertyRedirect,validMutationOrigin} from "@/lib/admin-property-request";
 export const runtime="nodejs";
@@ -8,6 +9,7 @@ const back=(code:string)=>propertyRedirect("/admin/agenda?error="+encodeURICompo
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  const user=await requireAdmin();
+ if(!await tenantModuleEnabled(user.tenantId,"agenda"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.some(r=>["admin","editor","agente"].includes(r)))return back("permisos");
  if(!validMutationOrigin(req))return back("origen");
  const length=Number(req.headers.get("content-length")||0);
