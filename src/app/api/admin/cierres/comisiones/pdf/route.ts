@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {commissionTableReady} from "@/lib/commission-schema";
 import {closingTableReady} from "@/lib/closing-schema";
 import {commissionLedger} from "@/lib/commission-ledger";
@@ -11,6 +12,7 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 export async function GET(req:NextRequest){
  const user=await requireAdmin();
+ if(!await tenantModuleEnabled(user.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.some(r=>["admin","editor","agente"].includes(r)))return new Response("No autorizado",{status:403});
  if(!await closingTableReady()||!await commissionTableReady())return new Response("Comisiones no activadas",{status:503});
  const qs=new URL(req.url).searchParams;
