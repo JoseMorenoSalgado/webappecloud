@@ -52,6 +52,8 @@ for(const expected of ["Auditoría externa de cumplimiento","Capacitación para 
 }
 const homeHtml=await (await fetch(origin+"/")).text();
 assert.ok(homeHtml.includes("nexus-advisory-home")&&homeHtml.includes('href="/asesoria-empresarial"'),"Published service must appear on Home");
+const servicesPublished=await (await fetch(origin+"/servicios")).text();
+assert.ok(servicesPublished.includes("nexus-advisory-services-teaser"),"Published advisory must be discoverable from Services");
 const image=await sharp({create:{width:1000,height:650,channels:3,background:"#dde7ef"}}).png().toBuffer();
 const uploadForm=new FormData();
 uploadForm.set("image",new Blob([image],{type:"image/png"}),"informacion-cumplimiento.png");
@@ -87,6 +89,8 @@ assert.equal((await fetch(origin+"/asesoria-empresarial")).status,404,"Draft adv
 assert.equal((await fetch(origin+"/api/site-page-images/asesoria-empresarial/"+uploadJson.id)).status,404,"Draft or removed images cannot be public");
 const homeDraft=await (await fetch(origin+"/")).text();
 assert.ok(!homeDraft.includes("nexus-advisory-home"),"Draft advisory promo must disappear from Home");
+const servicesDraft=await (await fetch(origin+"/servicios")).text();
+assert.ok(!servicesDraft.includes("nexus-advisory-services-teaser"),"Draft service must disappear from Services page");
 
 const leadRequest={
  name:"Usuario pruebas asesoria",phone:"88887777",email:"cumplimiento@example.com",
