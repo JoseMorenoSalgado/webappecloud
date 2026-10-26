@@ -457,3 +457,53 @@
   justify-self:stretch;
  }
 }
+
+
+/* Contextual discovery in Services without replacing the existing offers. */
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser{
+ background:#f8f9fa;
+ border-top:1px solid #e2e9ee;
+ border-bottom:1px solid #e2e9ee;
+ padding-block:clamp(27px,3.8vw,45px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{
+ display:grid;
+ grid-template-columns:62px minmax(0,1fr) auto;
+ align-items:center;
+ gap:clamp(18px,3vw,32px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-service-teaser-icon{
+ display:grid;
+ place-items:center;
+ width:60px;height:60px;
+ background:#fff0f1;
+ color:var(--red);
+ border-radius:12px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser h2{
+ color:#253449;
+ font-size:clamp(24px,2.7vw,32px);
+ margin:8px 0;
+ letter-spacing:-.045em;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-services-teaser p{
+ color:#5b6c7b;
+ max-width:690px;
+ line-height:1.7;
+ font-size:13px;
+ margin:0;
+}
+@media(max-width:860px){
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{
+  grid-template-columns:60px minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser .nexus-advisory-home-button{
+  grid-column:2;justify-self:start;
+ }
+}
+@media(max-width:540px){
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser-inner{grid-template-columns:minmax(0,1fr)}
+ .public-site:not(.public-site-organization) .nexus-advisory-services-teaser .nexus-advisory-home-button{
+  grid-column:1;justify-self:stretch;
+ }
+}
