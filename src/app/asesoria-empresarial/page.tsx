@@ -1,7 +1,6 @@
 import type {Metadata} from "next";
-import Link from "next/link";
 import {notFound} from "next/navigation";
-import {ArrowRight,ArrowUpRight,BookOpenCheck,BriefcaseBusiness,CheckCircle2,ClipboardCheck,GraduationCap,MessageCircle,ShieldCheck} from "lucide-react";
+import {ArrowRight,ArrowUpRight,BookOpenCheck,CheckCircle2,ClipboardCheck,GraduationCap,MessageCircle,ShieldCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {getPageDefinitions} from "@/lib/site-pages";
@@ -97,7 +96,7 @@ export default async function AdvisoryPage(){
      <div>
       <span className="nexus-section-kicker">MARCO NORMATIVO</span>
       <h2>Referencias legales de <em>Nicaragua.</em></h2>
-      <p>Nuestros servicios de capacitación y orientación consideran el marco jurídico aplicable, incluidas sus reformas y normas regulatorias complementarias.</p>
+      <p>Nuestros servicios de capacitación y orientación consideran el marco jurídico aplicable, incluidas sus reformas y normas regulatorias complementarias. Entre ellas, la Ley N.º 1282 publicada en junio de 2026.</p>
      </div>
      <div className="nexus-advisory-law-list">
       <div><span>LEY N.º 977</span><strong>Prevención del lavado de activos, financiamiento al terrorismo y financiamiento de la proliferación de armas de destrucción masiva.</strong></div>
