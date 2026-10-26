@@ -29,7 +29,7 @@ export default function InstallerForm({domain}:{domain:string}){
   }catch(e){setError(e instanceof Error?e.message:"No fue posible completar la instalación.");}
   finally{setBusy(false);}
  }
- const input=(name:keyof Values,label:string,options:{type?:string;required?:boolean;hint?:string;minLength?:number;autoComplete?:string;placeholder?:string}={})=><label className="wizard-field" key={name}>
+ const input=(name:Exclude<keyof Values,"modules">,label:string,options:{type?:string;required?:boolean;hint?:string;minLength?:number;autoComplete?:string;placeholder?:string}={})=><label className="wizard-field" key={name}>
    <span>{label}</span>
    <input value={values[name]} type={options.type||"text"} required={options.required!==false} minLength={options.minLength} autoComplete={options.autoComplete||"off"} placeholder={options.placeholder} onChange={e=>change(name,e.target.value)} disabled={busy}/>
    {options.hint&&<small>{options.hint}</small>}
