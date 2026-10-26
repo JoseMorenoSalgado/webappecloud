@@ -195,7 +195,7 @@ export function CustomPageEditor({
    </div>
   </form>
   <aside className="cms-live-preview" aria-label="Vista previa orientativa sin guardar">
-   <div className="cms-preview-top"><Eye size={17}/> Vista previa <span>Sin guardar</span></div>
+   <div className="cms-preview-top"><Eye size={17}/> Vista previa <span>Sin publicar</span></div>
    <div className="cms-preview-body">
     <small>INFORMACIÓN</small>
     <h2>{title||"Título de tu página"}</h2>
