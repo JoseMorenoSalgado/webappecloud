@@ -121,6 +121,11 @@ jobs:
           y CREA el proyecto y entorno Dokploy antes de devolver verde.
           Si es un pedido anterior con solo reserva, usar
           "Crear / verificar proyecto Dokploy" desde Comandos del modulo.
+          Si un proyecto VACIO se elimino desde Dokploy, el mismo comando
+          puede recrearlo automaticamente SIN borrar el servicio WHMCS,
+          SOLO tras confirmar project.search vacio y project.one HTTP 404,
+          y ausencia de aplicaciones, bases de datos y dominios anteriores.
+          Un error de API o proyecto renombrado detiene la recuperacion.
           SOPORTE: la ficha de servicio WHMCS incluye campos GitHub, rama,
           carpeta, framework, puerto y variables de entorno cifradas.
           Guardar primero la ficha y ejecutar despues el comando
