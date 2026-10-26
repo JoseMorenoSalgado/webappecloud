@@ -1,0 +1,164 @@
+name: WHMCS Dokploy module checks
+
+on:
+  pull_request:
+    paths:
+      - 'integrations/whmcs/modules/servers/eclouddokploy/**'
+      - '.github/workflows/whmcs-dokploy-lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'integrations/whmcs/modules/servers/eclouddokploy/**'
+
+permissions:
+  contents: read
+
+jobs:
+  php-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify PHP syntax
+        run: |
+          php -v
+          find integrations/whmcs/modules/servers/eclouddokploy -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Run offline contract checks
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/validate.php
+      - name: Verify one-time automatic encryption seed (mock WHMCS runtime)
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/automatic_seed_mock.php
+      - name: Verify only paid orders can trigger automatic deployment
+        run: php integrations/whmcs/modules/servers/eclouddokploy/tests/order_payment_mock.php
+      - name: Verify HTTPS handshake, auth and read-only Dokploy contract (mock)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="integrations/whmcs/modules/servers/eclouddokploy"
+          TEMP_DIR="$(mktemp -d)"
+          trap 'if [ -n "${MOCK_PID:-}" ]; then sudo pkill -P "$MOCK_PID" || true; kill "$MOCK_PID" || true; fi; rm -rf "$TEMP_DIR"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TEMP_DIR/key.pem" -out "$TEMP_DIR/cert.pem" -days 1 -subj "/CN=dokploy.test" -addext "subjectAltName=DNS:dokploy.test" >/dev/null 2>&1
+          echo "127.0.0.1 dokploy.test" | sudo tee -a /etc/hosts >/dev/null
+          sudo env MOCK_CERT="$TEMP_DIR/cert.pem" MOCK_KEY="$TEMP_DIR/key.pem" python3 "$ROOT/tests/mock_dokploy_https.py" >/dev/null 2>&1 &
+          MOCK_PID=$!
+          export NO_PROXY="dokploy.test,localhost,127.0.0.1"
+          export no_proxy="$NO_PROXY"
+          ready=0
+          for i in $(seq 1 30); do
+            if curl --silent --fail --cacert "$TEMP_DIR/cert.pem" -H 'x-api-key: test-key-very-long' https://dokploy.test/api/project.all >/dev/null; then ready=1; break; fi
+            sleep 0.5
+          done
+          if [ "$ready" -ne 1 ]; then echo 'Mock TLS server failed to start'; exit 1; fi
+          export ECLOUD_DOKPLOY_URL="https://dokploy.test"
+          export ECLOUD_DOKPLOY_API_KEY="test-key-very-long"
+          export ECLOUD_DOKPLOY_TEST_APPLICATION_ID="stagingapp123"
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_readonly.php" | tee "$TEMP_DIR/output.txt"
+          grep -q '"status":"pass"' "$TEMP_DIR/output.txt"
+          grep -q '"test_application_lookup":"ok"' "$TEMP_DIR/output.txt"
+          # Mutations below operate ONLY on the ephemeral local mock's RAM.
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/mock_project_isolation.php"
+          # Verify that WHMCS green CreateAccount implies a real Dokploy
+          # project and environment, with idempotent retries.
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/paid_project_creation_mock.php"
+          # WHMCS support agent saves Git in native admin tab, creates project
+          # and installs within exactly that account's existing environment.
+          php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/admin_assistance_https_mock.php"
+          export ECLOUD_DOKPLOY_API_KEY="wrong-token"
+          if php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_readonly.php" > "$TEMP_DIR/denied.txt"; then
+            echo 'Invalid Dokploy token was accepted'; exit 1
+          fi
+          grep -q '"status":"fail"' "$TEMP_DIR/denied.txt"
+          if grep -q 'wrong-token' "$TEMP_DIR/denied.txt"; then
+            echo 'Diagnostic leaked auth secret'; exit 1
+          fi
+      - name: Verify corporate mail UAPI over TLS (ephemeral mock only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="integrations/whmcs/modules/servers/eclouddokploy"
+          TEMP_DIR="$(mktemp -d)"
+          trap 'kill "${MAIL_MOCK_PID:-0}" 2>/dev/null || true; rm -rf "$TEMP_DIR"' EXIT
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TEMP_DIR/key.pem" -out "$TEMP_DIR/cert.pem" -days 1 -subj "/CN=mail.test" -addext "subjectAltName=DNS:mail.test" >/dev/null 2>&1
+          echo "127.0.0.1 mail.test" | sudo tee -a /etc/hosts >/dev/null
+          env MOCK_CERT="$TEMP_DIR/cert.pem" MOCK_KEY="$TEMP_DIR/key.pem" python3 "$ROOT/tests/mock_cpanel_mail_https.py" >/dev/null 2>&1 &
+          MAIL_MOCK_PID=$!
+          export NO_PROXY="mail.test,localhost,127.0.0.1"
+          export no_proxy="$NO_PROXY"
+          ready=0
+          for i in $(seq 1 25); do
+            if curl --silent --fail --cacert "$TEMP_DIR/cert.pem" -H 'Authorization: cpanel eclient:cpanel-staging-token-123456789' 'https://mail.test:2083/execute/Email/list_pops_with_disk?domain=empresa.test' >/dev/null; then ready=1; break; fi
+            sleep 0.5
+          done
+          if [ "$ready" -ne 1 ]; then echo 'cPanel mock TLS server failed to start'; exit 1; fi
+          ECLOUD_CPANEL_TEST_HOST="mail.test" ECLOUD_CPANEL_TEST_TOKEN="cpanel-staging-token-123456789" php -d curl.cainfo="$TEMP_DIR/cert.pem" "$ROOT/tests/remote_mail_mock.php"
+
+      - name: Validate accessible Lagom UX, HTML/Smarty structure and JS syntax
+        run: python3 integrations/whmcs/modules/servers/eclouddokploy/tests/ux_template_contract.py
+
+      - name: Package WHMCS Dokploy module for staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="integrations/whmcs/modules/servers/eclouddokploy"
+          mkdir -p dist/eclouddokploy/lib dist/eclouddokploy/templates
+          cp "$SRC/eclouddokploy.php" dist/eclouddokploy/
+          cp "$SRC/lib/DokployClient.php" "$SRC/lib/ClientOperations.php" "$SRC/lib/ServerRouting.php" "$SRC/lib/ProjectIsolation.php" "$SRC/lib/CpanelMail.php" "$SRC/lib/EmailOperations.php" "$SRC/lib/SelfService.php" "$SRC/lib/AutomaticSetup.php" "$SRC/lib/AutoMail.php" "$SRC/lib/OrderInstall.php" "$SRC/lib/AdminAssistance.php" "$SRC/lib/DeletedProjectRecovery.php" "$SRC/lib/ProjectImport.php" dist/eclouddokploy/lib/
+          cp "$SRC/templates/clientarea.tpl" dist/eclouddokploy/templates/
+          cat > dist/LEEME-INSTALACION.txt <<'EOF'
+          MODULO ELEARNING CLOUD DOKPLOY — SOLO PRUEBAS
+          Copiar eclouddokploy a <WHMCS_ROOT>/modules/servers/
+          En WHMCS, crear un producto de prueba separado de los paquetes cPanel.
+          Seleccionar el modulo eclouddokploy en los ajustes del producto.
+          Cada servicio genera su propio proyecto y entorno Dokploy.
+          Este modulo NO figura en Modulos adicionales; es un modulo de servidor.
+          Correo corporativo: el cliente ve automaticamente su servicio cPanel
+          activo para el mismo dominio y puede abrirlo desde App Ecloud.
+          Operaciones avanzadas UAPI en la ficha requieren token privado
+          y siguen desactivadas hasta validarlas en staging.
+          Instalacion guiada activada desde Module Settings (guiado/pedido/legado).
+          Modo pedido: si el cliente facilita Repositorio GitHub como campo
+          personalizado durante la compra, el despliegue se solicita al aprovisionar.
+          Configura aprovisionamiento tras el primer pago.
+          Sin variables PHP para habilitar; WHMCS verifica el primer pago
+          y CREA el proyecto y entorno Dokploy antes de devolver verde.
+          Si es un pedido anterior con solo reserva, usar
+          "Comprobar / crear proyecto" desde Comandos del modulo.
+          Si existe: no se importa ni duplica. WHMCS pregunta
+          "El proyecto ya existe. Deseas importarlo?" y muestra
+          "Si, importar proyecto existente" o "No, cancelar importacion".
+          Al confirmar Si, vincula los IDs del proyecto y production,
+          revalidando propietario, VPS y el ID remoto bajo lock MySQL.
+          Si NO existe: crea proyecto nuevo y su production.
+          Si ya esta vinculado: solo lo verifica.
+          Si un proyecto VACIO se elimino desde Dokploy, el mismo comando
+          puede recrearlo automaticamente SIN borrar el servicio WHMCS,
+          SOLO tras confirmar project.search vacio y project.one HTTP 404,
+          y ausencia de aplicaciones, bases de datos y dominios anteriores.
+          Un error de API o proyecto renombrado detiene la recuperacion.
+          SOPORTE: la ficha de servicio WHMCS incluye campos GitHub, rama,
+          carpeta, framework, puerto y variables de entorno cifradas.
+          Guardar primero la ficha y ejecutar despues el comando
+          "Instalar aplicacion del cliente". No entrar como el cliente.
+          Ver docs/WHMCS-DOKPLOY-SOPORTE-ADMIN.md.
+          El secreto de cifrado se genera al primer uso y cifra con WHMCS.
+          Probar en staging antes de producción.
+          Importacion publica de GitHub desde la ficha App Ecloud en Lagom.
+          No soporta GitHub privado OAuth ni dominio gratuito automatizado.
+          No activar creacion automatica de servicios ni redespliegues en produccion.
+          API keys y secretos solo en el entorno privado del servidor WHMCS.
+          Interfaz renovada aplicando UI/UX Pro Max: estado veridico,
+          GitHub como paso principal, ajustes avanzados opcionales,
+          panel de ayuda y correo responsive, y soporte admin compacto.
+          Guia UX: docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md.
+          Guia actual: docs/WHMCS-DOKPLOY-INSTALADOR-AUTOSERVICIO.md en GitHub.
+          Ajustar WHMCS Producto > Modulo: aprovisionar tras primer pago.
+          PR: https://github.com/JoseMorenoSalgado/webappecloud/pull/38
+          EOF
+          cd dist
+          zip -qr ../eclouddokploy-whmcs-staging.zip eclouddokploy LEEME-INSTALACION.txt
+          unzip -t ../eclouddokploy-whmcs-staging.zip
+      - name: Publish downloadable staging ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclouddokploy-whmcs-staging
+          path: eclouddokploy-whmcs-staging.zip
+          if-no-files-found: error
+          retention-days: 30

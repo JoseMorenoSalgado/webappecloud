@@ -1,0 +1,167 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * Routes a WHMCS service to exactly one Dokploy control plane and deploy node.
+ * Uses built-in WHMCS server hostname and password credentials. An optional\n * private server map supports advanced remote Dokploy nodes.
+ *
+ * One WHMCS server entry == one placement target (Dokploy instance + node).
+ * The same Dokploy URL may legitimately appear in multiple entries, each with
+ * a distinct remote_server_id.
+ */
+
+function eclouddokploy_load_server_map(): array
+{
+    $path = trim((string) getenv('ECLOUD_DOKPLOY_SERVER_MAP_FILE'));
+    if ($path === '' || !str_starts_with($path, '/') ||
+        is_link($path) || !is_file($path) || !is_readable($path) ||
+        filesize($path) > 262144 || ((fileperms($path) & 0077) !== 0)) {
+        throw new RuntimeException('Dokploy server map missing or permissions are unsafe.');
+    }
+    $decoded = json_decode((string) file_get_contents($path), true, 32, JSON_THROW_ON_ERROR);
+    if (!is_array($decoded) || !isset($decoded['servers']) || !is_array($decoded['servers'])) {
+        throw new RuntimeException('Dokploy server map must contain a servers object.');
+    }
+    return $decoded['servers'];
+}
+
+function eclouddokploy_valid_server_hostname(string $host): bool
+{
+    if (strlen($host) > 253 || !str_contains($host, '.') ||
+        !preg_match('/^[a-z0-9.-]+$/D', $host)) return false;
+    foreach (explode('.', $host) as $label) {
+        if (!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D', $label)) return false;
+    }
+    return true;
+}
+
+function eclouddokploy_route_fingerprint(array $route): string
+{
+    return hash('sha256', json_encode([
+        (int) $route['whmcs_server_id'],
+        (string) $route['url'],
+        (string) $route['environment_id'],
+        (string) $route['remote_server_id'],
+    ], JSON_THROW_ON_ERROR));
+}
+
+/**
+ * Accepts WHMCS-generated serverid, never a user-supplied browser field.
+ * Legacy environment-variable mode is limited to unassigned services,
+ * and only when explicitly opted in by the administrator.
+ */
+function eclouddokploy_resolve_route(array $params): array
+{
+    $id = filter_var($params['serverid'] ?? 0, FILTER_VALIDATE_INT);
+    $id = $id === false ? 0 : (int) $id;
+    if ($id < 0) throw new RuntimeException('Invalid WHMCS server ID.');
+
+    $path = trim((string) getenv('ECLOUD_DOKPLOY_SERVER_MAP_FILE'));
+    if ($path === '') {
+        if ($id > 0) {
+            // Standard WHMCS server settings, just like a cPanel provisioning module.
+            // Hostname = Dokploy hostname, Password = API token,
+            // Username = Dokploy environment ID (per server).
+            $hostname = strtolower(trim((string) ($params['serverhostname'] ?? '')));
+            if (!eclouddokploy_valid_server_hostname($hostname)) {
+                throw new RuntimeException('Configure a valid Dokploy server hostname in WHMCS.');
+            }
+            $route = [
+                'whmcs_server_id' => $id,
+                'url' => 'https://' . $hostname,
+                'api_key' => trim((string) ($params['serverpassword'] ?? '')),
+                'environment_id' => trim((string) ($params['serverusername'] ?? '')),
+                'remote_server_id' => '',
+            ];
+        } else {
+            if (getenv('ECLOUD_DOKPLOY_ALLOW_LEGACY_SINGLE') !== '1') {
+                throw new RuntimeException('Assign a Dokploy server using WHMCS Server Groups.');
+            }
+            $route = [
+                'whmcs_server_id' => 0,
+                'url' => trim((string) getenv('ECLOUD_DOKPLOY_URL')),
+                'api_key' => trim((string) getenv('ECLOUD_DOKPLOY_API_KEY')),
+                'environment_id' => trim((string) ($params['configoption1'] ?? '')),
+                'remote_server_id' => '',
+            ];
+        }
+    } else {
+        if ($id < 1) throw new RuntimeException('The WHMCS service must have an assigned server.');
+        $map = eclouddokploy_load_server_map();
+        $config = $map[(string) $id] ?? null;
+        if (!is_array($config)) {
+            throw new RuntimeException('This WHMCS server has no configured Dokploy route.');
+        }
+        $route = [
+            'whmcs_server_id' => $id,
+            'url' => trim((string) ($config['url'] ?? '')),
+            'api_key' => trim((string) ($config['api_key'] ?? '')),
+            'environment_id' => trim((string) ($config['environment_id'] ?? '')),
+            'remote_server_id' => trim((string) ($config['remote_server_id'] ?? '')),
+        ];
+    }
+
+    // New services create their own project and environment. The optional
+    // server-level value is retained only for backwards route identification.
+    if ($route['environment_id'] !== '' &&
+        !preg_match('/^[A-Za-z0-9_-]{4,128}$/D', $route['environment_id'])) {
+        throw new RuntimeException('Invalid legacy Dokploy environment ID.');
+    }
+    if ($route['remote_server_id'] !== '' &&
+        !preg_match('/^[A-Za-z0-9_-]{3,128}$/D', $route['remote_server_id'])) {
+        throw new RuntimeException('Invalid Dokploy remote server ID.');
+    }
+
+    // Constructor enforces HTTPS, private token and safe URL properties.
+    new ECloudDokployClient($route['url'], $route['api_key']);
+    $route['fingerprint'] = eclouddokploy_route_fingerprint($route);
+    return $route;
+}
+
+/**
+ * WHMCS server groups choose the destination. This is a second guard for
+ * manual provisioning, stale group assignment and simultaneous pending orders.
+ * Counts all provisioned or reserved WHMCS accounts including the new service.
+ */
+function eclouddokploy_within_capacity(int $maximum, int $reserved): bool
+{
+    return $maximum > 0 && $reserved >= 1 && $reserved <= $maximum;
+}
+
+function eclouddokploy_server_has_capacity(int $whmcsServerId, int $serviceId): bool
+{
+    if ($whmcsServerId <= 0 || $serviceId <= 0) return false;
+    $db = \WHMCS\Database\Capsule::connection();
+    $host = $db->table('tblservers')->where('id', $whmcsServerId)
+        ->first(['id', 'maxaccounts']);
+    $service = $db->table('tblhosting')->where('id', $serviceId)
+        ->first(['id', 'server', 'domainstatus']);
+    if (!$host || !$service || (int) $service->server !== $whmcsServerId
+        || !in_array((string) $service->domainstatus, ['Pending', 'Active', 'Suspended'], true)) {
+        return false;
+    }
+    $reserved = (int) $db->table('tblhosting')->where('server', $whmcsServerId)
+        ->whereIn('domainstatus', ['Pending', 'Active', 'Suspended'])->count();
+    return eclouddokploy_within_capacity((int) $host->maxaccounts, $reserved);
+}
+
+/** Existing services can never be silently re-homed to a new server. */
+function eclouddokploy_route_matches(?string $persistedFingerprint, array $route): bool
+{
+    return is_string($persistedFingerprint) &&
+        preg_match('/^[a-f0-9]{64}$/D', $persistedFingerprint) === 1 &&
+        hash_equals($persistedFingerprint, $route['fingerprint']);
+}
+
+function eclouddokploy_application_create_payload(
+    string $environmentId, string $name, string $remoteServerId
+): array {
+    $payload = [
+        'name' => $name,
+        'appName' => $name,
+        'environmentId' => $environmentId,
+        'sourceType' => 'git',
+    ];
+    if ($remoteServerId !== '') $payload['serverId'] = $remoteServerId;
+    return $payload;
+}
