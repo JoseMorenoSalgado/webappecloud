@@ -90,6 +90,16 @@ export async function RealEstateHome(){
     </div>
    </section>}
 
+   {visible("asesoria-empresarial")&&<section className="nexus-section nexus-advisory-home" aria-labelledby="advisory-home-title">
+    <div className="container nexus-advisory-home-row">
+     <div className="nexus-advisory-home-mark"><ShieldCheck size={31}/></div>
+     <div><span className="nexus-section-kicker">NUEVA ÁREA DE SERVICIOS</span>
+      <h2 id="advisory-home-title">Asesoría empresarial y <em>cumplimiento normativo.</em></h2>
+      <p>Auditoría externa, prevención LA/FT/FP y capacitación para sujetos obligados, conforme al marco legal aplicable en Nicaragua.</p></div>
+     <Link href="/asesoria-empresarial" className="btn nexus-advisory-home-button">Conoce nuestra asesoría <ArrowUpRight size={18}/></Link>
+    </div>
+   </section>}
+
    {visible("nosotros")&&<section className="nexus-section nexus-story">
     <div className="container nexus-story-layout">
      <div className="nexus-story-panel">
