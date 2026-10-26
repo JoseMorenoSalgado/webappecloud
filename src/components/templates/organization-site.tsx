@@ -1,19 +1,21 @@
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusiness,Handshake,Target,Mail,MessageCircle} from "lucide-react";
+import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusiness,Handshake,Target,Mail,MessageCircle,ShoppingBag,PackageCheck,Headphones} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
 import {type SiteTemplate} from "@/lib/site-template-store";
 import {PublicFrame} from "@/components/public-frame";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {ContactForm} from "@/components/contact-form";
 type Props={tenant:PublicTenant;demo:boolean;template:SiteTemplate;heroImage?:boolean};
-const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake]};
+const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake],ecommerce:[ShoppingBag,PackageCheck,Headphones]};
 function context(template:SiteTemplate){return template.key==="education"?{
  label:"Educación",servicesLabel:"Programas",aboutLabel:"Nuestra institución"
+}:template.key==="ecommerce"?{
+ label:"Comercio electrónico",servicesLabel:"Nuestra oferta",aboutLabel:"Nuestra tienda"
 }:{label:"Servicios",servicesLabel:"Nuestros servicios",aboutLabel:"Quiénes somos"};}
 export async function OrganizationHome({tenant,demo,template,heroImage}:Props){
  const pages=await getPageDefinitions(tenant.id);
  const visible=new Set(pages.filter(p=>p.published).map(p=>p.id));
- const c=context(template),data=template.content,Icons=icons[template.key==="education"?"education":"services"];
+ const c=context(template),data=template.content,Icons=icons[template.key==="education"?"education":template.key==="ecommerce"?"ecommerce":"services"];
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" className="organization-main">
    <section className={"organization-hero"+(heroImage?" organization-hero-image":"")}>
@@ -62,10 +64,10 @@ export function OrganizationAbout({tenant,demo,template}:Props){
 }
 export function OrganizationServices({tenant,demo,template}:Props){
  const d=template.content,educational=template.key==="education";
- const Icons=icons[educational?"education":"services"];
+ const Icons=icons[educational?"education":template.key==="ecommerce"?"ecommerce":"services"];
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" className="organization-main">
-  <section className="organization-inner-hero"><div className="container"><span className="organization-section-kicker">{educational?"PROGRAMAS EDUCATIVOS":"SERVICIOS PROFESIONALES"}</span>
-   <h1>{educational?"Programas de formación":"Nuestros servicios"}</h1><p>{d.description}</p></div></section>
+  <section className="organization-inner-hero"><div className="container"><span className="organization-section-kicker">{educational?"PROGRAMAS EDUCATIVOS":template.key==="ecommerce"?"OFERTA COMERCIAL":"SERVICIOS PROFESIONALES"}</span>
+   <h1>{educational?"Programas de formación":template.key==="ecommerce"?"Nuestra oferta":"Nuestros servicios"}</h1><p>{d.description}</p></div></section>
   <section className="organization-section"><div className="container">
    <div className="organization-cards">{d.cards.map((item,i)=>{const Icon=Icons[i];return <article className="organization-card" key={i}>
     <span className="organization-card-icon"><Icon size={25}/></span><h2>{item.title}</h2><p>{item.description}</p>
