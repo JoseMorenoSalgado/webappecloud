@@ -1,13 +1,17 @@
 import Link from "next/link";
 import {ArrowUpRight,Plus,Search,X} from "lucide-react";
 import {SiteCustomizerNav} from "@/components/site-customizer-nav";
+import {PagePublicationAction} from "@/components/page-publication-action";
+import {getSiteTemplate} from "@/lib/site-template-store";
+import {type PageDefinition} from "@/lib/site-pages";
 import {requireAdmin} from "@/lib/auth";
 import {getPageDefinitions} from "@/lib/site-pages";
 export const dynamic="force-dynamic";
 type Query={saved?:string;error?:string;estado?:string;buscar?:string};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
- const pages=await getPageDefinitions(admin.tenantId);
+ const [pages,template]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteTemplate(admin.tenantId)]);
+ const editingLocation=(page:PageDefinition)=>page.builtIn&&template.key!=="real-estate"?"/admin/personalizar/plantilla":"/admin/personalizar/paginas/"+page.slug;
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
@@ -18,10 +22,11 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
  const tabHref=(id:string)=>{const params=new URLSearchParams({estado:id});if(search)params.set("buscar",search);return "/admin/personalizar/paginas?"+params.toString();};
  return <>
   <div className="admin-heading cms-heading"><div><h1>Páginas</h1>
-   <p>Gestiona las páginas de tu sitio web: edita el contenido, publica o guarda borradores.</p></div>
+   <p>Edita el contenido y decide qué páginas pueden ver tus visitantes.</p></div>
    {canEdit&&<Link href="/admin/personalizar/paginas/nueva" className="btn btn-red"><Plus size={17}/> Nueva página</Link>}
   </div>
   <SiteCustomizerNav current="pages"/>
+  <div className="cms-publication-guide"><strong>Publicar y mostrar en el menú son acciones diferentes.</strong><span>Una página publicada se puede abrir mediante su enlace. Para mostrarla en la navegación superior, agrégala en <Link href="/admin/personalizar/menu">Menú principal</Link>.</span></div>
   {q.saved&&<p className="property-success" role="status">Estado de publicación actualizado correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudieron actualizar los datos. Comprueba los permisos.</p>}
   <section className="admin-panel cms-list-panel">
@@ -39,18 +44,14 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
     <table className="cms-page-table">
      <thead><tr><th>Página</th><th>Estado</th><th>Dirección</th><th>Acciones</th></tr></thead>
      <tbody>{results.map(p=><tr key={p.id}>
-      <td className="cms-page-name"><Link href={"/admin/personalizar/paginas/"+p.slug}>{p.title}</Link>
-       <small>{p.builtIn?"Página del sitio":"Página personalizada"}</small></td>
+      <td className="cms-page-name"><Link href={editingLocation(p)}>{p.title}</Link>
+       <small>{p.builtIn?(template.key==="real-estate"?"Página del sitio":"Contenido de la plantilla"):"Página personalizada"}</small></td>
       <td><span className={"cms-status "+(p.published?"cms-status-live":"cms-status-draft")}>{p.published?"Publicada":"Borrador"}</span></td>
       <td><code>{p.href}</code></td>
       <td><div className="cms-row-actions">
-       <Link href={"/admin/personalizar/paginas/"+p.slug}>Editar</Link>
+       <Link href={editingLocation(p)}>{p.builtIn&&template.key!=="real-estate"?"Editar plantilla":"Editar"}</Link>
        {p.published&&<Link href={p.href} target="_blank" aria-label={"Ver "+p.title}>Ver <ArrowUpRight size={14}/></Link>}
-       {canEdit&&p.id!=="home"&&<form method="post" action={"/api/admin/site-pages/"+encodeURIComponent(p.slug)}>
-        <input type="hidden" name="intent" value="status"/>
-        {!p.published&&<input type="hidden" name="published" value="on"/>}
-        <button type="submit">{p.published?"Borrador":"Publicar"}</button>
-       </form>}
+       {canEdit&&p.id!=="home"&&<PagePublicationAction slug={p.slug} title={p.title} published={p.published}/>}
       </div></td>
      </tr>)}</tbody>
     </table>
@@ -59,6 +60,6 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
    </div>
    <div className="cms-list-footer"><span>{results.length} de {pages.length} páginas</span></div>
   </section>
-  <p className="property-help">La portada siempre está publicada. Cada página se edita individualmente; el menú y la identidad visual se gestionan por separado.</p>
+  <p className="property-help">La portada siempre está publicada. Cada página se edita de forma independiente. <Link href="/admin/personalizar/inicio">Volver a Mi sitio web</Link>.</p>
  </>;
 }
