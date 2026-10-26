@@ -1,3 +1,4 @@
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {randomUUID} from "node:crypto";
 import {mkdir,writeFile,unlink} from "node:fs/promises";
 import {dirname} from "node:path";
@@ -11,6 +12,7 @@ export const runtime="nodejs";
 function json(error:string,status:number){return NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});}
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const admin=await propertyEditor();
+ if(!await tenantModuleEnabled(admin.tenantId,"properties"))return new Response("Módulo desactivado",{status:403});
  if(!admin.canEdit)return json("No autorizado",403);
  if(!validMutationOrigin(req))return json("Origen no permitido",403);
  const length=Number(req.headers.get("content-length")||0);
