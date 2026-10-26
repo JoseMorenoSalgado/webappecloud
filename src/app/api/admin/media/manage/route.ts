@@ -1,5 +1,5 @@
 import {constants} from "node:fs";
-import {copyFile,mkdir,stat,unlink} from "node:fs/promises";
+import {copyFile,mkdir,stat,unlink,utimes} from "node:fs/promises";
 import {dirname} from "node:path";
 import {NextRequest,NextResponse} from "next/server";
 import {requireAdmin} from "@/lib/auth";
@@ -50,6 +50,9 @@ export async function POST(req:NextRequest){
   try{
    await mkdir(dirname(trash),{recursive:true,mode:0o700});
    await copyFile(live,trash,constants.COPYFILE_EXCL);
+   // Trash retention begins on archival, never on the older source upload date.
+   const archivedAt=new Date();
+   await utimes(trash,archivedAt,archivedAt);
    // Revalidate immediately before removing the original. Never move referenced media.
    const rechecked=await referencedTenantImages(admin.tenantId);
    if(rechecked.has(id)){await unlink(trash);return fail("La imagen acaba de utilizarse en otra sección.",409);}
