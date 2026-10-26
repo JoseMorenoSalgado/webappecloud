@@ -1,4 +1,4 @@
-# NEXUS · Primera fase del rediseño público (Home)
+# NEXUS · Rediseño premium de la web pública
 
 **Objetivo:** portada comercial más clara, fotográfica y profesional, sin
 romper el CMS multicliente ni las funciones inmobiliarias existentes.
@@ -39,9 +39,9 @@ romper el CMS multicliente ni las funciones inmobiliarias existentes.
   inmuebles reales. La fotografía de referencia existente es solo un fondo
   visual provisional; idealmente se reemplaza por una fotografía aprobada
   mediante el editor del sitio.
-- Esta PR afecta **solamente a la portada inmobiliaria**. La siguiente
-  fase cubrirá catálogo, ficha de propiedad y páginas institucionales,
-  después de revisar esta composición.
+- Además de la portada, esta misma PR incluye una capa de diseño para
+  catálogo, ficha de propiedad, Nosotros, Servicios y Contacto. Los sectores
+  Educación, Servicios institucionales y Comercio conservan sus estilos.
 - La validación automática `scripts/check-nexus-premium-home.mjs` cubre
   HTML publicado, enlaces, aislamiento y reglas CSS; **no equivale a
   una auditoría visual manual**.
@@ -59,3 +59,40 @@ Comprobar en navegador real a anchos 375 / 768 / 1024 / 1440 px:
 - Que un tenant institucional no herede ninguna clase del Home NEXUS.
 
 No fusionar a main ni desplegar antes de revisar estas capturas y las CI.
+
+## Segunda fase implementada: resto de páginas públicas
+
+Se incorporó `src/app/styles/templates/nexus-site-premium.css`, cargado
+después del estilo del Home y acotado al sitio inmobiliario mediante la clase
+`nexus-site-premium` colocada exclusivamente en `PublicFrame` cuando el
+sector de la empresa es `real-estate`. Se usa `nexus-public-page` para
+acotar los espacios y tarjetas internas y no sobrescribir los ajustes del Home.
+
+- **Propiedades:** portada clara, filtros compactos y sin cajas superpuestas,
+  selectores móviles legibles, resultados y tarjetas con jerarquía visual.
+- **Ficha de inmueble:** mejor lectura de título, precio, ubicación,
+  características, PDF y contacto; galería original en `object-fit:contain`
+  y sidebar solo sticky en escritorio, nunca sobrepuesto en móvil.
+- **Nosotros:** misión y visión como secciones editoriales separadas por
+  líneas; fotografía real del catálogo si existe y texto del CMS intacto.
+- **Servicios:** servicios como filas editoriales con iconografía discreta,
+  proceso simplificado y enlaces existentes a venta, alquiler y contacto.
+- **Contacto:** métodos como filas legibles, correo y WhatsApp dinámicos,
+  formulario independiente y políticas de permiso del módulo preservadas.
+- **Navegación y footer:** mejor contraste y consistencia en todo el sector,
+  sin reemplazar la identidad de otros clientes.
+
+No se han sustituido ni inventado fotos, estadísticas, testimonios ni datos
+de propiedades. Los ajustes CMS y las publicaciones por empresa se mantienen.
+
+### Verificaciones técnicas adicionales
+
+`scripts/check-nexus-premium-site.mjs` solicita las seis rutas públicas
+en el servidor de CI y verifica HTML, componentes, aislamiento sectorial,
+filtros de catálogo, PDF, WhatsApp, publicación, formulario de contacto
+y CSS responsive. `check-style-modules.mjs` valida el nuevo módulo CSS.
+
+**Antes de fusionar:** inspeccionar capturas auténticas en 375, 768,
+1024 y 1440 px, comprobar navegación con teclado y touch, y validar
+visualmente fotografías reales del cliente. Las pruebas de código no
+sustituyen estas comprobaciones.
