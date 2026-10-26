@@ -54,7 +54,7 @@ const sections:Record<Builtin,{title:string;description:string;path:string;field
 };
 const isBuiltin=(s:string):s is Builtin=>Object.prototype.hasOwnProperty.call(sections,s);
 const canEditRole=(r:string)=>r==="admin"||r==="editor";
-export default async function EditSitePage({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{saved?:string;created?:string;error?:string}>}){
+export default async function EditSitePage({params,searchParams}:{params:Promise<{slug:string}>;searchParams:Promise<{saved?:string;created?:string;blocksSaved?:string;error?:string}>}){
  const admin=await requireRole(["admin","editor"]);
  const {slug}=await params,q=await searchParams;
  const canEdit=canEditRole(admin.role);
