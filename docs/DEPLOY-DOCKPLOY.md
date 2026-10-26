@@ -19,7 +19,7 @@ Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Doc
 
 1. Projects → proyecto nuevo **WebAppECloud – Staging** (distinto al de Edvorya).
 2. Add service → **Compose** (Docker Compose). Activar **Isolated Deployments** en las utilidades de Compose para que Traefik alcance la app sin compartir red con Edvorya. En **Preview Compose** comprobar que el servicio `app` está conectado a la red creada por Dockploy.
-3. Source: GitHub → `JoseMorenoSalgado/webappecloud`, rama `feat/nexus-real-estate-starter`.
+3. Source: GitHub → `JoseMorenoSalgado/webappecloud`, rama de staging que esté bajo pruebas; después de aprobar el lanzamiento, `main`.
 4. Compose file: `./docker-compose.yml`. Contenedor público: servicio `app`, puerto interno **3000**.
 5. Configurar variables secretas EN DOCKPLOY (nunca en Git):
 
@@ -53,4 +53,14 @@ Este procedimiento despliega WebAppECloud/NEXUS en el VPS existente mediante Doc
 
 ## Para producción
 
-No reutilizar el archivo de staging sin revisión. Faltan migraciones versionadas, backups automáticos, almacenamiento duradero de imágenes, pruebas de seguridad, alertas y carga, y adaptación definitiva para cPanel/Passenger.
+No reutilizar el archivo de staging sin revisión. Antes de producción se requieren migraciones versionadas, copias de seguridad con restauración verificada, almacenamiento duradero para imágenes, pruebas de seguridad, alertas y mediciones de carga.
+
+### Actualizar desde main sin pérdida de datos
+
+1. Antes de fusionar, identificar la rama de Git conectada a Dockploy y si **Auto Deploy** está activado. No suponer que un merge es inocuo.
+2. Crear respaldo consistente de **la base de datos SQL** y de **los volúmenes persistentes** de la aplicación (`/app/.runtime`, incluidas las imágenes). Confirmar fecha, tamaño, ubicación y capacidad de restauración.
+3. Validar en staging con una copia no sensible de los datos: instalador ya configurado, inicio de sesión, panel, edición de páginas, carga WebP, propiedad y formulario de contacto.
+4. Integrar `main` solo cuando las comprobaciones visuales y funcionales estén aprobadas; desplegar usando la imagen validada.
+5. Confirmar `/api/live`, `/api/health`, navegación pública y login después del despliegue. Ante fallo, volver al despliegue anterior **sin borrar ni reinstalar los volúmenes SQL o de archivos**.
+
+GitHub Actions verifica el código e imagen Docker, **pero no demuestra que exista una copia restaurable de los datos reales ni sustituye las pruebas visuales en el entorno publicado**.
