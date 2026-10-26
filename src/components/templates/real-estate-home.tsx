@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,Building2,KeyRound,Search,ShieldCheck,CheckCircle2} from "lucide-react";
+import {ArrowRight,ArrowUpRight,Building2,KeyRound,Search,ShieldCheck,CheckCircle2,ClipboardCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
 import type {PublicProperty} from "@/lib/demo";
@@ -20,6 +20,7 @@ export async function RealEstateHome(){
  const published=demo?new Set(["home","propiedades","nosotros","servicios","contacto"]):
   new Set((await getPageDefinitions(tenant.id)).filter(p=>p.published).map(p=>p.id));
  const visible=(page:string)=>published.has(page);
+ const serviceOptions=visible("asesoria-empresarial")?[...services,{href:"/asesoria-empresarial",Icon:ClipboardCheck,title:"Asesoría empresarial",desc:"Auditorías externas, cumplimiento normativo y capacitación LA/FT/FP."}]:services;
  // Do not load every listing and photo for three homepage cards.
  const displayed:PublicProperty[]=demo?
   (settings.featuredIds.length?demoProperties.filter(p=>settings.featuredIds.includes(p.id)).sort((a,b)=>settings.featuredIds.indexOf(a.id)-settings.featuredIds.indexOf(b.id)):demoProperties).slice(0,3):
@@ -83,7 +84,7 @@ export async function RealEstateHome(){
       <p>Un servicio inmobiliario cercano, con opciones para tus diferentes objetivos.</p></div>
       <Link href="/servicios" className="nexus-text-link">Conocer servicios <ArrowUpRight size={18}/></Link>
      </div>
-     <div className="nexus-services-grid">{services.map(({href,Icon,title,desc})=><Link href={href} key={href} className="nexus-service-card">
+     <div className={"nexus-services-grid"+(visible("asesoria-empresarial")?" nexus-services-grid-four":"")}>{serviceOptions.map(({href,Icon,title,desc})=><Link href={href} key={href} className="nexus-service-card">
       <span className="nexus-service-top"><Icon size={27} strokeWidth={1.65}/></span>
       <h3>{title}</h3><p>{desc}</p><span className="nexus-service-more">Conocer más <ArrowUpRight size={18}/></span>
      </Link>)}</div>
