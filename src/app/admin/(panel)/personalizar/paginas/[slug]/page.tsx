@@ -113,7 +113,7 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
   {(q.saved||q.created)&&<p className="property-success" role="status">Página {q.created?"creada":"actualizada"} correctamente.</p>}
   {q.error&&<p className="admin-error" role="alert">No se pudo guardar la página. Comprueba los textos y el estado de publicación.</p>}
   {canEdit?<CustomPageEditor mode="edit" slug={slug} title={page.title}
-    summary={blocks.summary} body={blocks.body} published={page.published}/>:
+    summary={blocks.summary} body={blocks.body} sections={blocks.sections} published={page.published}/>:
     <p className="admin-error">No tienes permisos para editar.</p>}
 
  </>;
