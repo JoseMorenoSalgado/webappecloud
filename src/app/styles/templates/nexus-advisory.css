@@ -388,3 +388,72 @@
 @media(prefers-reduced-motion:reduce){
  .public-site:not(.public-site-organization) .nexus-advisory-service{transition:none}
 }
+
+
+/* Optional Home promotion: only appears for a tenant that publishes Advisory. */
+.public-site:not(.public-site-organization) .nexus-advisory-home{
+ background:#f6f8fa;
+ border-top:1px solid #e9edf1;
+ border-bottom:1px solid #e9edf1;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-row{
+ display:grid;
+ grid-template-columns:70px minmax(0,1fr) auto;
+ align-items:center;
+ gap:clamp(17px,3vw,38px);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-mark{
+ width:64px;height:64px;
+ border-radius:13px;
+ display:grid;
+ place-items:center;
+ color:var(--red);
+ background:#fff;
+ box-shadow:0 4px 19px rgba(25,45,58,.08);
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home h2{
+ font-size:clamp(27px,3vw,40px);
+ line-height:1.14;
+ letter-spacing:-.052em;
+ margin:9px 0 11px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home p{
+ color:#607287;
+ line-height:1.73;
+ max-width:720px;
+ margin:0;
+ font-size:14px;
+}
+.public-site:not(.public-site-organization) .nexus-advisory-home-button{
+ min-height:48px;
+ border-radius:8px;
+ background:var(--red);
+ color:#fff;
+ display:inline-flex;
+ gap:8px;
+ align-items:center;
+ justify-content:center;
+ padding:12px 19px;
+ white-space:normal;
+}
+@media(max-width:950px){
+ .public-site:not(.public-site-organization) .nexus-advisory-home-row{
+  grid-template-columns:58px minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-mark{
+  width:55px;height:55px;
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-button{
+  grid-column:2;
+  justify-self:start;
+ }
+}
+@media(max-width:540px){
+ .public-site:not(.public-site-organization) .nexus-advisory-home-row{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .public-site:not(.public-site-organization) .nexus-advisory-home-button{
+  grid-column:1;
+  justify-self:stretch;
+ }
+}
