@@ -26,6 +26,8 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 Home editable, buscador, propiedades, imágenes, fichas PDF, formulario de contacto, WhatsApp por propiedad, seguimiento de leads y estadísticas diferenciadas (visita/clic/contacto).
 
 ## Diseño: Taste Skill, Impeccable y Emil Kowalski
+- **Skill local integrada en el repositorio:** `.agents/skills/webappecloud-design/SKILL.md` y sus referencias. Leerla y aplicarla en cambios de UI. Está disponible al abrir el repositorio en un agente compatible con Skills, sin ejecutar un instalador externo.
+- La Skill local agrupa criterios comprobados de las tres fuentes, pero no instala ni ejecuta los analizadores oficiales. La instalación opcional completa sigue disponible mediante `scripts/setup-design-skills.sh`.
 - Los agentes Codex pueden instalarlas en la raíz del proyecto con `bash scripts/setup-design-skills.sh` (Node 22+ y red; únicamente en desarrollo). Se usan los instaladores oficiales; no se ejecutan en cPanel ni en contenedores de producción.
 - Leer `PRODUCT.md`, `DESIGN.md` y `docs/APLICACION-SKILLS-UI.md` antes de modificar pantallas. Tras la instalación, reiniciar el agente y aprobar los hooks según el proveedor.
 - Revisar https://www.tasteskill.dev/ como referencia de dirección artística, jerarquía tipográfica y composiciones no genéricas.
