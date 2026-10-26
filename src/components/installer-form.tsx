@@ -2,19 +2,20 @@
 import {useState,type FormEvent} from "react";
 import {ArrowLeft,ArrowRight,CheckCircle2,Database,ShieldCheck,Building2} from "lucide-react";
 import {SITE_TEMPLATES,type SiteTemplateKey} from "@/lib/site-template-registry";
+import {defaultEnabledModules,modulesForSector,type ModuleKey} from "@/lib/tenant-modules-registry";
 
 type Values={
  dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
- institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;
+ institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey:SiteTemplateKey;modules:ModuleKey[];
 };
 const defaults:Values={
  dbType:"mariadb",dbHost:"db",dbPort:"3306",dbName:"webappecloud",dbUser:"webappecloud",dbPassword:"",
- institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate"
+ institution:"",institutionEmail:"",adminName:"",adminEmail:"",adminPassword:"",templateKey:"real-estate",modules:defaultEnabledModules("real-estate")
 };
 export default function InstallerForm({domain}:{domain:string}){
  const [step,setStep]=useState<1|2>(1),[values,setValues]=useState(defaults);
  const [error,setError]=useState(""),[busy,setBusy]=useState(false),[complete,setComplete]=useState(false);
- function change(name:keyof Values,value:string){setValues(v=>({...v,[name]:value}));}
+ function change(name:Exclude<keyof Values,"modules">,value:string){setValues(v=>({...v,[name]:value}));}
  async function submit(event:FormEvent<HTMLFormElement>){
   event.preventDefault();setError("");
   if(step===1){setStep(2);return;}
@@ -65,11 +66,23 @@ export default function InstallerForm({domain}:{domain:string}){
     {input("institutionEmail","Correo institucional",{type:"email",autoComplete:"email"})}
     <div className="wizard-domain"><span>Dominio detectado:</span> <strong>{domain}</strong></div>
     <label className="wizard-field"><span>Plantilla inicial del sitio</span>
-     <select value={values.templateKey} className="wizard-db-select" onChange={e=>change("templateKey",e.target.value)}>
+     <select value={values.templateKey} className="wizard-db-select" onChange={e=>{const next=e.target.value as SiteTemplateKey;setValues(v=>({...v,templateKey:next,modules:defaultEnabledModules(next)}));}}>
       {SITE_TEMPLATES.map(t=><option value={t.key} key={t.key}>{t.label}</option>)}
      </select>
      <small>La plantilla puede cambiarse después desde Personalizar sitio. No elimina datos.</small>
     </label>
+    <div className="wizard-module-step">
+     <h3>Aplicaciones y módulos</h3>
+     <p>Selecciona las herramientas que quieres usar. Puedes cambiarlas después desde el panel. Los módulos en desarrollo todavía no pueden activarse.</p>
+     <div className="wizard-module-options">
+      {modulesForSector(values.templateKey).map(module=><label className="wizard-module-choice" key={module.key}>
+       <input type="checkbox" checked={values.modules.includes(module.key)} disabled={!module.implemented||module.mandatory}
+        onChange={e=>setValues(v=>({...v,modules:e.target.checked?[...v.modules,module.key]:v.modules.filter(k=>k!==module.key)}))}/>
+       <span><strong>{module.label}</strong><small>{module.description}</small></span>
+       {!module.implemented&&<small>Próximamente</small>}
+      </label>)}
+     </div>
+    </div>
     <h3>Cuenta administradora</h3>
     {input("adminName","Nombre del administrador",{minLength:2,autoComplete:"name"})}
     {input("adminEmail","Correo del administrador",{type:"email",autoComplete:"email"})}
