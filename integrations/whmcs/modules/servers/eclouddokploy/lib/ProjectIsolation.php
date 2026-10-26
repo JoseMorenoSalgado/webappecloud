@@ -120,7 +120,7 @@ function eclouddokploy_lookup_service_project(
         // Never fall back after auth/permission errors or ambiguous 500s.
         // Older Dokploy API releases may not expose project.search at all.
         if (!preg_match(
-            '/^Dokploy request failed: project[.]search [(]HTTP (404|405)[)][.]$/D',
+            '/^Dokploy read failed: project[.]search [(]HTTP (404|405)[)][.]$/D',
             $e->getMessage()
         )) {
             throw $e;
