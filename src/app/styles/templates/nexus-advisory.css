@@ -1,0 +1,73 @@
+/* NEXUS advisory: restrained editorial presentation without changing the original public theme. */
+.public-site:not(.public-site-organization) .nexus-advisory{background:#fff;color:#26394d}
+.public-site .nexus-advisory .nexus-advisory-hero{background:linear-gradient(113deg,#112638,#1e3c4d 77%,#263d4c);padding-block:clamp(62px,7.5vw,112px);position:relative;overflow:hidden}
+.public-site .nexus-advisory .nexus-advisory-hero:after{content:"";position:absolute;width:430px;height:430px;border:1px solid #ffffff12;border-radius:50%;right:-190px;bottom:-250px;pointer-events:none}
+.public-site .nexus-advisory .nexus-advisory-hero-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(265px,.8fr);align-items:center;gap:clamp(32px,5vw,78px);position:relative;z-index:1}
+.public-site .nexus-advisory .nexus-advisory-hero h1{color:#fff;max-width:780px;font-size:clamp(37px,4.5vw,64px);line-height:1.09;letter-spacing:-.05em;margin:16px 0 22px}
+.public-site .nexus-advisory .nexus-advisory-hero h1 em{font-style:normal;color:#f4a0a5}
+.public-site .nexus-advisory .nexus-advisory-hero p{max-width:690px;font-size:15px;line-height:1.85;color:#dae5ec;margin:0}
+.public-site .nexus-advisory .nexus-advisory-actions{display:flex;align-items:center;flex-wrap:wrap;gap:15px 22px;margin-top:29px}
+.public-site .nexus-advisory .nexus-advisory-hero-link{color:#fff;display:inline-flex;gap:8px;align-items:center;font-size:13px;font-weight:750;min-height:44px}
+.public-site .nexus-advisory .nexus-advisory-hero-aside{padding:27px 27px 22px;background:#ffffff0b;border:1px solid #ffffff28;border-radius:14px;box-shadow:0 20px 45px #03152222;backdrop-filter:blur(5px)}
+.public-site .nexus-advisory .nexus-advisory-aside-label{display:block;color:#eeb0b4;font-size:10px;font-weight:850;letter-spacing:.14em;margin-bottom:10px}
+.public-site .nexus-advisory .nexus-advisory-hero-aside>div{display:flex;gap:13px;align-items:center;border-bottom:1px solid #ffffff25;padding:17px 0;color:#f3f7fa;font-size:13px;font-weight:700}
+.public-site .nexus-advisory .nexus-advisory-hero-aside>div svg{color:#f7b0b8;flex-shrink:0}
+.public-site .nexus-advisory .nexus-advisory-aside-footer{display:block;font-size:11px;letter-spacing:.24em;color:#bed0dc;margin-top:18px;text-align:right}
+.public-site .nexus-advisory .nexus-advisory-section{padding-block:clamp(55px,7vw,95px);scroll-margin-top:84px}
+.public-site .nexus-advisory .nexus-advisory-heading{max-width:740px;margin-bottom:30px}
+.public-site .nexus-advisory .nexus-advisory-heading h2,.public-site .nexus-advisory .nexus-advisory-two-columns h2,.public-site .nexus-advisory .nexus-advisory-contact h2{font-size:clamp(28px,3.3vw,43px);letter-spacing:-.04em;line-height:1.16;color:#23374b;margin:12px 0 15px}
+.public-site .nexus-advisory h2 em{font-style:normal;color:var(--red)}
+.public-site .nexus-advisory .nexus-advisory-heading p,.public-site .nexus-advisory .nexus-advisory-two-columns p{font-size:14px;color:#5f7286;line-height:1.8}
+.public-site .nexus-advisory .nexus-advisory-services{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.public-site .nexus-advisory .nexus-advisory-service{display:flex;flex-direction:column;align-items:start;gap:13px;min-width:0;padding:25px 24px;background:#fff;border:1px solid #e0e7eb;border-radius:12px;box-shadow:0 9px 23px #172c3b09}
+.public-site .nexus-advisory .nexus-advisory-service-symbol{width:48px;height:48px;display:grid;place-items:center;border-radius:10px;background:#fff1f2;color:var(--red)}
+.public-site .nexus-advisory .nexus-advisory-service span{display:block;color:var(--red);font-size:10px;letter-spacing:.14em;font-weight:800}
+.public-site .nexus-advisory .nexus-advisory-service h3{font-size:18px;letter-spacing:-.025em;line-height:1.3;margin:10px 0;color:#213749}
+.public-site .nexus-advisory .nexus-advisory-service p{font-size:13px;line-height:1.8;color:#607288;margin:0}
+.public-site .nexus-advisory .nexus-advisory-service a{margin-top:auto;display:inline-flex;align-items:center;gap:7px;color:var(--red);font-size:12px;font-weight:800;min-height:40px}
+.public-site .nexus-advisory .nexus-advisory-audience{background:#f6f8fa}
+.public-site .nexus-advisory .nexus-advisory-two-columns{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);gap:clamp(28px,6vw,88px);align-items:center}
+.public-site .nexus-advisory .nexus-advisory-checklist{background:#fff;border:1px solid #e2e8ed;border-radius:12px;padding:28px}
+.public-site .nexus-advisory .nexus-advisory-checklist h3{font-size:18px;margin:0 0 19px;color:#2b4055}
+.public-site .nexus-advisory .nexus-advisory-checklist ul{list-style:none;padding:0;margin:0;display:grid;gap:17px}
+.public-site .nexus-advisory .nexus-advisory-checklist li{display:flex;align-items:start;gap:11px;font-size:13px;color:#53687b;line-height:1.5}
+.public-site .nexus-advisory .nexus-advisory-checklist li svg{flex-shrink:0;color:#329576}
+.public-site .nexus-advisory .nexus-advisory-laws{border-bottom:1px solid #e7ebee}
+.public-site .nexus-advisory .nexus-advisory-law-list{display:grid;gap:10px}
+.public-site .nexus-advisory .nexus-advisory-law-list>div{display:grid;gap:8px;padding:18px 21px;border-left:3px solid var(--red);background:#f7f9fb;border-radius:0 9px 9px 0}
+.public-site .nexus-advisory .nexus-advisory-law-list span{color:var(--red);font-size:11px;letter-spacing:.12em;font-weight:850}
+.public-site .nexus-advisory .nexus-advisory-law-list strong{color:#34485a;font-size:13px;line-height:1.6;font-weight:700}
+.public-site .nexus-advisory .nexus-advisory-law-list a{display:inline-flex;align-items:center;gap:7px;color:var(--red);font-size:12px;font-weight:800;justify-self:start;margin-top:6px}
+.public-site .nexus-advisory .nexus-advisory-disclaimer{margin:21px 0 0;line-height:1.65;color:#7e8b99;font-size:11px}
+.public-site .nexus-advisory .nexus-advisory-contact{background:#172c3c;color:#fff}
+.public-site .nexus-advisory .nexus-advisory-contact-layout{display:grid;grid-template-columns:minmax(0,.95fr) minmax(320px,1fr);gap:clamp(25px,7vw,105px);align-items:start}
+.public-site .nexus-advisory .nexus-advisory-contact h2{color:#fff;margin-top:17px}
+.public-site .nexus-advisory .nexus-advisory-contact h2 em{color:#f1a0aa}
+.public-site .nexus-advisory .nexus-advisory-contact-copy>p{max-width:520px;font-size:14px;color:#c4d4dd;line-height:1.85;margin-bottom:25px}
+.public-site .nexus-advisory .nexus-advisory-whatsapp{display:inline-flex;align-items:center;gap:10px;border:1px solid #ffffff65;border-radius:9px;color:#fff;padding:13px 16px;font-size:13px;font-weight:800;min-height:48px}
+.public-site .nexus-advisory .nexus-advisory-email{display:block;margin-top:19px;font-size:13px;color:#f4c2c5;overflow-wrap:anywhere}
+.public-site .nexus-advisory .nexus-advisory-form{background:#fff;border-radius:12px;padding:30px;color:#273c50;box-shadow:0 18px 42px #07192432}
+.public-site .nexus-advisory .nexus-advisory-form h3{font-size:25px;line-height:1.25;margin:12px 0;color:#25384c}
+.public-site .nexus-advisory .nexus-advisory-form>p{font-size:13px;color:#65768a;line-height:1.7}
+.public-site .nexus-advisory .nexus-advisory-form .contact-form{display:grid;gap:13px;margin-top:22px}
+.public-site .nexus-advisory .nexus-advisory-form .contact-form .btn{width:100%;justify-content:center;min-height:47px}
+.public-site .nexus-services-grid-four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.public-site .nexus-services-grid-four .nexus-service-card{min-width:0}
+.public-site .nexus-advisory :is(a,button,input,textarea):focus-visible{outline:3px solid #e87e8a;outline-offset:3px}
+@media(max-width:1050px){
+ .public-site .nexus-advisory .nexus-advisory-services{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .public-site .nexus-services-grid-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:800px){
+ .public-site .nexus-advisory .nexus-advisory-hero-grid,.public-site .nexus-advisory .nexus-advisory-two-columns,.public-site .nexus-advisory .nexus-advisory-contact-layout{grid-template-columns:1fr}
+ .public-site .nexus-advisory .nexus-advisory-hero-aside{max-width:550px}
+}
+@media(max-width:610px){
+ .public-site .nexus-advisory .nexus-advisory-services,.public-site .nexus-services-grid-four{grid-template-columns:1fr}
+ .public-site .nexus-advisory .nexus-advisory-service{padding:22px 19px}
+ .public-site .nexus-advisory .nexus-advisory-hero{padding-block:60px}
+ .public-site .nexus-advisory .nexus-advisory-hero h1{font-size:clamp(35px,9vw,48px)}
+ .public-site .nexus-advisory .nexus-advisory-hero-aside{padding:21px}
+ .public-site .nexus-advisory .nexus-advisory-checklist,.public-site .nexus-advisory .nexus-advisory-form{padding:22px 19px}
+}
+@media(prefers-reduced-motion:reduce){.public-site .nexus-advisory *{scroll-behavior:auto!important;transition:none!important}}
