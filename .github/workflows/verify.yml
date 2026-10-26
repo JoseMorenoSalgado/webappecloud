@@ -158,6 +158,8 @@ jobs:
         run: node scripts/check-template-selection.mjs
       - name: Verificar sector, módulos, accesos y aislamiento en MariaDB
         run: node scripts/check-tenant-modules.mjs
+      - name: Probar orientación CMS, páginas y navegación por sector
+        run: node scripts/check-site-hub.mjs
       - name: Reproducir instalación MariaDB heredada y comprobar recuperación sin pérdida de datos
         run: node scripts/check-legacy-db.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado
