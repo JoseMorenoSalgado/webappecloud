@@ -258,25 +258,21 @@ function eclouddokploy_prepare_private_project_locked(
         $api, $clientId, $serviceId
     );
     if ($remoteProjectId !== null) {
-        if ($projectId !== '' && !hash_equals($projectId, $remoteProjectId)) {
-            return 'El ID guardado en WHMCS no corresponde al proyecto existente en Dokploy. '
-                . 'Se requiere revisión; no se vinculó otro proyecto.';
+        // A remote project that has NOT been linked to this WHMCS service
+        // must never be imported without the administrator's explicit "Sí".
+        // This also protects against accidentally adopting a project whose
+        // old WHMCS ID was deleted or now belongs to another resource.
+        if ($projectId === '' || !hash_equals($projectId, $remoteProjectId)) {
+            return eclouddokploy_import_question();
         }
+        // Already bound by exact projectId: verification is idempotent, not
+        // another import. If the environment ID was missing, read it below.
         $projectId = $remoteProjectId;
         if (in_array($state, $preProject, true)) {
-            // Dokploy has the real project: reconcile the lost response first.
-            // This also covers old services saved as awaiting_setup or new.
             eclouddokploy_set_state($serviceId, 'project_created', [
                 'project_id' => $projectId,
             ]);
             $state = 'project_created';
-        } elseif ((string) ($row->project_id ?? '') === '') {
-            // State may already be project_created/environment_ready, but
-            // the project ID was not persisted by an older installation.
-            // Restore only the missing ID; do not change an advanced state.
-            eclouddokploy_set_state($serviceId, $state, [
-                'project_id' => $projectId,
-            ]);
         }
     } elseif ($projectId !== '') {
         return 'WHMCS tiene un ID de proyecto, pero no aparece en Dokploy '
