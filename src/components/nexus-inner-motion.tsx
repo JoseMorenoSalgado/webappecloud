@@ -25,7 +25,10 @@ export function NexusInnerMotion(){
    ".nexus-services-page .nexus-service-details > article",
    ".nexus-steps-grid > div",
    ".nexus-contact-information .nexus-contact-methods > .nexus-contact-method",
-   ".nexus-contact-information .nexus-contact-note"
+   ".nexus-contact-information .nexus-contact-note",
+   ".nexus-advisory-service-grid > .nexus-advisory-service",
+   ".nexus-advisory-process > div",
+   ".nexus-advisory-resources-inner"
   ];
   const targets=Array.from(root.querySelectorAll<HTMLElement>(selectors.join(",")));
   const running=new Set<Animation>();
