@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import {type PageSection,MAX_PAGE_SECTIONS} from "@/lib/page-sections";
 import {PageSectionContent} from "@/components/page-section-content";
+import {CmsMediaPicker} from "@/components/cms-media-picker";
 
 type EditorProps={mode:"create"|"edit";slug?:string;title?:string;summary?:string;body?:string;published?:boolean;sections?:PageSection[]};
 function slugify(value:string){
@@ -158,6 +159,7 @@ export function CustomPageEditor({
           onChange={e=>{void uploadImage(section.id,e.target.files?.[0]);e.target.value="";}}/>
         </label>:
         <p className="cms-block-image-help">Primero crea la página como borrador. Después podrás subir imágenes desde este editor.</p>}
+       {mode==="edit"&&storedSlug&&<CmsMediaPicker targetSlug={storedSlug} disabled={Boolean(busyImage)||submitting} onChoose={imageId=>update(section.id,{imageId} as Partial<PageSection>)}/>}
        {section.imageId&&mode==="edit"&&storedSlug&&<img loading="lazy" src={"/api/admin/site-pages/"+encodeURIComponent(storedSlug)+"/images/"+section.imageId} alt={section.alt||"Imagen cargada en edición"}/>}
        <label>Descripción para accesibilidad (obligatoria)
         <input value={section.alt} onChange={e=>update(section.id,{alt:e.target.value})} maxLength={180}
