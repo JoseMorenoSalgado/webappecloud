@@ -4,7 +4,7 @@ import {join} from "node:path";
 import {prisma} from "@/lib/prisma";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {configDir} from "@/lib/server-config";
-import {normalizePageSections} from "@/lib/page-sections";
+import {pageImageId} from "@/lib/page-sections";
 import {pageImagePath} from "@/lib/page-images";
 
 export const MEDIA_RECENT_MS=24*60*60*1000;
@@ -24,8 +24,13 @@ export async function referencedTenantImages(tenantId:string):Promise<Set<string
   const raw=page.blocks;
   if(!raw||typeof raw!=="object"||Array.isArray(raw))continue;
   const data=raw as Record<string,unknown>;
-  for(const section of normalizePageSections(data.sections)){
-   if(section.type==="image")used.add(section.imageId);
+  // Conservative: keep references even if a legacy block has an invalid
+  // caption/alt field. Never infer that a corrupted block frees its image.
+  if(!Array.isArray(data.sections))continue;
+  for(const section of data.sections){
+   if(!section||typeof section!=="object"||Array.isArray(section))continue;
+   const id=(section as Record<string,unknown>).imageId;
+   if(typeof id==="string"&&pageImageId.test(id))used.add(id);
   }
  }
  return used;
