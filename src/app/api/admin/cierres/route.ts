@@ -1,6 +1,7 @@
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {closingTableReady} from "@/lib/closing-schema";
 import {decimalAmount,validClosedAt} from "@/lib/closing-utils";
 import {parseRoles} from "@/lib/roles";
@@ -9,6 +10,7 @@ export const runtime="nodejs";
 const back=(error:string)=>propertyRedirect("/admin/cierres?error="+encodeURIComponent(error));
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
+ if(!await tenantModuleEnabled(admin.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!admin.roles.some(r=>r==="admin"||r==="editor"))return back("permisos");
  if(!validMutationOrigin(req))return back("origen");
  const length=Number(req.headers.get("content-length")||0);
