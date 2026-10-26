@@ -1,7 +1,7 @@
 import Link from "next/link";
-import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2} from "lucide-react";
+import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2,ClipboardCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
-import {assertPagePublished} from "@/lib/site-pages";
+import {assertPagePublished,getPageDefinitions} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
@@ -20,6 +20,7 @@ export default async function Services(){
  }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"servicios");
+ const advisoryVisible=demo||((await getPageDefinitions(tenant.id)).some(p=>p.id==="asesoria-empresarial"&&p.published));
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" data-nexus-inner-motion="servicios"><NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-services-hero"><div className="container">
@@ -50,6 +51,12 @@ export default async function Services(){
        <Link href="/contacto" className="nexus-text-link">Hablar con nuestro equipo <ArrowUpRight size={18}/></Link>
       </div>
      </article>
+     {advisoryVisible&&<article id="cumplimiento"><div className="nexus-service-icon"><ClipboardCheck size={28}/></div>
+      <div><span>04 / SERVICIOS EMPRESARIALES</span><h3>Auditoría y cumplimiento normativo</h3><p>Asesoría y formación en prevención de lavado de activos, financiamiento al terrorismo y de la proliferación de armas de destrucción masiva.</p>
+       <ul><li><CheckCircle2 size={17}/> Auditorías externas de cumplimiento</li><li><CheckCircle2 size={17}/> Orientación para sujetos obligados</li><li><CheckCircle2 size={17}/> Capacitaciones sobre la Ley 977 y la Ley 976</li></ul>
+       <Link href="/asesoria-empresarial" className="nexus-text-link">Explorar asesoría empresarial <ArrowUpRight size={18}/></Link>
+      </div>
+     </article>}
     </div>
    </div></section>
    <section className="nexus-section nexus-steps"><div className="container">
