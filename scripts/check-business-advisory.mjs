@@ -22,7 +22,7 @@ assert.match(await list.text(),/Asesoría Empresarial/);
 const edit=await fetch(origin+"/admin/personalizar/paginas/asesoria-empresarial",{headers:{Cookie:auth.Cookie}});
 assert.equal(edit.status,200,"Advisory content must be CMS-editable");
 const editHtml=await edit.text();
-assert.ok(editHtml.includes("Material informativo")&&editHtml.includes("Subir imagen"),"Missing image editor for advisory");
+assert.ok(editHtml.includes("Material informativo")&&editHtml.includes("Secciones adicionales")&&editHtml.includes("Imagen"),"Missing image editor for advisory");
 assert.equal((await fetch(origin+"/asesoria-empresarial")).status,404,"Business advisory must opt in and stay unpublished by default");
 
 const toggle=async published=>{
