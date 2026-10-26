@@ -13,7 +13,7 @@ import {PageExtrasEditor} from "@/components/page-extras-editor";
 import {readExtraSections} from "@/lib/page-extras";
 export const dynamic="force-dynamic";
 type Field={name:string;label:string;max:number;multiline?:boolean;hint?:string};
-type Builtin="home"|"propiedades"|"nosotros"|"servicios"|"contacto";
+type Builtin="home"|"propiedades"|"nosotros"|"servicios"|"contacto"|"asesoria-empresarial";
 const sections:Record<Builtin,{title:string;description:string;path:string;fields:Field[]}>={
  home:{title:"Página de inicio",description:"Edita exclusivamente los textos del banner principal. Otros contenidos permanecen como estaban.",path:"/",
   fields:[
@@ -45,6 +45,7 @@ const sections:Record<Builtin,{title:string;description:string;path:string;field
    {name:"servicesRent",label:"Alquileres",max:400,multiline:true},
    {name:"servicesAdvice",label:"Asesoría inmobiliaria",max:400,multiline:true}
   ]},
+ "asesoria-empresarial":{title:"Asesoría Empresarial",description:"Publica la asesoría en cumplimiento y añade textos e imágenes informativas.",path:"/asesoria-empresarial",fields:[]},
  contacto:{title:"Contacto",description:"Edita los mensajes y los canales de contacto que utilizarán tus visitantes.",path:"/contacto",
   fields:[
    {name:"contactHeading",label:"Título principal",max:100},
@@ -60,6 +61,29 @@ export default async function EditSitePage({params,searchParams}:{params:Promise
  const canEdit=canEditRole(admin.role);
  if(isBuiltin(slug)){
   const template=await getSiteTemplate(admin.tenantId);
+  if(slug==="asesoria-empresarial"){
+   if(template.key!=="real-estate")notFound();
+   const [definitions,extras]=await Promise.all([getPageDefinitions(admin.tenantId),readExtraSections(admin.tenantId,"asesoria-empresarial")]);
+   const published=definitions.some(page=>page.id==="asesoria-empresarial"&&page.published);
+   return <>
+    <div className="admin-heading"><div><Link href="/admin/personalizar/paginas" className="inline-link"><ArrowLeft size={16}/> Todas las páginas</Link>
+     <h1>Asesoría Empresarial</h1><p>Auditoría externa, prevención LA/FT/FP y capacitaciones. Agrega textos e imágenes a esta página sin cambiar la inmobiliaria.</p></div>
+     {published&&<Link href="/asesoria-empresarial" target="_blank" className="btn wizard-back">Ver página <ExternalLink size={16}/></Link>}
+    </div>
+    <div className="cms-publication-guide"><strong>{published?"Página publicada":"Página en borrador"}</strong>
+     <span>Para {published?"retirar":"publicar"} esta sección usa <Link href="/admin/personalizar/paginas">Páginas</Link>.
+     Cuando esté publicada podrás colocarla en <Link href="/admin/personalizar/menu">Menú principal</Link>.</span>
+    </div>
+    {q.blocksSaved&&<p role="status" className="property-success">Contenido adicional guardado correctamente.</p>}
+    {q.error&&<p role="alert" className="admin-error">{q.error==="imagenes"?"La imagen ya no está disponible. Vuelve a cargarla.":q.error==="secciones"?"Revisa los textos e imágenes.":"No fue posible guardar los contenidos."}</p>}
+    <section className="cms-builtins-extras-intro"><h2>Material informativo e imágenes</h2>
+     <p>Sube fotografías, infografías, encabezados o explicaciones sobre cumplimiento y formación.
+     Se convierten a WebP y se almacenan por empresa. El contenido aparecerá al final de Asesoría Empresarial.</p></section>
+    <PageExtrasEditor slug="asesoria-empresarial" initial={extras}/>
+    <p className="property-help">El contenido legal introductorio y el formulario de solicitud se mantienen.
+     Las imágenes y los textos de esta sección los puedes actualizar cuando lo necesites.</p>
+   </>;
+  }
   if(template.key!=="real-estate"){
    if(slug==="propiedades")notFound();
    const extra=await readExtraSections(admin.tenantId,slug);
