@@ -9,6 +9,7 @@ import {notFound} from "next/navigation";
 import {getCatalogPage,getCatalogLocationSuggestions,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
@@ -91,5 +92,6 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
     {result.currentPage<result.totalPages&&<Link className="btn" href={pageHref(result.currentPage+1)}>Siguiente</Link>}
    </nav>}
   </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="propiedades" demo={demo}/>
  </main></PublicFrame>;
 }
