@@ -26,6 +26,8 @@ SaaS de sitios web multicliente. Primer módulo: inmobiliaria; futuros módulos 
 Home editable, buscador, propiedades, imágenes, fichas PDF, formulario de contacto, WhatsApp por propiedad, seguimiento de leads y estadísticas diferenciadas (visita/clic/contacto).
 
 ## Diseño: Taste Skill, Impeccable y Emil Kowalski
+- Los agentes Codex pueden instalarlas en la raíz del proyecto con `bash scripts/setup-design-skills.sh` (Node 22+ y red; únicamente en desarrollo). Se usan los instaladores oficiales; no se ejecutan en cPanel ni en contenedores de producción.
+- Leer `PRODUCT.md`, `DESIGN.md` y `docs/APLICACION-SKILLS-UI.md` antes de modificar pantallas. Tras la instalación, reiniciar el agente y aprobar los hooks según el proveedor.
 - Revisar https://www.tasteskill.dev/ como referencia de dirección artística, jerarquía tipográfica y composiciones no genéricas.
 - Consultar https://impeccable.style/ para crítica de interfaz, accesibilidad, densidad informativa y pulido de formularios, estados y navegación.
 - Consultar https://emilkowal.ski/skill para criterios de movimiento, navegación móvil y rendimiento de animaciones.
