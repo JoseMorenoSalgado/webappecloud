@@ -22,6 +22,7 @@ require_once __DIR__ . '/lib/AutomaticSetup.php';
 require_once __DIR__ . '/lib/AutoMail.php';
 require_once __DIR__ . '/lib/OrderInstall.php';
 require_once __DIR__ . '/lib/AdminAssistance.php';
+require_once __DIR__ . '/lib/DeletedProjectRecovery.php';
 
 use WHMCS\Database\Capsule;
 
