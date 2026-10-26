@@ -154,6 +154,8 @@ jobs:
         run: node scripts/check-public-pages.mjs
       - name: Probar diseño clásico restaurado de NEXUS y micro-mejoras móviles
         run: node scripts/check-nexus-classic-restored.mjs
+      - name: Verificar animaciones ligeras del Home sin alterar el diseño clásico
+        run: node scripts/check-nexus-home-motion.mjs
       - name: Preparar Playwright sin depender de Ubuntu del runner
         run: |
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
