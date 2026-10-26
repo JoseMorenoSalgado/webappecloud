@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {prisma} from "@/lib/prisma";
 import {closingTableReady} from "@/lib/closing-schema";
 import {closingWhere,closingMoney} from "@/lib/closing-utils";
@@ -10,6 +11,7 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 export async function GET(req:NextRequest){
  const user=await requireAdmin();
+ if(!await tenantModuleEnabled(user.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.some(r=>["admin","editor","agente"].includes(r)))return new Response("No autorizado",{status:403});
  if(!await closingTableReady())return new Response("Cierres no activados",{status:503});
  const qs=new URL(req.url).searchParams;

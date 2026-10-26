@@ -1,19 +1,23 @@
 import Link from "next/link";
-import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusiness,Handshake,Target,Mail,MessageCircle} from "lucide-react";
+import {ArrowRight,ArrowUpRight,GraduationCap,BookOpen,UsersRound,BriefcaseBusiness,Handshake,Target,Mail,MessageCircle,ShoppingBag,PackageCheck,Headphones} from "lucide-react";
 import {type PublicTenant} from "@/lib/demo";
 import {type SiteTemplate} from "@/lib/site-template-store";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {getPageDefinitions} from "@/lib/site-pages";
 import {ContactForm} from "@/components/contact-form";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 type Props={tenant:PublicTenant;demo:boolean;template:SiteTemplate;heroImage?:boolean};
-const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake]};
+const icons={education:[BookOpen,GraduationCap,UsersRound],services:[BriefcaseBusiness,Target,Handshake],ecommerce:[ShoppingBag,PackageCheck,Headphones]};
 function context(template:SiteTemplate){return template.key==="education"?{
  label:"Educación",servicesLabel:"Programas",aboutLabel:"Nuestra institución"
+}:template.key==="ecommerce"?{
+ label:"Comercio electrónico",servicesLabel:"Nuestra oferta",aboutLabel:"Nuestra tienda"
 }:{label:"Servicios",servicesLabel:"Nuestros servicios",aboutLabel:"Quiénes somos"};}
 export async function OrganizationHome({tenant,demo,template,heroImage}:Props){
  const pages=await getPageDefinitions(tenant.id);
  const visible=new Set(pages.filter(p=>p.published).map(p=>p.id));
- const c=context(template),data=template.content,Icons=icons[template.key==="education"?"education":"services"];
+ const c=context(template),data=template.content,Icons=icons[template.key==="education"?"education":template.key==="ecommerce"?"ecommerce":"services"];
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" className="organization-main">
    <section className={"organization-hero"+(heroImage?" organization-hero-image":"")}>
@@ -46,6 +50,7 @@ export async function OrganizationHome({tenant,demo,template,heroImage}:Props){
    {visible.has("contacto")&&<section className="organization-cta"><div className="container"><div><span>ESTAMOS PARA AYUDARTE</span><h2>{data.contactTitle}</h2><p>{data.contactText}</p></div>
     <Link href="/contacto" className="btn organization-primary-button">Contactar <ArrowRight size={17}/></Link>
    </div></section>}
+  <PageExtraSections tenantId={tenant.id} slug="home" demo={demo}/>
   </main>
  </PublicFrame>;
 }
@@ -58,14 +63,15 @@ export function OrganizationAbout({tenant,demo,template}:Props){
    <Link href="/servicios" className="organization-text-link">{template.key==="education"?"Conocer programas":"Conocer servicios"} <ArrowUpRight size={17}/></Link>
   </div></section>
   <section className="organization-cta"><div className="container"><div><h2>{d.contactTitle}</h2><p>{d.contactText}</p></div><Link className="btn organization-primary-button" href="/contacto">Contáctanos <ArrowRight size={17}/></Link></div></section>
+  <PageExtraSections tenantId={tenant.id} slug="nosotros" demo={demo}/>
  </main></PublicFrame>;
 }
 export function OrganizationServices({tenant,demo,template}:Props){
  const d=template.content,educational=template.key==="education";
- const Icons=icons[educational?"education":"services"];
+ const Icons=icons[educational?"education":template.key==="ecommerce"?"ecommerce":"services"];
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" className="organization-main">
-  <section className="organization-inner-hero"><div className="container"><span className="organization-section-kicker">{educational?"PROGRAMAS EDUCATIVOS":"SERVICIOS PROFESIONALES"}</span>
-   <h1>{educational?"Programas de formación":"Nuestros servicios"}</h1><p>{d.description}</p></div></section>
+  <section className="organization-inner-hero"><div className="container"><span className="organization-section-kicker">{educational?"PROGRAMAS EDUCATIVOS":template.key==="ecommerce"?"OFERTA COMERCIAL":"SERVICIOS PROFESIONALES"}</span>
+   <h1>{educational?"Programas de formación":template.key==="ecommerce"?"Nuestra oferta":"Nuestros servicios"}</h1><p>{d.description}</p></div></section>
   <section className="organization-section"><div className="container">
    <div className="organization-cards">{d.cards.map((item,i)=>{const Icon=Icons[i];return <article className="organization-card" key={i}>
     <span className="organization-card-icon"><Icon size={25}/></span><h2>{item.title}</h2><p>{item.description}</p>
@@ -73,10 +79,12 @@ export function OrganizationServices({tenant,demo,template}:Props){
    </article>;})}</div>
   </div></section>
   <section className="organization-cta"><div className="container"><div><h2>{d.contactTitle}</h2><p>{d.contactText}</p></div><Link className="btn organization-primary-button" href="/contacto">Solicitar información <ArrowRight size={17}/></Link></div></section>
+  <PageExtraSections tenantId={tenant.id} slug="servicios" demo={demo}/>
  </main></PublicFrame>;
 }
-export function OrganizationContact({tenant,demo,template}:Props){
+export async function OrganizationContact({tenant,demo,template}:Props){
  const d=template.content;
+ const inquiriesEnabled=await tenantModuleEnabled(tenant.id,"inquiries");
  const phone=tenant.whatsapp?.replace(/\D/g,"");
  const wa=phone?"https://wa.me/"+phone+"?text="+encodeURIComponent("Hola, deseo información sobre "+tenant.name+"."):null;
  return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" className="organization-main">
@@ -88,8 +96,9 @@ export function OrganizationContact({tenant,demo,template}:Props){
     {!wa&&!tenant.contactEmail&&<p>Puedes comunicarte mediante el formulario de esta página.</p>}
    </div>
    <div className="organization-contact-form"><h2>Enviar consulta</h2><p>Utilizaremos tus datos solamente para responder tu solicitud.</p>
-    {demo?<p className="preview-form-note">El formulario se habilitará cuando esté configurada la base de datos.</p>:<ContactForm messagePlaceholder={template.key==="education"?"¿Sobre qué programa deseas información?":"¿En qué servicio estás interesado?"}/>}
+    {demo?<p className="preview-form-note">El formulario se habilitará cuando esté configurada la base de datos.</p>:inquiriesEnabled?<ContactForm messagePlaceholder={template.key==="education"?"¿Sobre qué programa deseas información?":"¿En qué servicio estás interesado?"}/>:<p className="property-help">El formulario de consultas está desactivado. Puedes utilizar los datos de contacto disponibles.</p>}
    </div>
   </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="contacto" demo={demo}/>
  </main></PublicFrame>;
 }

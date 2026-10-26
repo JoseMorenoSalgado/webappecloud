@@ -4,10 +4,12 @@ import {ArrowUpRight,Search,SlidersHorizontal,Building2,X} from "lucide-react";
 import "./catalog-filters.css";
 import {getPublicContext} from "@/lib/tenant";
 import {getSiteTemplate} from "@/lib/site-template-store";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {notFound} from "next/navigation";
 import {getCatalogPage,getCatalogLocationSuggestions,CATALOG_PAGE_SIZE,type CatalogSort} from "@/lib/catalog";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {PropertyCard} from "@/components/property-card";
 export const dynamic="force-dynamic";
 export const metadata:Metadata={title:"Propiedades",description:"Explora inmuebles disponibles para compra o alquiler en Nicaragua."};
@@ -23,7 +25,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const codigo=typeof raw.codigo==="string"?raw.codigo.trim().slice(0,90):"";
  const f={ciudad,codigo,precioMin,precioMax,operacion:(raw.operacion||"").slice(0,20),tipo:(raw.tipo||"").slice(0,40),ubicacion:(raw.ubicacion||"").slice(0,90),orden};
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
- if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const requestedPage=/^[1-9]\d{0,5}$/.test(raw.pagina||"")?Number(raw.pagina):1;
  const normalizedLocation=f.ubicacion.toLocaleLowerCase();
@@ -90,5 +92,6 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
     {result.currentPage<result.totalPages&&<Link className="btn" href={pageHref(result.currentPage+1)}>Siguiente</Link>}
    </nav>}
   </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="propiedades" demo={demo}/>
  </main></PublicFrame>;
 }

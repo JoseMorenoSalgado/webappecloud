@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
@@ -11,6 +12,7 @@ export const runtime="nodejs";
 const back=(code:string)=>propertyRedirect("/admin/leads/nuevo?error="+code);
 export async function POST(req:NextRequest){
  const admin=await requireAdmin();
+ if(!await tenantModuleEnabled(admin.tenantId,"inquiries"))return new Response("Módulo desactivado",{status:403});
  if(!admin.roles.some(r=>["admin","editor","agente"].includes(r)))return back("permisos");
  if(!validMutationOrigin(req))return back("origen");
  const len=Number(req.headers.get("content-length")||0);

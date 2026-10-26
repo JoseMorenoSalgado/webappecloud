@@ -3,6 +3,7 @@ import {NextResponse,type NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {parseRoles} from "@/lib/roles";
 import {tenantFromHost} from "@/lib/tenant";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 const missingColumn=(error:unknown)=>!!(error&&typeof error==="object"&&"code" in error&&error.code==="P2022");
 export async function POST(req:NextRequest){
  if(!hasDatabaseConfig())return NextResponse.json({error:"Formulario disponible cuando se configure la base de datos."},{status:503});
@@ -15,6 +16,7 @@ export async function POST(req:NextRequest){
  try{
   const tenant=await tenantFromHost(req.headers.get("host")||"");
   if(!tenant)return NextResponse.json({error:"Sitio no encontrado"},{status:404});
+  if(!await tenantModuleEnabled(tenant.tenantId,"inquiries"))return NextResponse.json({error:"Formulario desactivado."},{status:403});
   let propertyId:string|undefined;
   let assignedAgentId:string|null=null;
   let hasAgentColumn=true;

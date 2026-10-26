@@ -3,6 +3,7 @@ import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2} from 
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
+import {PageExtraSections} from "@/components/page-extra-sections";
 import {getSiteTemplate} from "@/lib/site-template-store";
 import {OrganizationServices} from "@/components/templates/organization-site";
 export const dynamic="force-dynamic";
@@ -58,6 +59,7 @@ export default async function Services(){
     <h2>Una conversación puede ser <em>el primer paso.</em></h2></div>
     <Link href="/contacto" className="btn nexus-hero-primary">Solicitar información <ArrowRight size={18}/></Link>
    </div></section>
+  <PageExtraSections tenantId={tenant.id} slug="servicios" demo={demo}/>
   </main>
  </PublicFrame>;
 }

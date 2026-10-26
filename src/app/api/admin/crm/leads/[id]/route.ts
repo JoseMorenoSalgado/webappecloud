@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {prisma} from "@/lib/prisma";
 import {crmTablesReady} from "@/lib/crm-schema";
 import {leadWhere} from "@/lib/agent-scope";
@@ -22,6 +23,7 @@ function parseContactDate(raw:string){
 export async function POST(req:NextRequest,{params}:{params:Promise<{id:string}>}){
  const {id}=await params;
  const admin=await requireAdmin();
+ if(!await tenantModuleEnabled(admin.tenantId,"inquiries"))return new Response("Módulo desactivado",{status:403});
  if(!admin.roles.some(r=>["admin","editor","agente"].includes(r)))return back(id,"error=permisos");
  if(!validMutationOrigin(req))return back(id,"error=origen");
  const length=Number(req.headers.get("content-length")||0);

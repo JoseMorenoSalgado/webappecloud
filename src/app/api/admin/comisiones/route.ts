@@ -1,6 +1,7 @@
 import {NextRequest} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {commissionTableReady} from "@/lib/commission-schema";
 import {decimalAmount,validClosedAt} from "@/lib/closing-utils";
 import {cents} from "@/lib/commission-ledger";
@@ -10,6 +11,7 @@ const back=(code:string)=>propertyRedirect("/admin/cierres/comisiones?error="+co
 const methods=["transferencia","efectivo","cheque","otro"] as const;
 export async function POST(req:NextRequest){
  const user=await requireAdmin();
+ if(!await tenantModuleEnabled(user.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.includes("admin"))return back("permisos");
  if(!validMutationOrigin(req))return back("origen");
  const len=Number(req.headers.get("content-length")||0);

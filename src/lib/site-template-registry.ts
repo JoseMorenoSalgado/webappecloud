@@ -2,7 +2,8 @@
 export const SITE_TEMPLATES=[
  {key:"real-estate",label:"Inmobiliaria",description:"Catálogo de propiedades, fichas PDF, WhatsApp y captación de prospectos"},
  {key:"education",label:"Educación",description:"Cursos, programas, presentación institucional y solicitudes de información"},
- {key:"services",label:"Servicios",description:"Servicios profesionales, propuestas de valor y contacto comercial"}
+ {key:"services",label:"Servicios",description:"Servicios profesionales, propuestas de valor y contacto comercial"},
+ {key:"ecommerce",label:"Comercio electrónico",description:"Sitio comercial y presentación de productos; carrito e inventario estarán disponibles próximamente"}
 ] as const;
 export type SiteTemplateKey=typeof SITE_TEMPLATES[number]["key"];
 export type TemplateContent={
@@ -34,6 +35,14 @@ export const TEMPLATE_DEFAULTS:Record<SiteTemplateKey,TemplateContent>={
   aboutText:"Trabajamos para ofrecer soluciones con atención cercana y procesos claros.",
   cards:[{title:"Asesoría",description:"Analizamos tus necesidades para definir el siguiente paso."},{title:"Soluciones",description:"Servicios adaptados a las necesidades de cada proyecto."},{title:"Atención personalizada",description:"Hablemos para encontrar la opción adecuada."}],
   contactTitle:"Conversemos sobre tu proyecto",contactText:"Cuéntanos lo que necesitas y nuestro equipo te responderá."
+ },
+ ecommerce:{
+  eyebrow:"COMERCIO EN LÍNEA",headline:"Tu marca, tu tienda digital",
+  description:"Presenta tus productos y servicios en un sitio web profesional. La venta en línea se habilitará en una próxima fase.",
+  actionLabel:"Conoce nuestra oferta",aboutTitle:"Descubre nuestra marca",
+  aboutText:"Ofrecemos productos y atención personalizada para nuestros clientes.",
+  cards:[{title:"Nuestra selección",description:"Conoce nuestras líneas de productos."},{title:"Atención personalizada",description:"Consulta disponibilidad y detalles."},{title:"Compra informada",description:"Resolvemos tus preguntas antes de comprar."}],
+  contactTitle:"Hablemos de lo que necesitas",contactText:"Contáctanos para conocer productos y disponibilidad."
  }
 };
 export function isTemplateKey(value:unknown):value is SiteTemplateKey{

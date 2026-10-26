@@ -1,5 +1,6 @@
 import {NextRequest} from "next/server";
 import {requireAdmin} from "@/lib/auth";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {prisma} from "@/lib/prisma";
 import {closingTableReady} from "@/lib/closing-schema";
 import {closingWhere} from "@/lib/closing-utils";
@@ -15,6 +16,7 @@ function cell(input:string){
 }
 export async function GET(req:NextRequest){
  const user=await requireAdmin();
+ if(!await tenantModuleEnabled(user.tenantId,"closings"))return new Response("Módulo desactivado",{status:403});
  if(!user.roles.some(r=>["admin","editor","agente"].includes(r)))return new Response("No autorizado",{status:403});
  if(!await closingTableReady())return new Response("Registro no activado",{status:503});
  const query=new URL(req.url).searchParams;

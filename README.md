@@ -2,7 +2,7 @@
 
 **Primera implementación:** NEXUS REAL ESTATE · «Pensando en tu futuro».
 
-Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQL**, preparada para cPanel cuando la cuenta admita una aplicación Node.js persistente. **Estado:** primera versión de pruebas, no apta aún para clientes reales sin completar migraciones, respaldos y auditoría de seguridad.
+Base Next.js 15 + TypeScript + Tailwind CSS + Prisma + **MariaDB/MySQL/PostgreSQL**. **Despliegue previsto: Docker en Dockploy**, con base SQL y archivos persistentes respaldados. **Estado:** primera versión de pruebas; no se considera apta para clientes reales hasta verificar migraciones, respaldos recuperables y seguridad del entorno.
 
 ## Funcionalidades implementadas
 
@@ -26,7 +26,7 @@ Abre `/instalar` para configurar por primera vez **MariaDB/MySQL/PostgreSQL**, l
 - Ampliar el editor de plantillas con vista previa sin publicar, más bloques y nuevos sectores (las plantillas Educación y Servicios ya están disponibles).
 - Gestión de categorías, agentes, CRM, edición/eliminación de propiedades, informes avanzados.
 - Rate limiting del formulario público, anti-bots, auditoría de seguridad y protección de datos (login incluye control básico de intentos).
-- Migraciones iniciales versionadas, backups, pruebas de seguridad y despliegue validado en cPanel.
+- Migraciones iniciales versionadas, backups restaurables, pruebas de seguridad y despliegue de producción validado en Dockploy.
 
 ## Desarrollo local
 
@@ -50,9 +50,11 @@ La semilla crea la inmobiliaria NEXUS, el dominio configurado, tres propiedades 
 
 Nunca aceptamos el identificador del tenant enviado por el visitante para seleccionar datos. Se obtiene de la asignación única del dominio. Todas las consultas del panel se limitan al tenant de la cuenta autenticada, con cookie HttpOnly de sesión y token aleatorio cuyo hash se almacena en MariaDB.
 
-### cPanel / WHM
+### Docker / Dockploy
 
-Necesita Node.js / Passenger, Application Manager o Web Apps, más una versión de Node compatible, configurada por el administrador de WHM. Crear base MariaDB con credenciales en `.env`, fuera de `public_html`, y configurar dominio y SSL. Aún **no** se ha validado un despliegue Passenger de esta aplicación; `output: "standalone"` no significa que se pueda ejecutar sin ajustar el punto de entrada. No uses `prisma db push` como mecanismo de migración en producción; versionaremos migraciones y respaldos antes del primer despliegue.
+El destino de despliegue es **Docker en Dockploy**. Configura la base de datos con una red privada, los secretos fuera del repositorio y un volumen persistente para `APP_CONFIG_DIR`, el contenido multimedia y la configuración del instalador. Ver [guía Dockploy](docs/DEPLOY-DOCKPLOY.md) y [instalador](docs/INSTALACION-WEB.md).
+
+**Antes de publicar o fusionar cambios con despliegue automático:** realizar y verificar una copia restaurable de SQL y del volumen persistente, comprobar la estrategia de migración y confirmar qué rama tiene conectada Dockploy. Ejecutar `prisma db push` únicamente en instalaciones iniciales vacías de prueba, no como actualización automática de producción.
 
 ## Estado de validación
 

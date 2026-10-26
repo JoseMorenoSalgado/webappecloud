@@ -59,3 +59,13 @@
  .admin-shell .cms-live-preview{max-height:360px}
 }
 @media(prefers-reduced-motion:reduce){.admin-shell .cms-toolbar-unified{scroll-behavior:auto}}
+
+
+/* Publicar != mostrar en el menú: explicación accesible en índice CMS. */
+.admin-shell .cms-publication-guide{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 15px;margin:0 0 14px;background:#f7fafc;border:1px solid #e2e8ef;border-radius:10px;color:#42586f;font-size:12px;line-height:1.55}
+.admin-shell .cms-publication-guide strong{font-weight:780;color:#2a3d54}
+.admin-shell .cms-publication-guide span{flex:1 1 360px}
+.admin-shell .cms-publication-guide a,.admin-shell .property-help a{color:#265b87;text-decoration:underline;text-underline-offset:3px}
+.admin-shell .cms-row-actions button:disabled{opacity:.62;cursor:progress}
+.admin-shell .cms-publication-guide a:focus-visible{outline:3px solid #1764a0;outline-offset:3px}
+@media(max-width:620px){.admin-shell .cms-publication-guide{display:block;padding:12px}.admin-shell .cms-publication-guide span{display:block;margin-top:4px}.admin-shell .cms-row-actions button{min-height:40px}}

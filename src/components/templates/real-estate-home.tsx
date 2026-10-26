@@ -7,6 +7,7 @@ import {getPageDefinitions} from "@/lib/site-pages";
 import {PropertyCard} from "@/components/property-card";
 import {PublicFrame} from "@/components/public-frame";
 import {ContactForm} from "@/components/contact-form";
+import {PageExtraSections} from "@/components/page-extra-sections";
 const DEFAULT_EYEBROW="NEXUS REAL ESTATE · NICARAGUA";
 const services=[
  {href:"/servicios#comprar",Icon:Building2,title:"Compra y venta",desc:"Opciones para encontrar una vivienda o explorar oportunidades inmobiliarias."},
@@ -115,6 +116,7 @@ export async function RealEstateHome(){
      </div>
     </div>
    </section>}
+   <PageExtraSections tenantId={tenant.id} slug="home" demo={demo}/>
   </main>
  </PublicFrame>;
 }

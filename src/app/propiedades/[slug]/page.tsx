@@ -4,6 +4,7 @@ import {getPublicContext} from "@/lib/tenant";
 import {prisma} from "@/lib/prisma";
 import type {PublicProperty} from "@/lib/demo";
 import {getSiteTemplate} from "@/lib/site-template-store";
+import {tenantModuleEnabled} from "@/lib/tenant-modules";
 import {notFound} from "next/navigation";
 import {assertPagePublished} from "@/lib/site-pages";
 import {formatPrice} from "@/lib/demo";
@@ -18,7 +19,7 @@ export const dynamic="force-dynamic";
 export default async function Detail({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
  const {tenant,properties:demoProperties,demo}=await getPublicContext({loadProperties:false});
- if((await getSiteTemplate(tenant.id)).key!=="real-estate")notFound();
+ if((await getSiteTemplate(tenant.id)).key!=="real-estate"||!await tenantModuleEnabled(tenant.id,"properties"))notFound();
  await assertPagePublished(tenant.id,demo,"propiedades");
  const p:PublicProperty|undefined=demo?demoProperties.find(x=>x.slug===slug):await (async()=>{
   const row=await prisma.property.findUnique({

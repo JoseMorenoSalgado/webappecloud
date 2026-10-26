@@ -84,6 +84,12 @@ jobs:
         run: node scripts/check-template-boundaries.mjs
       - name: Verificar datos predeterminados por plantilla
         run: node scripts/check-template-defaults.mjs
+      - name: Validar procedimiento de respaldo Docker (sin tocar datos de CI)
+        run: |
+          bash -n scripts/backup-dockploy.sh
+          bash scripts/backup-dockploy.sh --help > /dev/null
+          test ! -f .cpanel.yml
+
       - name: Verificar biblioteca visual sin publicación accidental
         run: node scripts/check-template-gallery.mjs
       - name: Verificar TypeScript
@@ -150,12 +156,22 @@ jobs:
         run: node scripts/check-property-gallery.mjs
       - name: Probar CMS, estados de publicación, menú y WebP de alta calidad
         run: node scripts/check-site-cms.mjs
+      - name: Probar editor visual, bloques y privacidad de imágenes
+        run: node scripts/check-page-blocks.mjs
+      - name: Probar portada, páginas predeterminadas y biblioteca multicliente
+        run: node scripts/check-builtin-media.mjs
+      - name: Probar retención, restauración y limpieza segura de imágenes
+        run: node scripts/check-media-lifecycle.mjs
       - name: Validar editores independientes y administrador compacto
         run: node scripts/check-independent-pages.mjs
       - name: Comprobar vistas previas y experiencia CMS mejorada
         run: node scripts/check-cms-ux.mjs
       - name: Probar selección de plantillas, contenido y aislamiento en MariaDB
         run: node scripts/check-template-selection.mjs
+      - name: Verificar sector, módulos, accesos y aislamiento en MariaDB
+        run: node scripts/check-tenant-modules.mjs
+      - name: Probar orientación CMS, páginas y navegación por sector
+        run: node scripts/check-site-hub.mjs
       - name: Reproducir instalación MariaDB heredada y comprobar recuperación sin pérdida de datos
         run: node scripts/check-legacy-db.mjs
       - name: Probar vista previa sin MariaDB, solo en dominio autorizado

@@ -27,7 +27,7 @@ Manifest example:
 
 - Authenticate installations and authorize release channels via WHMCS or a dedicated API.
 - Digitally sign manifests and release archives; verify signatures using pinned public keys.
-- Implement safe, bounded archive extraction, backup, database migration strategy, Passenger restart, health check and recovery.
+- Implement safe, bounded archive extraction, backup, database migration strategy, controlled Docker deployment restart, health check and recovery.
 - Use per-installation credentials and a background job with least privilege.
 - Integrate dashboard route, authorization and audit trail after inspecting the app's actual navigation/auth structure.
 - Do not enable automatic updates before integration tests and rollback testing.

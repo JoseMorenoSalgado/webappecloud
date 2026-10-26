@@ -3,6 +3,10 @@ import {notFound} from "next/navigation";
 import {type Prisma} from "@prisma/client";
 import {prisma} from "@/lib/prisma";
 import {getSiteTemplate} from "@/lib/site-template-store";
+import {getTenantModules} from "@/lib/tenant-modules";
+import {normalizePageSections,type PageSection} from "@/lib/page-sections";
+import {validCustomSlug} from "@/lib/page-slug";
+export {validCustomSlug} from "@/lib/page-slug";
 
 export type SiteMenuItem={id:string;label:string;href:string};
 export type PageDefinition={id:string;slug:string;title:string;href:string;published:boolean;builtIn:boolean;summary:string};
@@ -17,29 +21,27 @@ export const DEFAULT_SITE_MENU:SiteMenuItem[]=staticPages.map(p=>({id:p.id,label
 export function defaultMenuForTemplate(key:string):SiteMenuItem[]{
  if(key==="real-estate")return [...DEFAULT_SITE_MENU];
  return staticPages.filter(p=>p.id!=="propiedades").map(p=>({
-  id:p.id,label:p.id==="servicios"&&key==="education"?"Programas":p.title,href:p.href
+  id:p.id,label:p.id==="servicios"&&key==="education"?"Programas":p.id==="servicios"&&key==="ecommerce"?"Nuestra oferta":p.title,href:p.href
  }));
 }
 export const CUSTOM_PAGE_PREFIX="pagina-";
 export const MENU_SLUG="site-navigation";
-const customSlug=/^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export function validCustomSlug(slug:string){return slug.length>=3&&slug.length<=65&&customSlug.test(slug)
- &&!["nueva","editar","menu","admin","api","instalar"].includes(slug);}
-export function textBlocks(raw:unknown):{summary:string;body:string}{
- if(!raw||typeof raw!=="object"||Array.isArray(raw))return {summary:"",body:""};
+export function textBlocks(raw:unknown):{summary:string;body:string;sections:PageSection[]}{
+ if(!raw||typeof raw!=="object"||Array.isArray(raw))return {summary:"",body:"",sections:[]};
  const obj=raw as Record<string,unknown>;
  return {summary:typeof obj.summary==="string"?obj.summary.slice(0,240):"",
-  body:typeof obj.body==="string"?obj.body.slice(0,12000):""};
+  body:typeof obj.body==="string"?obj.body.slice(0,12000):"",sections:normalizePageSections(obj.sections)};
 }
 export async function getPageDefinitions(tenantId:string):Promise<PageDefinition[]>{
  const template=await getSiteTemplate(tenantId);
- const enabledPages=template.key==="real-estate"?staticPages:staticPages.filter(p=>p.id!=="propiedades");
+ const available=await getTenantModules(tenantId,template.key);
+ const enabledPages=template.key==="real-estate"&&available.includes("properties")?staticPages:staticPages.filter(p=>p.id!=="propiedades");
  const rows=await prisma.sitePage.findMany({where:{tenantId,OR:[
   {slug:{in:staticPages.map(x=>x.slug)}},{slug:{startsWith:CUSTOM_PAGE_PREFIX}}
  ]},select:{slug:true,title:true,published:true,blocks:true},orderBy:{updatedAt:"desc"}});
  const lookup=new Map(rows.map(x=>[x.slug,x]));
  const builtins:PageDefinition[]=enabledPages.map(p=>({
-  ...p,title:p.id==="servicios"&&template.key==="education"?"Programas":p.title,published:p.id==="home"?true:(lookup.get(p.slug)?.published??true),
+  ...p,title:p.id==="servicios"&&template.key==="education"?"Programas":p.id==="servicios"&&template.key==="ecommerce"?"Nuestra oferta":p.title,published:p.id==="home"?true:(lookup.get(p.slug)?.published??true),
   builtIn:true,summary:""
  }));
  const extras=rows.filter(r=>r.slug.startsWith(CUSTOM_PAGE_PREFIX)).map(r=>{
