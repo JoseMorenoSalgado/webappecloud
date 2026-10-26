@@ -96,3 +96,28 @@ y CSS responsive. `check-style-modules.mjs` valida el nuevo módulo CSS.
 1024 y 1440 px, comprobar navegación con teclado y touch, y validar
 visualmente fotografías reales del cliente. Las pruebas de código no
 sustituyen estas comprobaciones.
+
+
+## Revisión con navegador automatizado (CI)
+
+La prueba `scripts/check-nexus-browser-qa.mjs` abre las seis rutas en
+Chromium, usando una base MariaDB temporal de CI y tamaños de **375, 768, 1024
+y 1440 px**. Genera **24 capturas PNG** de página completa y un
+`report.json` con anchos de pantalla, contenedores y hallazgos.
+
+Se comprueba:
+- que cada ruta HTTP responda y muestre encabezado, título y pie;
+- que no exista desplazamiento horizontal global;
+- que el título principal no se desborde y no aparezcan errores JS;
+- que el menú en móvil se abra y tenga controles táctiles de 44 px;
+- que la ficha individual no recorte su fotografía mediante `object-fit:cover`.
+
+GitHub Actions adjunta un artefacto descargable llamado
+`nexus-visual-qa` al workflow de verificación de la PR, con retención de
+siete días. Un diseñador o responsable del cliente **debe inspeccionar
+estas capturas** y comprobar en dispositivos reales el contraste, recortes,
+calidad de imágenes, legibilidad y navegación. Que el workflow esté verde
+**no equivale a aprobación visual humana**.
+
+La prueba emplea datos ficticios de CI; puede diferir de los contenidos
+reales y de las fotografías del cliente en Dockploy.
