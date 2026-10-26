@@ -47,7 +47,7 @@ export default async function Catalog({searchParams}:{searchParams:Promise<Filte
  const advancedActive=Boolean(ciudad||codigo||precioMin!==undefined||precioMax!==undefined);
  const filtersActive=Boolean(f.operacion||f.tipo||f.ubicacion||advancedActive||orden!=="recientes");
  const pageHref=(page:number)=>"/propiedades?"+new URLSearchParams({...Object.fromEntries(Object.entries(f).filter(([,v])=>v!==undefined&&v!=="").map(([k,v])=>[k,String(v)])),pagina:String(page)}).toString();
- return <PublicFrame tenant={tenant} demo={demo}><main id="contenido" className="nexus-public-page nexus-catalog-page">
+ return <PublicFrame tenant={tenant} demo={demo}><main id="contenido">
   <section className="nexus-inner-hero nexus-catalog-hero"><div className="container">
    <span className="nexus-section-kicker nexus-kicker-light">CATÁLOGO INMOBILIARIO</span>
    <div className="nexus-inner-hero-row"><div>

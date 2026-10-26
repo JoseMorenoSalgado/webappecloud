@@ -152,10 +152,8 @@ jobs:
         run: node scripts/check-site-customization.mjs
       - name: Verificar diseño público y páginas independientes
         run: node scripts/check-public-pages.mjs
-      - name: Comprobar Home premium NEXUS y aislamiento de plantillas
-        run: node scripts/check-nexus-premium-home.mjs
-      - name: Comprobar diseño premium de las seis páginas públicas
-        run: node scripts/check-nexus-premium-site.mjs
+      - name: Probar diseño clásico restaurado de NEXUS y micro-mejoras móviles
+        run: node scripts/check-nexus-classic-restored.mjs
       - name: Preparar Playwright sin depender de Ubuntu del runner
         run: |
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
