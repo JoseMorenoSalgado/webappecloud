@@ -4,6 +4,7 @@ import {promisify} from "node:util";
 import {join} from "node:path";
 import {prismaSchemaFor,type DatabaseEngine} from "@/lib/db-provider";
 import {isTemplateKey,type SiteTemplateKey} from "@/lib/site-template-registry";
+import {normalizeEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {prismaFor} from "@/lib/prisma";
 import {hashPassword} from "@/lib/auth";
 import {installerAvailable,takeInstallLock,saveInstallation,configDir} from "@/lib/server-config";
@@ -15,7 +16,7 @@ export const runtime="nodejs";
 const execute=promisify(execFile);
 type Form={
  dbType:"mariadb"|"mysql"|"postgresql";dbHost:string;dbPort:string;dbName:string;dbUser:string;dbPassword:string;
- institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey?:SiteTemplateKey;
+ institution:string;institutionEmail:string;adminName:string;adminEmail:string;adminPassword:string;templateKey?:SiteTemplateKey;modules?:ModuleKey[];
 };
 const response=(error:string,status=400)=>NextResponse.json({error},{status,headers:{"Cache-Control":"no-store"}});
 const safe=(input:unknown,max=128)=>String(input??"").trim().slice(0,max);
@@ -31,6 +32,7 @@ function validate(input:Form){
  const adminPassword=String(input.adminPassword||"");
  const templateKey=input.templateKey===undefined?"real-estate":input.templateKey;
  if(!isTemplateKey(templateKey))throw Error("Selecciona una plantilla válida.");
+ const modules=normalizeEnabledModules(templateKey,input.modules,true);
  if(!/^[a-z0-9][a-z0-9.-]*$/.test(dbHost)||dbHost.length>250||!Number.isInteger(dbPort)||dbPort<1||dbPort>65535)throw Error("Servidor o puerto de base de datos inválido.");
  if(!/^[a-zA-Z0-9_-]{1,64}$/.test(dbName))throw Error("Nombre de base de datos inválido. Se admiten letras, números, guiones (-) y guiones bajos (_).");
  if(!/^[a-zA-Z0-9_@.-]{1,80}$/.test(dbUser)||!dbPassword||dbPassword.length>256)throw Error("Revisa el usuario y contraseña de la base de datos.");
@@ -39,7 +41,7 @@ function validate(input:Form){
  const engine:DatabaseEngine=dbType==="postgresql"?"postgresql":"mysql";
  const scheme=engine==="postgresql"?"postgresql":"mysql";
  const url=`${scheme}://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${dbHost}:${dbPort}/${dbName}`;
- return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey};
+ return {institution,institutionEmail,adminName,adminEmail,adminPassword,url,engine,templateKey,modules};
 }
 function slugify(s:string){return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,72)||"institucion";}
 function databaseError(error:unknown){
@@ -95,6 +97,7 @@ export async function POST(req:NextRequest){
     const tenant=await tx.tenant.create({data:{name:data.institution,slug:slugify(data.institution),contactEmail:data.institutionEmail,
      tagline:realEstate?"Pensando en tu futuro":null,primaryColor:realEstate?"#cf202b":"#203F63"}});
     await tx.sitePage.create({data:{tenantId:tenant.id,slug:"site-template",title:"Plantilla del sitio",blocks:{key:data.templateKey,contentByTemplate:{}},published:true}});
+    await tx.sitePage.create({data:{tenantId:tenant.id,slug:"site-modules",title:"Módulos de la empresa",blocks:{version:1,byTemplate:{[data.templateKey]:data.modules}},published:false}});
     await tx.domain.create({data:{tenantId:tenant.id,hostname:domain}});
     await tx.adminUser.create({data:{tenantId:tenant.id,name:data.adminName,email:data.adminEmail,passwordHash:hashPassword(data.adminPassword),role:"admin"}});
    });
