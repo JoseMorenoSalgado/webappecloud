@@ -1,7 +1,8 @@
 import Link from "next/link";
-import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2} from "lucide-react";
+import {ArrowUpRight,ArrowRight,Building2,KeyRound,Handshake,CheckCircle2,ShieldCheck} from "lucide-react";
 import {getPublicContext} from "@/lib/tenant";
 import {assertPagePublished} from "@/lib/site-pages";
+import {getPageDefinitions} from "@/lib/site-pages";
 import {PublicFrame} from "@/components/public-frame";
 import {NexusInnerMotion} from "@/components/nexus-inner-motion";
 import {PageExtraSections} from "@/components/page-extra-sections";
@@ -20,6 +21,7 @@ export default async function Services(){
  }
  const {tenant,settings,demo}=await getPublicContext();
  await assertPagePublished(tenant.id,demo,"servicios");
+ const advisoryPublished=!demo&&(await getPageDefinitions(tenant.id)).some(p=>p.id==="asesoria-empresarial"&&p.published);
  return <PublicFrame tenant={tenant} demo={demo}>
   <main id="contenido" data-nexus-inner-motion="servicios"><NexusInnerMotion/>
    <section className="nexus-inner-hero nexus-services-hero"><div className="container">
@@ -52,6 +54,15 @@ export default async function Services(){
      </article>
     </div>
    </div></section>
+   {advisoryPublished&&<section className="nexus-advisory-services-teaser" aria-labelledby="advisory-teaser-title">
+    <div className="container nexus-advisory-services-teaser-inner">
+     <span className="nexus-advisory-service-teaser-icon"><ShieldCheck size={29}/></span>
+     <div><span className="nexus-section-kicker">SERVICIO COMPLEMENTARIO</span>
+      <h2 id="advisory-teaser-title">Asesoría empresarial y cumplimiento.</h2>
+      <p>Auditoría externa, prevención LA/FT/FP y capacitación para sujetos obligados de acuerdo con su marco normativo.</p></div>
+     <Link href="/asesoria-empresarial" className="btn nexus-advisory-home-button">Conoce la asesoría <ArrowUpRight size={17}/></Link>
+    </div>
+   </section>}
    <section className="nexus-section nexus-steps"><div className="container">
     <span className="nexus-section-kicker">UN PROCESO SENCILLO</span><h2>Así podemos <em>empezar.</em></h2>
     <div className="nexus-steps-grid">{steps.map(s=><div key={s.n}><span>{s.n}</span><h3>{s.title}</h3><p>{s.text}</p></div>)}</div>

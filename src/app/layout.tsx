@@ -25,6 +25,7 @@ import "./mobile-native.css";
 import "./styles/templates/nexus-classic-polish.css";
 import "./styles/templates/nexus-home-motion.css";
 import "./styles/templates/nexus-inner-motion.css";
+import "./styles/templates/nexus-advisory.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffffff"};
 
