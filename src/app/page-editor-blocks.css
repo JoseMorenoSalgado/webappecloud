@@ -31,3 +31,18 @@
 .admin-shell .cms-block-add button:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
 @media(max-width:720px){.admin-shell .cms-block-row{padding:12px}.admin-shell .cms-block-add button{flex:1 1 110px;justify-content:center}.admin-shell .cms-block-row :is(input:not([type=file]),textarea){font-size:16px}.admin-shell .cms-block-toolbar{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.admin-shell .cms-block-add button{transition:none}}
+
+
+/* Fingers and keyboard need equally reliable reordering/removal targets. */
+.admin-shell .cms-block-actions button{width:44px;height:44px;min-width:44px;min-height:44px}
+.admin-shell .cms-block-row>label{line-height:1.45}
+@media(max-width:720px){
+ .admin-shell .cms-page-workspace,.admin-shell .cms-extras-workspace{width:100%;min-width:0}
+ .admin-shell .cms-page-editor-form,.admin-shell .cms-extras-panel{min-width:0}
+ .admin-shell .cms-block-image-pick{max-width:100%}
+ .admin-shell .cms-block-image{min-width:0}
+ .admin-shell .cms-block-image>img{max-height:220px}
+ .admin-shell .cms-block-toolbar{gap:6px}
+ .admin-shell .cms-block-toolbar strong{min-width:70px}
+ .admin-shell .cms-editor-actions button,.admin-shell .cms-extra-save button{min-height:48px}
+}
