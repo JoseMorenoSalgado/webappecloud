@@ -10,7 +10,7 @@ export const dynamic="force-dynamic";
 export async function generateMetadata({params}:{params:Promise<{slug:string}>}):Promise<Metadata>{
  const {slug}=await params;
  if(!validCustomSlug(slug))return {};
- const {tenant,demo}=await getPublicContext();
+ const {tenant,demo}=await getPublicContext({loadProperties:false});
  if(demo)return {};
  const page=await getCustomPage(tenant.id,slug);
  if(!page||!page.published)return {};
@@ -19,7 +19,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
 export default async function CustomPublicPage({params}:{params:Promise<{slug:string}>}){
  const {slug}=await params;
  if(!validCustomSlug(slug))notFound();
- const {tenant,demo}=await getPublicContext();
+ const {tenant,demo}=await getPublicContext({loadProperties:false});
  if(demo)notFound();
  const page=await getCustomPage(tenant.id,slug);
  if(!page||!page.published)notFound();
