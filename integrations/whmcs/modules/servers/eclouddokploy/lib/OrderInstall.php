@@ -76,65 +76,136 @@ function eclouddokploy_order_invoice_paid(int $serviceId, int $ownerId): bool
  * Safe, actionable WHMCS error message. Never echo raw HTTP response bodies,
  * exception traces, SQL or credentials to customers/administrators.
  */
-function eclouddokploy_safe_project_diagnostic(Throwable $e): string
+/**
+ * Stable diagnostic code with no sensitive exception message. Use it in
+ * WHMCS Activity Log (customer id, service id, code) for support escalation.
+ */
+function eclouddokploy_project_error_code(Throwable $e): string
 {
     $detail = $e->getMessage();
     if (preg_match(
-        '/^Dokploy (?:request|read) failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{3})[)][.]$/D',
+        '/^Dokploy (?:request|read) failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{1,3})[)][.]$/D',
+        $detail, $matches
+    )) {
+        $op = strtoupper(str_replace('.', '_', $matches[1]));
+        return 'EC-DOK-HTTP-' . $matches[2] . '-' . $op;
+    }
+    if (preg_match('/^Dokploy transport failed [(]cURL ([0-9]{1,3})[)][.]$/D', $detail, $m)) {
+        return 'EC-DOK-CURL-' . $m[1];
+    }
+    if (str_contains($detail, 'project.search returned an incomplete or unknown result')) {
+        return 'EC-DOK-SEARCH-FORMAT';
+    }
+    if (str_contains($detail, 'Unexpected Dokploy environment listing')) {
+        return 'EC-DOK-ENV-FORMAT';
+    }
+    if (str_contains($detail, 'Environment does not belong to the service project')) {
+        return 'EC-DOK-ENV-OWNER';
+    }
+    if (str_contains($detail, 'Project description does not match')) {
+        return 'EC-DOK-PROJECT-DESCRIPTION';
+    }
+    if (str_contains($detail, 'Duplicate project names')
+        || str_contains($detail, 'Ambiguous production environments')) {
+        return 'EC-DOK-AMBIGUOUS';
+    }
+    if (str_contains($detail, 'Invalid Dokploy environment identifier')
+        || str_contains($detail, 'Invalid Dokploy project ID')) {
+        return 'EC-DOK-INVALID-ID';
+    }
+    if ($e instanceof \PDOException
+        || is_a($e, 'Illuminate\\Database\\QueryException')) {
+        return 'EC-DOK-WHMCS-DB';
+    }
+    if ($e instanceof \JsonException) return 'EC-DOK-JSON';
+    if ($e instanceof \TypeError) return 'EC-DOK-TYPE';
+    if (str_contains($detail, 'Unexpected Dokploy response')
+        || str_contains($detail, 'Dokploy response exceeded size limit')) {
+        return 'EC-DOK-RESPONSE';
+    }
+    if (str_contains($detail, 'Dokploy did not return a projectId')
+        || str_contains($detail, 'Dokploy did not return a environmentId')) {
+        return 'EC-DOK-MISSING-ID';
+    }
+    // Intentionally never return arbitrary exception messages or filenames.
+    return 'EC-DOK-UNCLASSIFIED';
+}
+
+function eclouddokploy_safe_project_diagnostic(Throwable $e): string
+{
+    $code = eclouddokploy_project_error_code($e);
+    $detail = $e->getMessage();
+    if (preg_match(
+        '/^Dokploy (?:request|read) failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{1,3})[)][.]$/D',
         $detail, $match
     )) {
         $operation = $match[1];
         $status = (int) $match[2];
         if ($status === 401 || $status === 403) {
-            return 'Dokploy rechazó el acceso a ' . $operation . ' (HTTP '
-                . $status . '). Revisa los permisos de la API key configurada en WHMCS.';
+            return 'La API de Dokploy rechazó ' . $operation . ' (HTTP ' . $status
+                . '). Revisa que la API key tenga acceso a la organización y al proyecto. '
+                . 'Referencia: ' . $code . '.';
         }
         if ($status === 404 || $status === 405) {
-            return 'Dokploy no reconoce el endpoint ' . $operation . ' (HTTP '
-                . $status . '). Verifica la versión y la ruta API de Dokploy.';
+            return 'Dokploy no reconoce la operación ' . $operation . ' (HTTP '
+                . $status . '). Verifica la versión y configuración de la API. '
+                . 'Referencia: ' . $code . '.';
         }
-        if ($status === 0) {
-            return 'WHMCS no pudo completar la conexión HTTPS hacia Dokploy en '
-                . $operation . '. Revisa DNS, firewall, TLS y conectividad desde WHMCS.';
+        if ($status >= 500) {
+            return 'El servidor Dokploy falló al consultar ' . $operation
+                . ' (HTTP ' . $status . '). El proyecto existente NO se ha eliminado '
+                . 'ni duplicado. Revisa el registro de Dokploy. Referencia: '
+                . $code . '.';
         }
-        return 'Dokploy devolvió HTTP ' . $status . ' durante '
-            . $operation . '. El proyecto podría existir; no se intentó duplicarlo. '
-            . 'Consulta los registros de Dokploy para ese endpoint.';
+        return 'Dokploy rechazó la operación ' . $operation . ' (HTTP '
+            . $status . '). No se han duplicado recursos. Referencia: ' . $code . '.';
     }
-    if (preg_match('/^Dokploy transport failed [(]cURL ([0-9]{1,3})[)][.]$/D', $detail, $match)) {
-        return 'La conexión HTTPS con Dokploy falló (cURL ' . $match[1]
-            . '). Revisa DNS, TLS, firewall y salida HTTPS desde WHMCS.';
+    if (preg_match('/^EC-DOK-CURL-([0-9]{1,3})$/D', $code, $m)) {
+        $curl = (int) $m[1];
+        $reason = match ($curl) {
+            6 => 'DNS (nombre del servidor no resuelto)',
+            7 => 'conexión TCP o firewall',
+            28 => 'tiempo de espera agotado',
+            35, 51, 60 => 'certificado TLS o conexión HTTPS',
+            default => 'conectividad HTTPS entre WHMCS y Dokploy',
+        };
+        return 'No se completó la consulta a Dokploy: ' . $reason
+            . '. Revisa la conectividad desde el servidor WHMCS. Referencia: '
+            . $code . '.';
     }
-    if (str_contains($detail, 'Project description does not match')) {
-        return 'El nombre del proyecto coincide, pero su descripción no corresponde '
-            . 'al servicio WHMCS. No se vinculó: requiere revisión administrativa.';
+    $messages = [
+        'EC-DOK-SEARCH-FORMAT' => 'Dokploy devolvió un resultado de búsqueda incompleto o incompatible.',
+        'EC-DOK-ENV-FORMAT' => 'La API devolvió una lista de entornos con formato inesperado.',
+        'EC-DOK-ENV-OWNER' => 'El entorno no corresponde al proyecto asignado a este cliente.',
+        'EC-DOK-PROJECT-DESCRIPTION' => 'La descripción del proyecto existente no corresponde al servicio WHMCS.',
+        'EC-DOK-AMBIGUOUS' => 'Dokploy devolvió recursos repetidos; hace falta conciliación administrativa.',
+        'EC-DOK-INVALID-ID' => 'Dokploy devolvió un identificador de proyecto o entorno inválido.',
+        'EC-DOK-WHMCS-DB' => 'Falló la consulta a la base de datos o el esquema del módulo en WHMCS.',
+        'EC-DOK-JSON' => 'La API de Dokploy devolvió JSON mal formado.',
+        'EC-DOK-TYPE' => 'El complemento recibió un tipo de datos inesperado; comprueba compatibilidad de PHP/WHMCS.',
+        'EC-DOK-RESPONSE' => 'La respuesta de la API de Dokploy tiene un formato o tamaño inesperado.',
+        'EC-DOK-MISSING-ID' => 'La API de Dokploy no devolvió el identificador obligatorio.',
+        'EC-DOK-UNCLASSIFIED' => 'No fue posible clasificar el error; revisa el registro de actividad de WHMCS.',
+    ];
+    return ($messages[$code] ?? $messages['EC-DOK-UNCLASSIFIED'])
+        . ' No se ha intentado crear un proyecto duplicado. Referencia: ' . $code . '.';
+}
+
+/** Activity Log event: fixed diagnostic code only, never raw exception text. */
+function eclouddokploy_log_project_diagnostic(
+    Throwable $error, int $serviceId, int $ownerId
+): void {
+    if (!function_exists('logActivity') || $serviceId < 1 || $ownerId < 1) return;
+    $code = eclouddokploy_project_error_code($error);
+    try {
+        logActivity(
+            'Elearning Cloud Dokploy: fallo de verificación de proyecto. Servicio #'
+            . $serviceId . ', referencia ' . $code,
+            $ownerId
+        );
+    } catch (Throwable $ignored) {
+        // A logging outage must never affect service state or leak secrets.
     }
-    if (str_contains($detail, 'Duplicate project names')) {
-        return 'Dokploy devolvió más de un proyecto con el mismo identificador de servicio. '
-            . 'No se vinculó ninguno para evitar confusión de cuentas.';
-    }
-    if (str_contains($detail, 'Invalid Dokploy project ID')) {
-        return 'Dokploy devolvió un ID de proyecto con formato incompatible. '
-            . 'No se modificó la vinculación del servicio.';
-    }
-    if (str_contains($detail, 'project.search returned an incomplete or unknown result')) {
-        return 'Dokploy devolvió una estructura inesperada en project.search. '
-            . 'No se creó ni vinculó otro proyecto. Comprueba la compatibilidad de la API.';
-    }
-    if (str_contains($detail, 'Dokploy response exceeded size limit')) {
-        return 'Dokploy devolvió demasiados datos para la consulta. '
-            . 'No se crearon recursos nuevos. Revisa el endpoint que respondió.';
-    }
-    if (str_contains($detail, 'Unexpected Dokploy response')
-        || str_contains($detail, 'Syntax error')
-        || str_contains($detail, 'JSON')) {
-        return 'Dokploy respondió con JSON inválido o inesperado. '
-            . 'No se creó otro proyecto. Comprueba la API del servidor.';
-    }
-    // Fail closed for all other exception classes; never include
-    // potentially sensitive SQL/HTTP exception messages.
-    return 'La verificación del proyecto no pudo completarse. '
-        . 'No se intentará duplicar recursos; revisa la conexión y los registros de WHMCS.';
 }
 
 /**
@@ -166,8 +237,10 @@ function eclouddokploy_order_prepare_project(array $params, array $route): strin
             $api, $serviceId, $owner, $route['fingerprint']
         );
     } catch (\Throwable $e) {
-        // Ambiguous API write: the persisted creating_* state prevents
-        // duplicate projects when WHMCS retries this module command.
+        // An ambiguous API write must never be repeated blindly.
+        // Log only a stable diagnostic code, not the raw exception, API
+        // response, SQL statement, URL or any credentials.
+        eclouddokploy_log_project_diagnostic($e, $serviceId, $owner);
         return eclouddokploy_safe_project_diagnostic($e);
     } finally {
         $db->selectOne('SELECT RELEASE_LOCK(?) AS released', [$lock]);
