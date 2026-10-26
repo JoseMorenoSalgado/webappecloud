@@ -64,3 +64,65 @@ No reutilizar el archivo de staging sin revisión. Antes de producción se requi
 5. Confirmar `/api/live`, `/api/health`, navegación pública y login después del despliegue. Ante fallo, volver al despliegue anterior **sin borrar ni reinstalar los volúmenes SQL o de archivos**.
 
 GitHub Actions verifica el código e imagen Docker, **pero no demuestra que exista una copia restaurable de los datos reales ni sustituye las pruebas visuales en el entorno publicado**.
+
+
+## Respaldo de verificación previo a la integración a main
+
+El script `scripts/backup-dockploy.sh` funciona **solo en el host Docker**
+con acceso administrativo a los dos contenedores correctos; no se ejecuta
+desde GitHub Actions ni desde el navegador. **El script no verifica ni
+desactiva Auto Deploy de Dockploy**. La base puede encontrarse en un
+contenedor distinto si WebAppECloud se ejecuta en modo Dockerfile.
+
+En **Dockploy → WebAppECloud**, identificar:
+- Proyecto y servicio de la aplicación, rama Git conectada, estado de
+  `Auto Deploy` y, si aparece, webhook. Registrar si apunta a `main`.
+- Contenedor que ejecuta Next.js y **volumen persistente** de
+  `/app/.runtime` (en él están `installation.json`, configuración e imágenes).
+- Contenedor SQL real al que se conecta esa aplicación: confirmar con
+  el host/base de `DATABASE_URL` o con los metadatos de
+  `installation.json` **sin copiar, imprimir ni enviar la contraseña**.
+  Identificar motor MariaDB/MySQL o PostgreSQL y verificar que tiene un
+  volumen persistente. **No respaldar una base de datos de otro proyecto.**
+
+Durante una ventana sin edición ni carga de archivos, en una sesión privada
+del **host Docker** donde se encuentre el repositorio:
+
+```bash
+# Ejemplo de variables: sustituir por los nombres REALES vistos en Dockploy.
+export APP_CONTAINER='contenedor-real-de-webappecloud'
+export DB_CONTAINER='contenedor-real-de-su-base-de-datos'
+export DB_ENGINE='mariadb'   # mariadb, mysql o postgresql
+export BACKUP_DIR='/var/backups/webappecloud-privado'
+# Solo después de verificar que DB_CONTAINER es la BD de esta aplicación:
+export CONFIRM_DB_MATCH='yes'
+bash scripts/backup-dockploy.sh --help
+bash scripts/backup-dockploy.sh
+```
+
+El proceso aborta si no detecta los contenedores en ejecución, el volumen
+de archivos o el volumen SQL esperado. Crea una carpeta privada con
+`database.sql.gz` o `database.pgdump`, `runtime.tar.gz`,
+`SHA256SUMS` y `manifest.txt`. Comprueba hash e integridad de archivos,
+**pero no prueba por sí solo una restauración completa**.
+
+Para dar por válido un respaldo:
+1. Cifrar y guardar una copia fuera del servidor y fuera de la web pública;
+   el archivo `runtime.tar.gz` incluye credenciales SQL privadas.
+2. Restaurar SQL en una **base de staging aislada, vacía** y recuperar
+   `runtime.tar.gz` en un volumen **diferente**, sin tocar producción.
+3. Probar login con la cuenta original, páginas, medios, fichas, permisos,
+   formularios y el conteo de registros principales. La prueba debe
+   quedar registrada con fecha/resultado.
+4. Confirmar de nuevo la rama y Auto Deploy **en Dockploy**, no solo
+   en GitHub. Si Auto Deploy apunta a main, programar la integración
+   únicamente cuando la aplicación y la base estén protegidas.
+
+### Lo que NO realiza el script
+
+No ejecuta migraciones, no detiene contenedores, no crea tablas, no
+modifica servicios, no hace despliegues y no fusiona ramas Git.
+No garantiza que SQL y archivos sean simultáneos si hubo escrituras
+durante la copia. Se recomienda un período de mantenimiento sin escrituras.
+No es compatible directamente con SQL externo no contenedorizado; para
+ese escenario se requiere el mecanismo de respaldo del proveedor SQL.
