@@ -2,6 +2,7 @@
 import Link from "next/link";
 import {signOut} from "@/app/admin/actions";
 import {type SiteTemplateKey} from "@/lib/site-template-registry";
+import {defaultEnabledModules,type ModuleKey} from "@/lib/tenant-modules-registry";
 import {useEffect,useRef,useState} from "react";
 import {usePathname} from "next/navigation";
 import {
@@ -26,8 +27,8 @@ const secondary:Entry[]=[
 function selectedLink(pathname:string,href:string){
  return href==="/admin"?pathname===href:pathname===href||pathname.startsWith(href+"/");
 }
-export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate"}:{
- role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey
+export function AdminNav({role="admin",roles=[role],userId,userName,notificationCount=0,templateKey="real-estate",enabledModules}:{
+ role?:string;roles?:string[];userId?:string;userName:string;notificationCount?:number;templateKey?:SiteTemplateKey;enabledModules?:ModuleKey[]
 }){
  const pathname=usePathname();
  const [mobileOpen,setMobileOpen]=useState(false);
@@ -64,20 +65,25 @@ export function AdminNav({role="admin",roles=[role],userId,userName,notification
  const manager=has("admin")||has("editor");
  const agent=has("agente");
  const realEstate=templateKey==="real-estate";
+ const enabled=new Set(enabledModules??defaultEnabledModules(templateKey));
+ const entryModule:Record<string,ModuleKey>={"/admin/propiedades":"properties","/admin/leads":"inquiries","/admin/agenda":"agenda","/admin/cierres":"closings","/admin/reportes":"analytics"};
+ const allowed=(entry:Entry)=>!entryModule[entry.href]||enabled.has(entryModule[entry.href]);
  const main=primary.filter(x=>(manager||(agent&&["/admin","/admin/leads","/admin/agenda","/admin/cierres"].includes(x.href))||x.href==="/admin")
   &&(realEstate||["/admin","/admin/leads"].includes(x.href)))
+  .filter(allowed)
   .map(x=>!realEstate&&x.href==="/admin/leads"?{...x,label:"Consultas"}:x);
  const tools=secondary.filter(x=>(manager||(agent&&x.href==="/admin/notificaciones"))
-  &&(realEstate||x.href==="/admin/personalizar"));
+  &&(realEstate||x.href==="/admin/personalizar")).filter(allowed);
  if(has("admin")){
-  if(realEstate)tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
+  if(realEstate&&enabled.has("properties"))tools.push({href:"/admin/clientes-agentes",label:"Clientes y agentes",Icon:ShieldCheck});
+  tools.push({href:"/admin/modulos",label:"Aplicaciones y módulos",Icon:Settings});
   tools.push({href:"/admin/sistema",label:"Estado técnico",Icon:Settings});
   tools.push({href:"/admin/actualizaciones",label:"Actualizaciones (simulación)",Icon:ShieldCheck});
  }
- if(realEstate&&agent&&!manager){
+ if(realEstate&&enabled.has("analytics")&&agent&&!manager){
   tools.push({href:"/admin/reportes/agentes",label:"Mi rendimiento",Icon:ChartNoAxesCombined});
  }
- if(realEstate&&agent&&userId){
+ if(realEstate&&enabled.has("properties")&&agent&&userId){
   tools.push({href:"/admin/clientes-agentes/agentes/"+encodeURIComponent(userId),label:"Mi perfil comercial",Icon:UserRound});
  }
  const notifyBadge=(x:Entry)=>x.href==="/admin/notificaciones"&&notificationCount>0
