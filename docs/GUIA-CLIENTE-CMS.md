@@ -86,7 +86,7 @@ Cada fotografía debe llevar una descripción breve para lectores de pantalla.
 Al quitar una imagen de una página no se borra inmediatamente su archivo,
 para evitar que desaparezca accidentalmente de la versión aún publicada.
 Las imágenes almacenadas tienen un límite preventivo de 50 por página;
-la depuración de archivos sobrantes requiere una fase de gestión de medios.
+la depuración de archivos sobrantes se realiza desde **Mi sitio web → Imágenes** con la protección de la papelera.
 
 Los textos que existían antes de esta actualización se mantienen en el campo
 Contenido principal. No es necesario copiarlos ni recrear la página.
@@ -118,9 +118,27 @@ crea una copia para la página actual para que el contenido no dependa de otro
 archivo o enlace.
 
 Si una imagen ya no se utiliza, quitarla de una sección no elimina
-automáticamente el fichero. Una futura administración de almacenamiento
-permitirá revisar y depurar imágenes sin riesgo de perder imágenes públicas.
-La biblioteca requiere permisos de administrador o editor.
+automáticamente el fichero. La biblioteca muestra cuatro estados:
+
+- **En uso:** referenciada por una página guardada o un borrador. No se puede archivar.
+- **Reciente:** subida hace menos de 24 horas. Se protege para no perder ediciones sin guardar.
+- **Sin usar:** no tiene referencias guardadas y superó la protección de 24 horas. Puede archivarse.
+- **Papelera:** archivo apartado temporalmente, recuperable por el administrador.
+
+Solamente los **administradores** pueden mover imágenes sin usar a la papelera,
+restaurarlas o eliminarlas definitivamente. Los editores pueden consultar la
+biblioteca, pero no borrar archivos.
+
+Para una limpieza segura seleccione **Sin usar → Mover a papelera** y confirme
+la operación. La imagen permanece en la papelera al menos siete días y puede
+**Restaurarse** durante ese período. A partir del séptimo día, un administrador
+puede decidir **Eliminar definitivamente**; debe escribir la palabra
+`ELIMINAR` para autorizar la acción. El CMS vuelve a comprobar las
+referencias antes de realizarla.
+
+El sistema **no elimina ni vacía la papelera automáticamente**. Esta protección
+conserva imágenes publicadas y datos de otros clientes. Se muestran hasta
+120 imágenes activas y 60 archivadas por consulta.
 
 ## Alcance del editor
 
