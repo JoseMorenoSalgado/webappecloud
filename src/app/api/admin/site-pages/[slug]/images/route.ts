@@ -6,6 +6,7 @@ import sharp from "sharp";
 import {requireAdmin} from "@/lib/auth";
 import {validMutationOrigin} from "@/lib/admin-property-request";
 import {getCustomPage} from "@/lib/site-pages";
+import {isBuiltinPageSlug,builtinPageAvailable} from "@/lib/page-extras";
 import {validCustomSlug} from "@/lib/page-slug";
 import {PAGE_IMAGE_MAX_BYTES,pageImagePath} from "@/lib/page-images";
 
@@ -17,8 +18,8 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{slug:string
  if(!validMutationOrigin(req))return error("Origen no autorizado.",403);
  const {slug}=await params;
  if(!validCustomSlug(slug))return error("Página inválida.",404);
- const page=await getCustomPage(admin.tenantId,slug);
- if(!page)return error("Guarda la página antes de agregar imágenes.",404);
+ const exists=isBuiltinPageSlug(slug)?await builtinPageAvailable(admin.tenantId,slug):Boolean(await getCustomPage(admin.tenantId,slug));
+ if(!exists)return error("Guarda la página antes de agregar imágenes.",404);
  const size=Number(req.headers.get("content-length")||0);
  if(!Number.isSafeInteger(size)||size<1||size>PAGE_IMAGE_MAX_BYTES+1024*1024)return error("Máximo 8 MB por imagen.",413);
  let file:FormDataEntryValue|null;
