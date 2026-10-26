@@ -11,7 +11,7 @@ type Query={saved?:string;error?:string;estado?:string;buscar?:string};
 export default async function PagesAdmin({searchParams}:{searchParams:Promise<Query>}){
  const admin=await requireAdmin(),q=await searchParams;
  const [pages,template]=await Promise.all([getPageDefinitions(admin.tenantId),getSiteTemplate(admin.tenantId)]);
- const editingLocation=(page:PageDefinition)=>page.builtIn&&template.key!=="real-estate"?"/admin/personalizar/plantilla":"/admin/personalizar/paginas/"+page.slug;
+ const editingLocation=(page:PageDefinition)=>"/admin/personalizar/paginas/"+page.slug;
  const canEdit=admin.roles.some(r=>["admin","editor"].includes(r));
  const search=(q.buscar||"").trim().slice(0,90).toLocaleLowerCase("es");
  const status=q.estado==="publicadas"?"publicadas":q.estado==="borradores"?"borradores":"todas";
@@ -45,11 +45,11 @@ export default async function PagesAdmin({searchParams}:{searchParams:Promise<Qu
      <thead><tr><th>Página</th><th>Estado</th><th>Dirección</th><th>Acciones</th></tr></thead>
      <tbody>{results.map(p=><tr key={p.id}>
       <td className="cms-page-name"><Link href={editingLocation(p)}>{p.title}</Link>
-       <small>{p.builtIn?(template.key==="real-estate"?"Página del sitio":"Contenido de la plantilla"):"Página personalizada"}</small></td>
+       <small>{p.builtIn?(template.key==="real-estate"?"Página del sitio":"Página de la plantilla"):"Página personalizada"}</small></td>
       <td><span className={"cms-status "+(p.published?"cms-status-live":"cms-status-draft")}>{p.published?"Publicada":"Borrador"}</span></td>
       <td><code>{p.href}</code></td>
       <td><div className="cms-row-actions">
-       <Link href={editingLocation(p)}>{p.builtIn&&template.key!=="real-estate"?"Editar plantilla":"Editar"}</Link>
+       <Link href={editingLocation(p)}>Editar</Link>
        {p.published&&<Link href={p.href} target="_blank" aria-label={"Ver "+p.title}>Ver <ArrowUpRight size={14}/></Link>}
        {canEdit&&p.id!=="home"&&<PagePublicationAction slug={p.slug} title={p.title} published={p.published}/>}
       </div></td>
