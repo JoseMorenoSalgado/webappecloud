@@ -158,10 +158,14 @@ jobs:
         run: node scripts/check-nexus-home-motion.mjs
       - name: Comprobar animaciones de las demás páginas públicas NEXUS
         run: node scripts/check-nexus-inner-motion.mjs
+      - name: Probar asesoría empresarial opcional, carga WebP y solicitudes de consulta
+        run: node scripts/check-business-advisory.mjs
       - name: Preparar Playwright sin depender de Ubuntu del runner
         run: |
           npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.56.1
           docker pull mcr.microsoft.com/playwright:v1.56.1-noble
+      - name: Publicar asesoría únicamente en entorno temporal de capturas
+        run: node scripts/stage-advisory-visual.mjs publish
       - name: Capturar y revisar desbordamientos públicos a 375, 768, 1024 y 1440 px
         run: |
           mkdir -p /tmp/nexus-visual-qa
@@ -181,6 +185,10 @@ jobs:
           path: /tmp/nexus-visual-qa/
           if-no-files-found: warn
           retention-days: 7
+
+      - name: Restablecer borrador de asesoría en pruebas
+        if: always()
+        run: node scripts/stage-advisory-visual.mjs draft
 
       - name: Verificar galería con imagen completa y sin ampliación artificial
         run: node scripts/check-property-gallery.mjs
