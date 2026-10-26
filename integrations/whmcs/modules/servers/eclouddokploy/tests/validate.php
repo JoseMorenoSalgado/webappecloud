@@ -525,8 +525,12 @@ check(eclouddokploy_auto_mail_choose([
 
 // WHMCS Admin Services Tab + custom support actions, without client impersonation.
 $adminButtons = eclouddokploy_AdminCustomButtonArray();
-check(($adminButtons['Crear / verificar proyecto Dokploy'] ?? '') === 'AdminCreateProject',
+check(($adminButtons['Comprobar / crear proyecto'] ?? '') === 'AdminCreateProject',
     'admin can create the customer project from service details');
+check(($adminButtons['Sí, importar proyecto existente'] ?? '') === 'AdminImportProject',
+    'existing project requires explicit confirmation before import');
+check(($adminButtons['No, cancelar importación'] ?? '') === 'AdminCancelImport',
+    'administrator can decline importing an existing project');
 check(($adminButtons['Instalar aplicación del cliente'] ?? '') === 'AdminInstallApp',
     'admin can install the application for the customer from service details');
 $adminFixture = [
@@ -535,6 +539,10 @@ $adminFixture = [
 ];
 unset($_SESSION['adminid']);
 check(!eclouddokploy_admin_authorized($adminFixture), 'non-admin cannot access support flow');
+check(eclouddokploy_import_question() !== 'success'
+    && str_contains(eclouddokploy_import_question(), '¿Deseas importarlo'),
+    'existing project is not automatically adopted');
+
 check(str_contains(eclouddokploy_AdminCreateProject($adminFixture), 'administrativa'),
     'support project creator rejects missing admin session');
 check(str_contains(eclouddokploy_AdminInstallApp($adminFixture), 'servicio debe estar activo'),
