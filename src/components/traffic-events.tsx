@@ -1,5 +1,6 @@
 "use client";
 import {useEffect} from "react";
+import {usePathname} from "next/navigation";
 import {MessageCircle} from "lucide-react";
 import {type PublicTenant,type PublicProperty,contactUrl} from "@/lib/demo";
 import {type SiteTemplateKey} from "@/lib/site-template-registry";
@@ -10,6 +11,8 @@ export function WhatsAppButton({tenant,property}:{tenant:PublicTenant;property?:
  return <a className="btn btn-whatsapp" href={href} target={enabled?"_blank":undefined} rel={enabled?"noopener noreferrer":undefined} onClick={()=>{if(enabled)log("whatsapp");}}>Consultar por WhatsApp →</a>;
 }
 export function FloatingWhatsapp({tenant,property,templateKey="real-estate"}:{tenant:PublicTenant;property?:PublicProperty;templateKey?:SiteTemplateKey}){
+ const pathname=usePathname();
  if(!tenant.whatsapp)return null;
- return <a className="floating-wa" href={contactUrl(tenant,property,templateKey)} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp" onClick={()=>log("whatsapp")}><MessageCircle size={28}/></a>;
+ const href=pathname==="/asesoria-empresarial"?`https://wa.me/${tenant.whatsapp.replace(/\\D/g,"")}?text=${encodeURIComponent("Hola, deseo información sobre sus servicios de asesoría empresarial y cumplimiento normativo LA/FT/FP.")}`:contactUrl(tenant,property,templateKey);
+ return <a className="floating-wa" href={href} target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp" onClick={()=>log("whatsapp")}><MessageCircle size={28}/></a>;
 }
