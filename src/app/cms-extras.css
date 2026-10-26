@@ -14,6 +14,7 @@
 .admin-shell .cms-media-open:hover:not(:disabled){background:#f4f8fa}
 .admin-shell .cms-media-open:disabled{opacity:.5;cursor:not-allowed}
 .admin-shell .cms-media-open:focus-visible{outline:3px solid #2674ae;outline-offset:2px}
+.admin-shell .cms-media-backdrop{position:fixed;inset:0;z-index:1999;background:#07132192}
 .admin-shell .cms-media-sheet{position:fixed;z-index:2000;inset:7vh max(12px,calc((100vw - 780px)/2));max-height:85dvh;overflow-y:auto;background:#fff;border:1px solid #d7e1ea;border-radius:15px;padding:20px;box-shadow:0 12px 70px #13263b40}
 .admin-shell .cms-media-head{display:flex;align-items:start;justify-content:space-between;gap:15px;margin-bottom:14px}
 .admin-shell .cms-media-head strong{font-size:18px;color:#24364c}
