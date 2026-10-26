@@ -27,8 +27,10 @@ export function CmsMediaPicker({targetSlug,onChoose,disabled=false}:{targetSlug:
   return ()=>{document.body.style.overflow=old;document.removeEventListener("keydown",keys);};
  },[open]);
  const [loading,setLoading]=useState(false),[selecting,setSelecting]=useState<string|null>(null),[error,setError]=useState("");
+ const [search,setSearch]=useState("");
+ const filtered=items.filter(item=>item.pageTitle.toLocaleLowerCase("es").includes(search.trim().toLocaleLowerCase("es")));
  async function show(){
-  setOpen(true);setLoading(true);setError("");
+  setOpen(true);setLoading(true);setError("");setSearch("");
   try{
    const res=await fetch("/api/admin/media",{credentials:"same-origin",cache:"no-store"});
    const value=await res.json() as {items?:Media[];error?:string};
@@ -60,12 +62,17 @@ export function CmsMediaPicker({targetSlug,onChoose,disabled=false}:{targetSlug:
    {loading&&<p role="status">Cargando fotografías...</p>}
    {error&&<p role="alert" className="admin-error">{error}</p>}
    {!loading&&!items.length&&<p>No hay fotografías disponibles. Sube una imagen primero.</p>}
-   {!loading&&items.length>0&&<div className="cms-media-grid">{items.map(item=><button
+   {!loading&&items.length>0&&<><label className="cms-media-search">Buscar por página
+    <input value={search} onChange={e=>setSearch(e.target.value)} type="search" placeholder="Ej. Nosotros, Servicios..." autoComplete="off"/>
+   </label>
+   <p className="cms-media-result-count" role="status">{filtered.length} de {items.length} imágenes</p>
+   {!filtered.length&&<p>No se encontraron imágenes de esa página.</p>}
+   <div className="cms-media-grid">{filtered.map(item=><button
     type="button" key={item.slug+":"+item.id} disabled={Boolean(selecting)}
     onClick={()=>void select(item)} aria-label={"Usar imagen de "+item.pageTitle}>
     <img loading="lazy" src={item.url} alt="" aria-hidden="true"/>
     <span>{item.pageTitle}</span>
-   </button>)}</div>}
+   </button>)}</div></>}
    {selecting&&<p role="status">Preparando imagen para esta página...</p>}
   </div></>}
  </div>;
