@@ -129,15 +129,20 @@ class Handler(BaseHTTPRequestHandler):
             if any(p["name"] == name for p in projects.values()):
                 return self.response(409, {"error": "duplicate project name"})
             pid = new_id("project")
-            projects[pid] = {"projectId": pid, "name": name}
-            # Simulate both Dokploy behaviors: auto-generated production or
-            # environment creation required, depending on the test account.
-            if not name.endswith(("service-311", "service-411", "service-415")):
+            projects[pid] = {"projectId": pid, "name": name,
+                             "description": data.get("description", "")}
+            # Dokploy v0.30.9 returns nested project + its default production.
+            # service-415 deliberately simulates a corrupted missing default.
+            production = None
+            if not name.endswith("service-415"):
                 eid = new_id("env")
-                environments[eid] = {
+                production = {
                     "projectId": pid, "environmentId": eid, "name": "production"
                 }
-            return self.response(200, {"projectId": pid})
+                environments[eid] = production
+            return self.response(200, {
+                "project": dict(projects[pid]), "environment": production,
+            })
         if path == "/api/environment.create":
             pid = data.get("projectId")
             if pid not in projects or data.get("name") != "production":
