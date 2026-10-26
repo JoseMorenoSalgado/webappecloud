@@ -80,7 +80,7 @@ function eclouddokploy_safe_project_diagnostic(Throwable $e): string
 {
     $detail = $e->getMessage();
     if (preg_match(
-        '/^Dokploy request failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{3})[)][.]$/D',
+        '/^Dokploy (?:request|read) failed: ([a-z]+[.][a-zA-Z]+) [(]HTTP ([0-9]{3})[)][.]$/D',
         $detail, $match
     )) {
         $operation = $match[1];
@@ -100,6 +100,22 @@ function eclouddokploy_safe_project_diagnostic(Throwable $e): string
         return 'Dokploy devolvió HTTP ' . $status . ' durante '
             . $operation . '. El proyecto podría existir; no se intentó duplicarlo. '
             . 'Consulta los registros de Dokploy para ese endpoint.';
+    }
+    if (preg_match('/^Dokploy transport failed [(]cURL ([0-9]{1,3})[)][.]$/D', $detail, $match)) {
+        return 'La conexión HTTPS con Dokploy falló (cURL ' . $match[1]
+            . '). Revisa DNS, TLS, firewall y salida HTTPS desde WHMCS.';
+    }
+    if (str_contains($detail, 'Project description does not match')) {
+        return 'El nombre del proyecto coincide, pero su descripción no corresponde '
+            . 'al servicio WHMCS. No se vinculó: requiere revisión administrativa.';
+    }
+    if (str_contains($detail, 'Duplicate project names')) {
+        return 'Dokploy devolvió más de un proyecto con el mismo identificador de servicio. '
+            . 'No se vinculó ninguno para evitar confusión de cuentas.';
+    }
+    if (str_contains($detail, 'Invalid Dokploy project ID')) {
+        return 'Dokploy devolvió un ID de proyecto con formato incompatible. '
+            . 'No se modificó la vinculación del servicio.';
     }
     if (str_contains($detail, 'project.search returned an incomplete or unknown result')) {
         return 'Dokploy devolvió una estructura inesperada en project.search. '
