@@ -129,3 +129,32 @@ jobs:
           path: eclouddokploy-whmcs-staging.zip
           retention-days: 30
           if-no-files-found: error
+      - name: Build standalone Git repository archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="standalone-export/whmcs-dokploy"
+          mkdir -p "$ROOT/modules/servers" "$ROOT/docs"
+          cp -a integrations/whmcs/standalone/. "$ROOT/"
+          cp -a integrations/whmcs/modules/servers/eclouddokploy "$ROOT/modules/servers/"
+          cp docs/WHMCS-DOKPLOY-*.md "$ROOT/docs/"
+          cp docs/UI-UX-PRO-MAX-WHMCS-DOKPLOY.md "$ROOT/docs/"
+          printf "Source: JoseMorenoSalgado/webappecloud\\nBranch: feature/whmcs-dokploy-git-mariadb\\nCommit: %s\\n" "$GITHUB_SHA" > "$ROOT/SOURCE-COMMIT.txt"
+          test -f "$ROOT/README.md"
+          test -f "$ROOT/.github/workflows/php-checks.yml"
+          test -f "$ROOT/modules/servers/eclouddokploy/eclouddokploy.php"
+          php "$ROOT/modules/servers/eclouddokploy/tests/validate.php"
+          (
+            cd "$ROOT"
+            zip -qr ../../whmcs-dokploy-git-source.zip .
+          )
+          unzip -t whmcs-dokploy-git-source.zip >/dev/null
+          unzip -Z1 whmcs-dokploy-git-source.zip | grep -q 'modules/servers/eclouddokploy/eclouddokploy.php'
+          unzip -Z1 whmcs-dokploy-git-source.zip | grep -q '.github/workflows/php-checks.yml'
+      - name: Upload standalone Git repository artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: whmcs-dokploy-git-source
+          path: whmcs-dokploy-git-source.zip
+          retention-days: 30
+          if-no-files-found: error
