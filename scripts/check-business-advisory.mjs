@@ -18,7 +18,12 @@ const auth=await login();
 
 const list=await fetch(origin+"/admin/personalizar/paginas",{headers:{Cookie:auth.Cookie}});
 assert.equal(list.status,200);
-assert.match(await list.text(),/Asesoría Empresarial/);
+const listHtml=await list.text();
+assert.match(listHtml,/Asesoría Empresarial/);
+assert.ok(listHtml.includes("cms-advisory-highlight"),"Advisory page must be prominent even while unpublished");
+const filtered=await fetch(origin+"/admin/personalizar/paginas?estado=publicadas",{headers:{Cookie:auth.Cookie}});
+assert.equal(filtered.status,200);
+assert.ok((await filtered.text()).includes("cms-advisory-highlight"),"Advisory page must remain discoverable in Published filter");
 const edit=await fetch(origin+"/admin/personalizar/paginas/asesoria-empresarial",{headers:{Cookie:auth.Cookie}});
 assert.equal(edit.status,200,"Advisory content must be CMS-editable");
 const editHtml=await edit.text();
