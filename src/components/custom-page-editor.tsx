@@ -1,5 +1,5 @@
 "use client";
-import {useMemo,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,Eye,FileText,Globe2,LockKeyhole,Plus,Save} from "lucide-react";
 type EditorProps={mode:"create"|"edit";slug?:string;title?:string;summary?:string;body?:string;published?:boolean};
@@ -20,6 +20,15 @@ export function CustomPageEditor({mode,slug:storedSlug,title:initialTitle="",sum
  const previewPath="/pagina/"+(slug||"tu-pagina");
  const isEdited=title!==initialTitle||summary!==initialSummary||body!==initialBody||published!==initialPublished||(mode==="create"&&slug.length>0);
  const textCount=body.trim().length;
+ useEffect(()=>{
+  if(!isEdited||submitting)return;
+  const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue="";};
+  window.addEventListener("beforeunload",warn);
+  return ()=>window.removeEventListener("beforeunload",warn);
+ },[isEdited,submitting]);
+ const confirmLeave=(event:React.MouseEvent<HTMLAnchorElement>)=>{
+  if(isEdited&&!submitting&&!window.confirm("Hay cambios sin guardar. ¿Quieres salir sin guardarlos?"))event.preventDefault();
+ };
  return <div className="cms-page-workspace">
   <form className="admin-panel site-page-editor cms-page-editor-form" action={destination} method="post" onSubmit={()=>setSubmitting(true)}>
    <div className="cms-editor-section-heading"><FileText size={18}/><div><h2>Contenido de la página</h2><p>Escribe el contenido y observa la vista previa antes de guardar.</p></div></div>
@@ -48,7 +57,7 @@ export function CustomPageEditor({mode,slug:storedSlug,title:initialTitle="",sum
    <div className="cms-publish-control">
     <div className="cms-publish-icon">{published?<Globe2 size={20}/>:<LockKeyhole size={20}/>}</div>
     <div><strong>{published?"Publicar en el sitio":"Guardar como borrador"}</strong>
-     <p>{published?"La página será accesible por su dirección después de guardar.":"Los visitantes no podrán acceder mientras esté en borrador."}</p></div>
+     <p>{published?"Después de guardar, estará disponible mediante su enlace. Para mostrarla en el menú debes agregarla allí.":"Los visitantes no podrán acceder mientras esté en borrador."}</p></div>
     <label className="cms-publish-switch"><input name="published" type="checkbox" checked={published} onChange={e=>setPublished(e.target.checked)}/>
      <span>Publicada</span></label>
    </div>
@@ -56,7 +65,7 @@ export function CustomPageEditor({mode,slug:storedSlug,title:initialTitle="",sum
     <button className="btn btn-red" type="submit" disabled={submitting}>
      {mode==="create"?<Plus size={17}/>:<Save size={17}/>}
      {submitting?"Guardando...":mode==="create"?"Crear página":"Guardar cambios"}</button>
-    <Link href="/admin/personalizar/paginas" className="btn wizard-back"><ArrowLeft size={16}/> Volver a páginas</Link>
+    <Link href="/admin/personalizar/paginas" className="btn wizard-back" onClick={confirmLeave}><ArrowLeft size={16}/> Volver a páginas</Link>
     {isEdited&&<span className="cms-unsaved" role="status">Cambios sin guardar</span>}
    </div>
   </form>
