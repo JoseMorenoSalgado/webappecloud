@@ -84,6 +84,12 @@ jobs:
         run: node scripts/check-template-boundaries.mjs
       - name: Verificar datos predeterminados por plantilla
         run: node scripts/check-template-defaults.mjs
+      - name: Validar procedimiento de respaldo Docker (sin tocar datos de CI)
+        run: |
+          bash -n scripts/backup-dockploy.sh
+          bash scripts/backup-dockploy.sh --help > /dev/null
+          test ! -f .cpanel.yml
+
       - name: Verificar biblioteca visual sin publicación accidental
         run: node scripts/check-template-gallery.mjs
       - name: Verificar TypeScript
