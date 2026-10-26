@@ -42,6 +42,17 @@
  color:#465567;
  transition:color .15s ease;
 }
+.public-site.nexus-site-premium .nexus-mobile-menu summary{
+ min-height:44px;
+ min-width:44px;
+ display:grid;
+ place-items:center;
+}
+.public-site.nexus-site-premium .nexus-mobile-menu>nav a{
+ min-height:44px;
+ display:flex;
+ align-items:center;
+}
 .public-site.nexus-site-premium .nexus-nav-links a[aria-current=page]{
  color:var(--red);
 }
@@ -651,7 +662,7 @@
   padding:19px 16px;
  }
  .public-site.nexus-site-premium .property-gallery-controls button{
-  min-width:40px;min-height:40px;
+  min-width:44px;min-height:44px;
  }
  .public-site.nexus-site-premium .property-gallery-thumbs button{
   min-height:55px;
