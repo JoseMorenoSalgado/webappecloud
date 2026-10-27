@@ -22,7 +22,7 @@ function safeCode(error) {
 const input = process.argv[2] || "";
 const host = input.toLowerCase().trim().replace(/:\d+$/, "").replace(/\.$/, "");
 if (!/^(?=.{4,253}$)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])$/.test(host)
-    || !host.includes(".") || host.includes("..")) {
+    || (host !== "localhost" && !host.includes(".")) || host.includes("..")) {
   console.error("Uso: node scripts/diagnose-dokploy.mjs ejemplo.com");
   process.exitCode = 2;
 } else {
