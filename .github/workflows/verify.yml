@@ -65,6 +65,8 @@ jobs:
         run: npx prisma db push
       - name: Crear datos de prueba
         run: npm run db:seed
+      - name: Diagnosticar solo lectura el esquema y dominio inicializado
+        run: node scripts/diagnose-dokploy.mjs localhost
       - name: Simular MariaDB existente antes de activar CRM
         run: |
           printf 'DROP TABLE IF EXISTS `LeadNote`;' | npx prisma db execute --schema prisma/schema.prisma --stdin
